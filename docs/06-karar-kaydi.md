@@ -14,6 +14,10 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-008 | Kabul | MVP'de online ödeme yoktur | Booking çekirdeği ve operasyon akışı önce doğrulanır |
 | ADR-009 | Kabul | MVP'de e-posta zorunlu, SMS sınırlı transactional kanal, WhatsApp sonraki faz pilotudur | WhatsApp entegrasyonu template/onboarding/politika yönetimi gerektirir; SMS kritik fallback olarak daha genel erişime sahiptir |
 | ADR-010 | Kabul | Çakışma kuralı staff ve resource için ayrı DB garantileriyle uygulanır | Aynı staff farklı resource ile veya aynı resource farklı staff ile çakışmamalıdır |
+| ADR-011 | Kabul | Backend SDK sürümü `.NET 10.0.300` olarak `global.json` ile sabitlenir | Güncel LTS çizgisinde tekrar üretilebilir build sağlar |
+| ADR-012 | Kabul | API host composition root olur; her domain modülü ayrı assembly olarak yalnızca `BuildingBlocks` referansı alır | Modüler monolith sınırlarını derleme ve mimari test seviyesinde görünür kılar |
+| ADR-013 | Kabul | Yerel geliştirme PostgreSQL `18.4-alpine3.23` container ile çalışır | PostgreSQL range/exclusion constraint hedefiyle uyumlu, tekrar üretilebilir geliştirme ortamı sağlar |
+| ADR-014 | Kabul | Ortak analyzer ayarlarında warnings-as-errors aktiftir; NuGet sürümleri merkezi tutulur | Kod kalitesini başlangıçtan itibaren tutarlı tutar |
 
 ## Değişiklik Süreci
 

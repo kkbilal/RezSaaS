@@ -19,6 +19,13 @@
 - Minimum yönetim paneli: işletme kurulumu + personel/hizmet/kaynak tanımlama + takvim görünümü
 - Audit log + tenant sınırları için temel güvenlik testleri
 
+## Mevcut Durum
+
+- Tamamlandı: `.NET 10` solution, API composition root ve modül assembly iskeleti
+- Tamamlandı: modülden modüle doğrudan referansı engelleyen mimari test
+- Tamamlandı: PostgreSQL 18.4 yerel compose tanımı ve healthcheck
+- Sıradaki dilim: Tenant context + Identity/Tenant Management + Organization temel veri modeli
+
 ## Kabul kriterleri (örnek)
 
 - Aynı `staff + time range` ve aynı `resource + time range` çakışmaları iki ayrı DB garantisiyle engellenir.

@@ -23,4 +23,20 @@ Türkiye odaklı, çoklu işletme/şube/personel/kaynak (koltuk/oda/yatak/istasy
 
 ## Not
 
-Repo şu an “dokümantasyon-first” başlatıldı. Uygulama kodu, `docs/roadmap/*` faz çıktıları netleştikçe eklenecek.
+Repo dokümantasyon-first başlatıldı ve Phase 1 platform iskeleti eklendi. Uygulama dilimleri `docs/15-phase-1-uygulama-plani.md` sırasıyla ilerler.
+
+## Geliştirme
+
+Gereksinimler: `.NET SDK 10.0.300`, Docker Desktop ve Docker Compose.
+
+```powershell
+docker compose up -d postgres
+dotnet restore RezSaaS.slnx
+dotnet build RezSaaS.slnx --no-restore
+dotnet test RezSaaS.slnx --no-build
+dotnet run --project src/Apps/RezSaaS.Api
+```
+
+API healthcheck: `GET /health`
+
+Ayrıntılı kurulum: `docs/14-gelistirici-kurulumu.md`

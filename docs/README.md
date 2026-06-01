@@ -20,6 +20,8 @@
 - `11-veri-envanteri-taslagi.md`: KVKK teknik veri envanteri başlangıcı
 - `12-acik-sorular.md`: Phase 0 kapanış soruları
 - `13-referanslar.md`: Resmi kaynaklar
+- `14-gelistirici-kurulumu.md`: Yerel geliştirme kurulumu
+- `15-phase-1-uygulama-plani.md`: Phase 1 uygulama sırası ve mevcut durum
 
 ## Bakım Kuralı
 

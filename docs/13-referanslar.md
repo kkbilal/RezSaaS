@@ -8,6 +8,8 @@ Bu liste dokümanlardaki teknik yönü destekleyen bir başlangıç setidir. Fiy
 - Azure multitenant mimari rehberi: <https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/overview>
 - PostgreSQL range types: <https://www.postgresql.org/docs/current/rangetypes.html>
 - PostgreSQL constraints: <https://www.postgresql.org/docs/current/ddl-constraints.html>
+- PostgreSQL Docker Official Image: <https://hub.docker.com/_/postgres>
+- .NET Windows kurulumu: <https://learn.microsoft.com/en-us/dotnet/core/install/windows>
 
 ## Güvenlik
 

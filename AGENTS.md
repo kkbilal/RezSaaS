@@ -246,3 +246,52 @@ IP ban sadece güçlü sinyal ve ağır abuse durumunda; NAT/CGNAT nedeniyle “
 - “Hızlı olsun” diye güvenlik/tenancy kurallarını bypass eden PR merge edilmez.
 - Doküman değişiklikleri ve kod değişiklikleri mümkünse ayrı commit’lerde tutulur.
 
+---
+
+## 11) Uygulama İskeleti ve Bağımlılık Kuralları
+
+### 11.1 Solution yapısı
+
+```text
+src/
+  Apps/RezSaaS.Api/                         Composition root
+  BuildingBlocks/RezSaaS.BuildingBlocks/   Ortak teknik kontratlar
+  Modules/RezSaaS.Modules.*/               Domain modülleri
+tests/
+  RezSaaS.ArchitectureTests/               Mimari sınır testleri
+```
+
+### 11.2 Referans yönü
+
+- `RezSaaS.Api` tüm modülleri composition root olarak bir araya getirir.
+- Her modül yalnızca `RezSaaS.BuildingBlocks` referansı alabilir.
+- Modülden modüle doğrudan assembly referansı yasaktır; CI mimari testi bunu denetler.
+- Ortak domain entity üretip `BuildingBlocks` içine taşımak yasaktır. `BuildingBlocks` yalnızca teknik kontratlar içindir.
+- Modüller arası use-case ihtiyacı oluşursa açık contract/event tasarlanır ve ADR güncellenir.
+
+### 11.3 Teknik sürüm ve yerel altyapı
+
+- SDK sürümü repo kökündeki `global.json` ile sabitlenir.
+- NuGet sürümleri `Directory.Packages.props` içinde merkezi tutulur.
+- Ortak analyzer/build ayarları `Directory.Build.props` içindedir; warnings-as-errors gevşetilmez.
+- Yerel PostgreSQL `compose.yaml` üzerinden çalışır. Local varsayılanlar staging/production ortamında kullanılmaz.
+- Clock bağımlılığı için .NET `TimeProvider` kullanılır; domain/application kodunda `DateTime.UtcNow` doğrudan çağrılmaz.
+
+---
+
+## 12) Yeni Özellik Kontrol Listesi
+
+Her yeni özellikte aşağıdaki etkileri kontrol et. Etki varsa ilgili dokümanı aynı PR içinde güncelle:
+
+- Yeni veya değişen domain terimi: `docs/05-domain-sozlugu.md`
+- Ürün/mimari kararı: `docs/06-karar-kaydi.md`
+- Rol, tenant veya branch scope etkisi: `docs/07-yetki-matrisi.md`
+- Bildirim etkisi: `docs/08-bildirim-kanali-stratejisi.md`
+- Abuse yüzeyi veya yaptırım etkisi: `docs/09-abuse-yaptirim-politikasi.md`
+- PII, log veya saklama etkisi: `docs/11-veri-envanteri-taslagi.md`
+- Yeni açık karar: `docs/12-acik-sorular.md`
+- Yeni endpoint: authn, authz, tenant isolation, idempotency, audit ve rate limit değerlendirmesi
+- Yeni DB tablosu: tenant-scoped/global kararı, index, migration ve saklama politikası
+- Yeni background job: explicit tenant scope, idempotency, retry ve audit/telemetry
+- Yeni modül bağımlılığı: doğrudan reference ekleme; önce contract/event ve ADR
+

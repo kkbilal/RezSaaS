@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Admin\RezSaaS.Modules.Admin.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Availability\RezSaaS.Modules.Availability.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Booking\RezSaaS.Modules.Booking.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Catalog\RezSaaS.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Identity\RezSaaS.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Messaging\RezSaaS.Modules.Messaging.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Organization\RezSaaS.Modules.Organization.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Resources\RezSaaS.Modules.Resources.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Reviews\RezSaaS.Modules.Reviews.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.TenantManagement\RezSaaS.Modules.TenantManagement.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\RezSaaS.BuildingBlocks\RezSaaS.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+</Project>
