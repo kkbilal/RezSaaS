@@ -1,0 +1,68 @@
+# Güvenlik, Uyumluluk ve Operasyon (Taslak)
+
+## Kimlik doğrulama ve abuse önleme
+
+- Login/OTP endpoint’lerinde global + endpoint bazlı rate limit
+- IP/account/device sayaçları, cooldown, retry-after
+- OTP maliyetini kontrol için kota ve/veya kullanım bazlı ücret
+
+## Rezervasyon abuse (slot spam) ve yaptırımlar
+
+MVP’de `PendingApproval` slotu bloklamadığı için kötüye kullanım riski vardır (aynı slot için çok sayıda istek açma, işletmeyi meşgul etme). Bu nedenle “önleme + tespit + kademeli yaptırım” birlikte tasarlanır.
+
+Önleme (proaktif kontroller):
+
+- Kullanıcı hesabı zorunlu (rezervasyon isteği için login şart).
+- Kullanıcı başına eşzamanlı `PendingApproval` limitleri (ör. aynı gün içinde N adet).
+- Aynı işletmeye kısa süre içinde açılabilecek istek sayısı limitleri.
+- Şüpheli paternlere cooldown (ör. ardışık ret alan kullanıcı).
+- Device/IP bazlı rate limiting (IP tek başına yeterli değil; NAT/CGNAT nedeniyle dikkatli).
+
+Tespit (sinyaller):
+
+- Kısa sürede çok sayıda `PendingApproval` açıp iptal/expiry oranı yüksek kullanıcılar.
+- Çok sayıda işletmeye “aynı saat aralığı” için istek açan kullanıcılar.
+- İşletmelerden gelen “spam/abuse” işaretlemeleri.
+
+Yaptırım merdiveni (kademeli):
+
+1) Uyarı + geçici cooldown (dakika/saat)  
+2) Rezervasyon isteği oluşturma limiti düşürme (günlük/haftalık)  
+3) Geçici hesap askıya alma (örn. 24–72 saat)  
+4) Kalıcı hesap kapatma (appeal/itiraz süreci ile)  
+
+Opsiyonel: IP ban sadece ağır abuse ve güvenilir sinyal varsa; aksi halde masum kullanıcıları da vurabilir.
+
+Operasyon:
+
+- İşletme panelinde “isteği spam olarak işaretle” aksiyonu
+- Admin panelde abuse olayları, strike geçmişi, ban gerekçesi ve audit log
+
+## MFA ayrımı
+
+- Müşteri tarafı: e-posta + telefon doğrulama **iletişim doğrulaması** olarak konumlanır
+- İşletme/admin tarafı: kritik aksiyonlar için MFA (TOTP/passkey) ve step-up auth
+
+## Log ve token hijyeni
+
+- OTP kodları plaintext tutulmaz
+- Log’larda e-posta/telefon maskelenir
+- Doğrulama/reset token’ları URL/token olarak loglanmaz
+
+## KVKK
+
+- Veri envanteri + saklama süreleri
+- Erişim matrisi
+- Silme/anonymization akışları
+- Backup şifreleme ve incident runbook
+- İhlal bildirim süreçleri (72 saat çerçevesi için operasyon planı)
+
+## İYS / mesajlaşma
+
+- Transactional vs commercial mesaj ayrımı (mimari olarak)
+- Pazarlama akışları için onay toplama ve İYS maliyetlerinin modele dahil edilmesi
+
+## PCI / ödeme güvenliği
+
+- Kart verisini sistemden uzak tut (hosted/redirect)
+- Redirect/checkout bütünlüğü ve unauthorized change monitoring

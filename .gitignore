@@ -1,0 +1,32 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Secrets
+.env
+.env.*
+*.secrets.json
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+
+# Logs
+*.log
+
+*docs
