@@ -26,18 +26,23 @@ Rakiplerin pazarlama ve paketlerinde genelde “koltuk/oda/yatak/istasyon” gib
 
 ## Çekirdek kavramlar (omurga)
 
-Veri ve domain omurgası, personel ve koltuk etrafında değil şu eksende kurulmalı:
+Veri ve domain omurgası, personel ve koltuk etrafında daraltılmaz:
 
-**Tenant → Business → Branch → ResourceType → Resource → StaffMember → Skill → Service → ServiceVariant → AvailabilityRule → Appointment**
+- `Tenant → Business → Branch`
+- `Branch → ResourceType → Resource`
+- `Branch → StaffMember ↔ Skill`
+- `Service → ServiceVariant → Skill/ResourceType gereksinimi`
+- `AvailabilityRule → StaffMember/Resource/Branch`
+- `AppointmentRequest → Appointment`
 
 ## Varsayılan teknoloji yönü (taslak)
 
 - Backend: **ASP.NET Core Web API (.NET 10 LTS)**
 - DB: **PostgreSQL** (çakışma önleme için range type + exclusion constraint yaklaşımına uygun)
 - Mimari: **Modüler monolith** (Identity, Booking, Catalog, Resources, Messaging, Payments, Analytics…)
-- Frontend: modern React yaklaşımı; public keşif sayfalarında SEO için SSR/SSG ihtiyacı değerlendirilecek
+- Frontend: React tabanlı modern yaklaşım; public keşif sayfalarında SEO için SSR/SSG zorunluluğu mimari tasarımda korunacak
 
-## Açık karar alanları (netleştirilecek)
+## Doğrulanmış kararlar
 
 - Ürün konumlandırması: **tek domain altında keşif** + işletme sayfaları (işletmeler sayfalarını müşterileriyle paylaşır).
 - İlk hedef: **multi-category** (dil, şablonlar ve model buna göre).
@@ -45,4 +50,22 @@ Veri ve domain omurgası, personel ve koltuk etrafında değil şu eksende kurul
 - Rezervasyon: müşteri isteği **işletme onayına** gider; onaylanınca randevu işlenir.
 - İşletme onayı: randevu istekleri **24 saat** içinde yanıtlanmazsa zaman aşımına düşer.
 - Müşteri auth: rezervasyon için **hesap şart**.
-- Bildirim: e-posta kesin; **SMS vs WhatsApp** seçimi netleşecek.
+- Kaynak planlama: her randevu **tam olarak 1 staff + 1 resource** kullanır.
+- Çoklu hizmet: MVP'de tüm hizmetler aynı staff ve resource üzerinde toplam süreli tek bloktur.
+- Bildirim: MVP'de e-posta zorunlu, SMS sınırlı transactional kanal; WhatsApp sonraki faz pilotudur.
+
+## MVP kapsamı
+
+- Tek domain üzerinde anonim keşif ve işletme sayfası
+- Müşteri hesabı, işletme hesabı ve işletme üyelikleri
+- Şube, staff, resource, hizmet ve hizmet varyantı yönetimi
+- Uygunluk hesaplama ve işletme onaylı rezervasyon isteği
+- E-posta bildirimleri ve sınırlı SMS bildirimleri
+- Temel spam önleme, audit log ve tenant izolasyonu testleri
+
+## MVP dışı
+
+- Online ödeme, depozito, iade ve chargeback
+- WhatsApp üzerinden production bildirim akışı
+- Paket/membership, stok, prim ve gelişmiş analitik
+- Marketplace komisyonu, sponsorlu sıralama ve uluslararası açılım

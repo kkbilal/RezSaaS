@@ -1,8 +1,8 @@
-# Phase 4 — Ödeme ve Gelir Optimizasyonu
+# Phase 4 - Ödeme ve Gelir Optimizasyonu
 
 ## Amaç
 
-Ödeme akışlarını kademeli açmak ve birim ekonomiyi iyileştirmek.
+Booking çekirdeği ve pilot kullanımı doğrulandıktan sonra ödeme akışlarını kademeli açmak ve birim ekonomiyi iyileştirmek. Bu faz MVP lansman kapısı değildir.
 
 ## Sıralama
 
@@ -21,4 +21,5 @@
 
 - Kart verisi sistemde tutulmaz (hosted/redirect checkout).
 - Ödeme webhooks idempotent işlenir ve auditlenir.
+- Refund ve hata senaryoları operasyon runbook'unda tanımlıdır.
 

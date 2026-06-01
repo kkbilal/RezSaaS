@@ -1,0 +1,29 @@
+# Açık Sorular
+
+Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-kaydi.md` içine işlenir.
+
+## Ürün
+
+- İşletme sayfası URL yapısı ne olacak: `/isletme/{slug}` mı, şehir/kategori içeren SEO yapısı mı?
+- Bir tenant ilk sürümde tam olarak bir `Business` mı içerir?
+- İşletme talebi 24 saat içinde cevaplamazsa görünür bir yanıt süresi metriği veya yaptırım olacak mı?
+- Müşterinin aynı zaman aralığında farklı işletmelere kaç açık talep göndermesine izin verilecek?
+
+## Rezervasyon
+
+- `responseBuffer` kaç saat olacak? Örnek: başlangıca 2 saatten az kalan slot için talep açılamaz.
+- Hizmetler arası hazırlık/temizlik buffer süresi MVP'de olacak mı?
+- Staff seçimi müşteri için zorunlu mu, yoksa "uygun herhangi bir staff" seçeneği olacak mı?
+- İşletme manuel rezervasyon eklediğinde müşteri hesabı şart olacak mı?
+
+## Bildirim
+
+- SMS sağlayıcısı ve gönderici adı operasyonu hangi sağlayıcı ile pilotlanacak?
+- Telefon doğrulaması MVP lansman kapısı mı, yoksa kontrollü pilot özelliği mi?
+- İşletme onay bekleyen talepleri e-posta dışında hangi kanaldan alacak?
+
+## Operasyon ve Uyum
+
+- İlk pilot şehir ve işletme kategorileri hangileri?
+- KVKK aydınlatma, saklama ve silme politikası için hukuk danışmanlığı takvimi nedir?
+- Platform support erişiminde kim, hangi gerekçeyle ve ne kadar süreyle tenant verisi görebilir?

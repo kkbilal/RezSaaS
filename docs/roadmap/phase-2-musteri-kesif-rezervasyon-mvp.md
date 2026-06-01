@@ -1,4 +1,4 @@
-# Phase 2 — Müşteri Keşif ve Rezervasyon MVP
+# Phase 2 - Müşteri Keşif ve Rezervasyon MVP
 
 ## Amaç
 
@@ -10,10 +10,9 @@ Gerçek kullanıcı alabilecek ilk uçtan uca akışı üretmek: keşif → işl
 - İşletme profili: tanıtım, galeri, hizmet menüsü, çalışma saatleri, personel görünürlüğü, kurallar
 - Slot bulma: hizmet(+variant), personel tercihi (opsiyonel), kaynak uygunluğu
 - Rezervasyon oluşturma:
-  - slot **hold** (geçici kilit) mantığı
   - login/register (rezervasyon için **hesap şart**)
   - **işletme onayı**: randevu isteği gönderilir, işletme onaylayınca kesinleşir
-  - doğrulama başarısızsa hold release
+- Bildirim: zorunlu e-posta, sınırlı transactional SMS
 - Yorumlar: yalnızca **tamamlanmış randevu** sonrası (verified review)
 
 ## Notlar (MVP kararları)
@@ -23,10 +22,10 @@ Gerçek kullanıcı alabilecek ilk uçtan uca akışı üretmek: keşif → işl
 
 ## Kabul kriterleri (örnek)
 
-- Hold süresi dolunca slot tekrar seçilebilir.
 - Rezervasyon isteği `PendingApproval` iken işletme panelinde görünür ve onay/ret edilebilir.
 - İşletme onayı olmadan randevu `Confirmed` duruma geçmez.
-- İşletme bir isteği onaylayınca aynı slot için diğer `PendingApproval` istekleri otomatik kapanır (`Declined/Expired`).
+- İşletme bir isteği onaylayınca artık karşılanamayan çakışan `PendingApproval` istekleri `Superseded` gerekçesiyle kapanır.
 - `PendingApproval` istekleri **24 saat** içinde yanıtlanmazsa `Expired` olur ve kullanıcı bilgilendirilir.
+- TTL randevu başlangıç zamanını aşamaz; `responseBuffer` kuralı uygulanır.
 - Kullanıcı başına `PendingApproval` limitleri ve cooldown’lar uygulanır (abuse önleme).
 - Tamamlanmamış randevulardan yorum yazılamaz.

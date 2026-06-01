@@ -5,6 +5,8 @@
 - Login/OTP endpoint’lerinde global + endpoint bazlı rate limit
 - IP/account/device sayaçları, cooldown, retry-after
 - OTP maliyetini kontrol için kota ve/veya kullanım bazlı ücret
+- Müşteri hesabı için e-posta doğrulaması MVP zorunludur.
+- Telefon doğrulaması, SMS sağlayıcısı ve maliyet/onboarding kararı kesinleştikten sonra kademeli açılır.
 
 ## Rezervasyon abuse (slot spam) ve yaptırımlar
 
@@ -31,7 +33,7 @@ Yaptırım merdiveni (kademeli):
 3) Geçici hesap askıya alma (örn. 24–72 saat)  
 4) Kalıcı hesap kapatma (appeal/itiraz süreci ile)  
 
-Opsiyonel: IP ban sadece ağır abuse ve güvenilir sinyal varsa; aksi halde masum kullanıcıları da vurabilir.
+Opsiyonel: IP ban yalnızca ağır abuse ve güvenilir sinyal varsa; aksi halde NAT/CGNAT nedeniyle masum kullanıcıları da etkileyebilir. IP tek başına kalıcı ban sebebi değildir.
 
 Operasyon:
 
@@ -40,8 +42,8 @@ Operasyon:
 
 ## MFA ayrımı
 
-- Müşteri tarafı: e-posta + telefon doğrulama **iletişim doğrulaması** olarak konumlanır
-- İşletme/admin tarafı: kritik aksiyonlar için MFA (TOTP/passkey) ve step-up auth
+- Müşteri tarafı: e-posta/telefon doğrulama **iletişim sahipliği doğrulaması** olarak konumlanır.
+- İşletme/admin tarafı: kritik aksiyonlar için MFA (TOTP/passkey) ve step-up auth.
 
 ## Log ve token hijyeni
 
@@ -56,13 +58,29 @@ Operasyon:
 - Silme/anonymization akışları
 - Backup şifreleme ve incident runbook
 - İhlal bildirim süreçleri (72 saat çerçevesi için operasyon planı)
+- Hassas müşteri notları serbest metin olarak sınırsız tutulmaz; minimum veri ilkesi uygulanır.
 
 ## İYS / mesajlaşma
 
 - Transactional vs commercial mesaj ayrımı (mimari olarak)
 - Pazarlama akışları için onay toplama ve İYS maliyetlerinin modele dahil edilmesi
+- MVP kararı: e-posta zorunlu; SMS yalnızca sınırlı transactional kullanım için hazırlanır; WhatsApp sonraki faz pilotudur.
 
 ## PCI / ödeme güvenliği
 
 - Kart verisini sistemden uzak tut (hosted/redirect)
 - Redirect/checkout bütünlüğü ve unauthorized change monitoring
+
+## Tenant izolasyonu ve kaynak gizliliği
+
+- Platform yöneticisi dışındaki kullanıcılar yalnızca üyesi oldukları tenant kapsamına erişir.
+- Tenant kapsamlı bir kaynağın kimliği tahmin edildiğinde dış kullanıcıya kaynağın varlığını doğrulamayacak yanıt tercih edilir (`404`).
+- Yetkili tenant içinde rolü yetersiz kullanıcıya `403` dönülür.
+- Background job, export ve admin araçları tenant kapsamını açıkça taşır ve auditlenir.
+
+## Uygulama güvenliği minimumları
+
+- State değiştiren endpoint'lerde CSRF stratejisi, güvenli cookie/token ayarları ve origin kontrolü mimari kararla sabitlenir.
+- Input doğrulama, parametrik sorgu ve dosya yükleme sınırlamaları merkezi uygulanır.
+- Dependency taraması, secret taraması ve temel SAST CI kapısı olarak planlanır.
+- Audit log append-only yaklaşımıyla tutulur; uygulama kullanıcıları geçmiş audit kayıtlarını değiştiremez.

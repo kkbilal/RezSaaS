@@ -6,6 +6,8 @@
 
 ## Plan taslağı (hipotez)
 
+Bu rakamlar ürün kararı değil, doğrulanacak fiyat hipotezidir. Lansman öncesi tarihli benchmark çalışmasıyla güncellenir.
+
 - **Launch**: ücretsiz/çok düşük giriş, 1 şube, 2 aktif personel, sınırlı aylık rezervasyon
 - **Starter**: yıllık ~990–1.290 TL/ay (1 şube, 5 personel, sınırsız rezervasyon, temel rol, review isteği, SMS kotası)
 - **Growth**: ~1.790–2.390 TL/ay (depozito, paket/membership, kaynak analitiği, gelişmiş yetki/filtreler)
@@ -17,7 +19,8 @@
 
 ## Ödeme sağlayıcısı (Türkiye-first)
 
-- Başlangıçta public pricing şeffaflığı nedeniyle `iyzico` değerlendirilir; GMV artınca alternatif sağlayıcılarla oran pazarlığı yapılır.
+- MVP'de online ödeme entegrasyonu yoktur.
+- Ödeme fazına geçildiğinde hosted/redirect checkout sunan sağlayıcılar güncel komisyon, onboarding ve operasyon koşullarıyla yeniden değerlendirilir.
 
 ## Ödeme feature sıralaması
 

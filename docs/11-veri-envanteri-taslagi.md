@@ -1,0 +1,21 @@
+# Veri Envanteri Taslağı
+
+Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri envanteri başlangıcıdır.
+
+| Veri Grubu | Örnekler | Amaç | Erişim | Saklama Kararı |
+| --- | --- | --- | --- | --- |
+| Hesap kimliği | Ad, e-posta, telefon | Kimlik ve iletişim | Kullanıcı, sınırlı destek | Netleştirilecek |
+| İşletme üyeliği | Rol, tenant, branch scope | Yetkilendirme | İşletme sahibi, admin | Netleştirilecek |
+| Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |
+| Audit | Actor, aksiyon, zaman, gerekçe | Güvenlik ve inceleme | Yetkili admin | Netleştirilecek |
+| Abuse | Strike, sinyal, yaptırım, itiraz | Platform güvenliği | Platform admin | Netleştirilecek |
+| Bildirim | Kanal, alıcı maskesi, template, provider sonucu | Teslimat ve hata çözümü | Sınırlı destek | Netleştirilecek |
+| Teknik telemetri | IP, device sinyali, correlation id | Abuse ve hata çözümü | Sınırlı güvenlik ekibi | Netleştirilecek |
+
+## İlkeler
+
+- Minimum veri: iş akışı için gerekmeyen alan toplanmaz.
+- Serbest metin müşteri notları sınırlanır; hassas veri girişi için uyarı ve erişim kısıtı planlanır.
+- Silme, anonimleştirme, export ve itiraz süreçleri veri grubu bazında tasarlanır.
+- Backup kopyaları ve log sistemleri saklama politikasına dahildir.
+- Destek erişimi süreli, gerekçeli ve auditli olmalıdır.
