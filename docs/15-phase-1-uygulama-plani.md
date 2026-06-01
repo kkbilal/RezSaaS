@@ -21,7 +21,7 @@ Durum: temel uygulandı; production teslimat adımları açık.
 - Tamamlandı: ASP.NET Core Identity + PostgreSQL store
 - Tamamlandı: register, cookie/bearer login, refresh ve manage endpoint yüzeyi
 - Tamamlandı: platform-global `UserAccount` ve hesap durumu (`Active`, `Suspended`, `Closed`)
-- Tamamlandı: global `PlatformAdmin`, `PlatformSupport` seed rolleri ve policy'leri
+- Tamamlandı: global `PlatformAdmin`, `PlatformSupport` policy kontratları; migration rol seed'i kullanılmaz
 - Tamamlandı: IP bazlı auth rate limit (`10/dakika`, `429`) ve Identity lockout
 - Tamamlandı: production confirmed e-posta fail-fast; local token loglamayan sink
 - Tamamlandı: migration ve gerçek PostgreSQL entegrasyon testleri

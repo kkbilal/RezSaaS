@@ -27,8 +27,5 @@ public sealed class IdentityDbContext
                 .HasConversion<string>()
                 .HasMaxLength(32);
         });
-
-        builder.Entity<IdentityRole<Guid>>()
-            .HasData(PlatformRoles.CreateSeedData());
     }
 }

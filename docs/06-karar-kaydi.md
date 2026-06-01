@@ -24,6 +24,7 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-018 | Kabul | Platform rolleri Identity içinde; tenant işletme rolleri tenant membership içinde tutulur | Global hesap ve tenant kapsamlı yetkilendirmeyi birbirine karıştırmaz |
 | ADR-019 | Kabul | Production confirmed e-posta ister ve gerçek sağlayıcı olmadan fail-fast olur; development token loglamayan sink kullanır | Güvenli production varsayılanı ve yerel geliştirme akışını birlikte korur |
 | ADR-020 | Kabul | Auth yüzeyi IP bazlı `10/dakika` rate limit, `429` cevabı ve Identity lockout ile korunur | Brute-force ve otomatik kaynak tüketimini ilk günden sınırlar |
+| ADR-021 | Kabul | Değiştirilebilir çalışma verileri ve secret değerleri kaynak koda veya migration seed'ine gömülmez; platform rolleri auditli bootstrap ile üretilir | Ortamlar arası veri sızıntısını önler ve ayrıcalıklı yetki üretimini denetlenebilir tutar |
 
 ## Değişiklik Süreci
 

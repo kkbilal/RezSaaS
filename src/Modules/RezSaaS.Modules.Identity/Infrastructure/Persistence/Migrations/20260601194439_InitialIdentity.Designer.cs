@@ -12,7 +12,7 @@ using RezSaaS.Modules.Identity.Infrastructure.Persistence;
 namespace RezSaaS.Modules.Identity.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(IdentityDbContext))]
-    [Migration("20260601190503_InitialIdentity")]
+    [Migration("20260601194439_InitialIdentity")]
     partial class InitialIdentity
     {
         /// <inheritdoc />
@@ -51,22 +51,6 @@ namespace RezSaaS.Modules.Identity.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", "identity");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("4d40e226-60da-4eeb-9c18-5601221fcf62"),
-                            ConcurrencyStamp = "4d40e226-60da-4eeb-9c18-5601221fcf62",
-                            Name = "PlatformAdmin",
-                            NormalizedName = "PLATFORMADMIN"
-                        },
-                        new
-                        {
-                            Id = new Guid("855b4be9-9e11-444f-9aa1-6d980f2921a9"),
-                            ConcurrencyStamp = "855b4be9-9e11-444f-9aa1-6d980f2921a9",
-                            Name = "PlatformSupport",
-                            NormalizedName = "PLATFORMSUPPORT"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

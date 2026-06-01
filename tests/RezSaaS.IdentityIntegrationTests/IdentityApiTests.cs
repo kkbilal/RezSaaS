@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using RezSaaS.Modules.Identity.Domain;
 
 namespace RezSaaS.IdentityIntegrationTests;
 
@@ -68,10 +67,9 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
-    public async Task PlatformRolesAreSeededByMigration()
+    public async Task MigrationDoesNotProvisionPlatformRoles()
     {
-        Assert.True(await fixture.PlatformRoleExistsAsync(PlatformRoles.PlatformAdmin));
-        Assert.True(await fixture.PlatformRoleExistsAsync(PlatformRoles.PlatformSupport));
+        Assert.Equal(0, await fixture.GetPlatformRoleCountAsync());
     }
 
     [Fact]

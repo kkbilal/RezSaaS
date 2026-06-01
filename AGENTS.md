@@ -185,6 +185,7 @@ En azından şu aksiyonlar auditlenir:
 
 - Platform-global kullanıcı hesabı `Identity` modülündeki `UserAccount`'tır.
 - `PlatformAdmin` ve `PlatformSupport` global platform rolleridir; `Identity` modülünde yönetilir.
+- Global rol kayıtları migration seed verisi olarak gömülmez. İlk rol ve ayrıcalıklı hesap üretimi auditli bootstrap akışıyla yapılır.
 - `Customer` bir global Identity rolü değildir; aktif ve doğrulanmış platform hesabının temel kullanım bağlamıdır.
 - `BusinessOwner`, `BranchManager` ve `Staff` tenant üyelik rolleridir; global Identity rolü olarak eklenmez.
 - Browser tabanlı istemciler cookie auth tercih eder. Bearer token yalnızca kontrollü istemciler ve gerekli entegrasyonlar için kullanılır.
@@ -287,6 +288,7 @@ tests/
 - NuGet sürümleri `Directory.Packages.props` içinde merkezi tutulur.
 - Ortak analyzer/build ayarları `Directory.Build.props` içindedir; warnings-as-errors gevşetilmez.
 - Yerel PostgreSQL `compose.yaml` üzerinden çalışır. Local varsayılanlar staging/production ortamında kullanılmaz.
+- Parola, connection string, token, kullanıcı hesabı veya değiştirilebilir operasyon verisi kaynak koda ve migration seed'ine gömülmez. Yerel değerler ignored `.env`, shared ortam değerleri secret manager üzerinden sağlanır.
 - Clock bağımlılığı için .NET `TimeProvider` kullanılır; domain/application kodunda `DateTime.UtcNow` doğrudan çağrılmaz.
 
 ---

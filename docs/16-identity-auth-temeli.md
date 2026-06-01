@@ -10,7 +10,7 @@ Identity/Auth yüzeyi diğer domain API'lerinden önce tamamlanan zorunlu güven
 - PostgreSQL-backed EF Core Identity store (`identity` şeması)
 - Platform-global `UserAccount`
 - Hesap durumları: `Active`, `Suspended`, `Closed`
-- Global platform rolleri: `PlatformAdmin`, `PlatformSupport`
+- Global platform rol kontratları: `PlatformAdmin`, `PlatformSupport`; rol kayıtları migration seed'i olarak gömülmez
 - Platform policy'leri: `PlatformAdminOnly`, `PlatformSupportOrAdmin`
 - Cookie ve bearer login desteği
 - IP bazlı authentication rate limit: `10/dakika`, reddetme `429`
@@ -45,8 +45,11 @@ Browser istemcileri cookie auth tercih eder. Bearer token yalnızca gerekli kont
 
 ## Environment Davranışı
 
-- Development: `Identity:EmailDeliveryMode=DevelopmentSink`, `RequireConfirmedEmail=false`
-- Production: `Identity:EmailDeliveryMode=Unconfigured`, `RequireConfirmedEmail=true`
+- Development: `Identity:DeliveryMode=DevelopmentSink`, `RequireConfirmedEmail=false`
+- Production: `Identity:DeliveryMode=Unconfigured`, `RequireConfirmedEmail=true`
+
+Parola ve connection string repoya yazılmaz. Local geliştirme değerleri ignored `.env`
+dosyasından `. .\scripts\Import-LocalEnvironment.ps1` komutuyla süreç ortamına alınır.
 
 Production e-posta sağlayıcısı bağlanmadan API başlangıçta hata verir. Bu kasıtlı güvenli varsayılandır.
 

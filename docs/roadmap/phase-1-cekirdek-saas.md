@@ -24,7 +24,7 @@
 - Tamamlandı: `.NET 10` solution, API composition root ve modül assembly iskeleti
 - Tamamlandı: modülden modüle doğrudan referansı engelleyen mimari test
 - Tamamlandı: PostgreSQL 18.4 yerel compose tanımı ve healthcheck
-- Tamamlandı: Identity/Auth temeli, platform rolleri, migration ve auth entegrasyon testleri
+- Tamamlandı: Identity/Auth temeli, platform rol policy kontratları, seedsiz migration ve auth entegrasyon testleri
 - Sıradaki kapı: production e-posta sağlayıcısı + MFA enforcement + ilk admin bootstrap
 - Sonraki dilim: Tenant context + Tenant Management + Organization temel veri modeli
 

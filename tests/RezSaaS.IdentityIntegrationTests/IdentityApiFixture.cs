@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Persistence;
@@ -12,9 +14,6 @@ namespace RezSaaS.IdentityIntegrationTests;
 
 public sealed class IdentityApiFixture : IAsyncLifetime
 {
-    private const string LocalAdminConnectionString =
-        "Host=localhost;Port=5432;Database=postgres;Username=rezsaas;Password=rezsaas-local-only";
-
     private readonly string databaseName = $"rezsaas_identity_tests_{Guid.NewGuid():N}";
     private WebApplicationFactory<Program>? factory;
 
@@ -23,6 +22,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await CreateDatabaseAsync();
+        string databaseConnectionString = CreateDatabaseConnectionString();
 
         factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
@@ -30,14 +30,26 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                 builder.UseEnvironment("Development");
                 builder.ConfigureAppConfiguration((_, configuration) =>
                 {
+                    configuration.Sources.Clear();
                     configuration.AddInMemoryCollection(
                         new Dictionary<string, string?>
                         {
-                            ["ConnectionStrings:IdentityDatabase"] = CreateDatabaseConnectionString(),
+                            ["ConnectionStrings:IdentityDatabase"] = databaseConnectionString,
                             ["Identity:AuthenticationPermitLimit"] = "100",
-                            ["Identity:EmailDeliveryMode"] = "DevelopmentSink",
+                            ["Identity:AuthenticationWindowMinutes"] = "1",
+                            ["Identity:DeliveryMode"] = "DevelopmentSink",
+                            ["Identity:LockoutMinutes"] = "15",
+                            ["Identity:MaxFailedAccessAttempts"] = "5",
+                            ["Identity:PasswordRequiredLength"] = "12",
+                            ["Identity:PasswordRequiredUniqueChars"] = "4",
                             ["Identity:RequireConfirmedEmail"] = "false",
                         });
+                });
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<DbContextOptions<IdentityDbContext>>();
+                    services.AddDbContext<IdentityDbContext>(
+                        options => options.UseNpgsql(databaseConnectionString));
                 });
             });
 
@@ -74,24 +86,25 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         Assert.True(result.Succeeded);
     }
 
-    public async Task<bool> PlatformRoleExistsAsync(string roleName)
-    {
-        using IServiceScope scope = factory!.Services.CreateScope();
-        RoleManager<IdentityRole<Guid>> roleManager =
-            scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
-
-        return await roleManager.RoleExistsAsync(roleName);
-    }
-
     public HttpClient CreateClient()
     {
         return factory!.CreateClient();
     }
 
+    public async Task<int> GetPlatformRoleCountAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
+        return await dbContext.Roles.CountAsync();
+    }
+
     private static string GetAdminConnectionString()
     {
         return Environment.GetEnvironmentVariable("REZSAAS_TEST_POSTGRES_CONNECTION_STRING")
-            ?? LocalAdminConnectionString;
+            ?? throw new InvalidOperationException(
+                "Environment variable 'REZSAAS_TEST_POSTGRES_CONNECTION_STRING' is required. "
+                + "Run '. .\\scripts\\Import-LocalEnvironment.ps1' before executing integration tests.");
     }
 
     private string CreateDatabaseConnectionString()

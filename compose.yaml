@@ -2,20 +2,20 @@ services:
   postgres:
     image: postgres:18.4-alpine3.23
     environment:
-      POSTGRES_DB: ${REZSAAS_POSTGRES_DB:-rezsaas}
-      POSTGRES_PASSWORD: ${REZSAAS_POSTGRES_PASSWORD:-rezsaas-local-only}
-      POSTGRES_USER: ${REZSAAS_POSTGRES_USER:-rezsaas}
+      POSTGRES_DB: ${REZSAAS_POSTGRES_DB:?Set REZSAAS_POSTGRES_DB in .env}
+      POSTGRES_PASSWORD: ${REZSAAS_POSTGRES_PASSWORD:?Set REZSAAS_POSTGRES_PASSWORD in .env}
+      POSTGRES_USER: ${REZSAAS_POSTGRES_USER:?Set REZSAAS_POSTGRES_USER in .env}
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${REZSAAS_POSTGRES_USER:-rezsaas} -d ${REZSAAS_POSTGRES_DB:-rezsaas}",
+          "pg_isready -U ${REZSAAS_POSTGRES_USER:?Set REZSAAS_POSTGRES_USER in .env} -d ${REZSAAS_POSTGRES_DB:?Set REZSAAS_POSTGRES_DB in .env}",
         ]
       interval: 5s
       timeout: 5s
       retries: 10
     ports:
-      - "${REZSAAS_POSTGRES_PORT:-5432}:5432"
+      - "${REZSAAS_POSTGRES_PORT:?Set REZSAAS_POSTGRES_PORT in .env}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
 

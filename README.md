@@ -30,6 +30,10 @@ Repo dokümantasyon-first başlatıldı ve Phase 1 platform iskeleti eklendi. Uy
 Gereksinimler: `.NET SDK 10.0.300`, Docker Desktop ve Docker Compose.
 
 ```powershell
+Copy-Item .env.example .env
+# .env içindeki REZSAAS_POSTGRES_PASSWORD değerini değiştir.
+Set-ExecutionPolicy -Scope Process Bypass
+. .\scripts\Import-LocalEnvironment.ps1
 docker compose up -d postgres
 dotnet tool restore
 dotnet restore RezSaaS.sln
@@ -38,6 +42,10 @@ dotnet build RezSaaS.sln --no-restore
 dotnet test RezSaaS.sln --no-build
 dotnet run --project src/Apps/RezSaaS.Api
 ```
+
+Her yeni terminal oturumunda API veya entegrasyon testlerini çalıştırmadan önce
+`Set-ExecutionPolicy -Scope Process Bypass` ve ardından
+`. .\scripts\Import-LocalEnvironment.ps1` komutunu yürüt.
 
 API healthcheck: `GET /health`
 

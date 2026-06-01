@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.Identity.Configuration;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Email;
 using RezSaaS.Modules.Identity.Infrastructure.Persistence;
@@ -18,7 +19,6 @@ namespace RezSaaS.Modules.Identity;
 public sealed class IdentityModule : ModuleBase
 {
     private const string AuthenticationRateLimitPolicy = "identity-authentication";
-    private const int DefaultAuthenticationPermitLimit = 10;
 
     public override string Name => "Identity";
 
@@ -27,30 +27,25 @@ public sealed class IdentityModule : ModuleBase
         string connectionString = configuration.GetConnectionString(IdentityDbContext.ConnectionStringName)
             ?? throw new InvalidOperationException(
                 $"Connection string '{IdentityDbContext.ConnectionStringName}' is required.");
-        bool requireConfirmedEmail =
-            configuration.GetValue("Identity:RequireConfirmedEmail", defaultValue: true);
-        string emailDeliveryMode =
-            configuration.GetValue<string>("Identity:EmailDeliveryMode") ?? "Unconfigured";
-        int authenticationPermitLimit =
-            configuration.GetValue("Identity:AuthenticationPermitLimit", DefaultAuthenticationPermitLimit);
+        IdentitySecurityOptions identityOptions =
+            configuration.GetSection(IdentitySecurityOptions.SectionName)
+                .Get<IdentitySecurityOptions>()
+            ?? throw new InvalidOperationException(
+                $"Configuration section '{IdentitySecurityOptions.SectionName}' is required.");
 
-        if (requireConfirmedEmail && emailDeliveryMode == "Unconfigured")
-        {
-            throw new InvalidOperationException(
-                "An email provider must be configured when confirmed email is required.");
-        }
+        identityOptions.Validate();
 
         services.AddDbContext<IdentityDbContext>(options => options.UseNpgsql(connectionString));
         services.AddAuthorization(options =>
         {
             options.AddPolicy(
                 AuthorizationPolicies.PlatformAdminOnly,
-                policy => policy.RequireRole(PlatformRoles.PlatformAdmin));
+                policy => policy.RequireRole(PlatformRoleNames.Administrator));
             options.AddPolicy(
                 AuthorizationPolicies.PlatformSupportOrAdmin,
                 policy => policy.RequireRole(
-                    PlatformRoles.PlatformAdmin,
-                    PlatformRoles.PlatformSupport));
+                    PlatformRoleNames.Administrator,
+                    PlatformRoleNames.Support));
         });
         services.AddRateLimiter(options =>
         {
@@ -60,9 +55,9 @@ public sealed class IdentityModule : ModuleBase
                     partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = authenticationPermitLimit,
+                        PermitLimit = identityOptions.AuthenticationPermitLimit,
                         QueueLimit = 0,
-                        Window = TimeSpan.FromMinutes(1),
+                        Window = TimeSpan.FromMinutes(identityOptions.AuthenticationWindowMinutes),
                     }));
         });
 
@@ -70,11 +65,11 @@ public sealed class IdentityModule : ModuleBase
             .AddIdentityApiEndpoints<UserAccount>(options =>
             {
                 options.Lockout.AllowedForNewUsers = true;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-                options.Lockout.MaxFailedAccessAttempts = 5;
-                options.Password.RequiredLength = 12;
-                options.Password.RequiredUniqueChars = 4;
-                options.SignIn.RequireConfirmedEmail = requireConfirmedEmail;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(identityOptions.LockoutMinutes);
+                options.Lockout.MaxFailedAccessAttempts = identityOptions.MaxFailedAccessAttempts;
+                options.Password.RequiredLength = identityOptions.PasswordRequiredLength;
+                options.Password.RequiredUniqueChars = identityOptions.PasswordRequiredUniqueChars;
+                options.SignIn.RequireConfirmedEmail = identityOptions.RequireConfirmedEmail;
                 options.User.RequireUniqueEmail = true;
             })
             .AddRoles<IdentityRole<Guid>>()
@@ -82,7 +77,7 @@ public sealed class IdentityModule : ModuleBase
 
         services.AddScoped<SignInManager<UserAccount>, UserAccountSignInManager>();
         services.AddSingleton<IEmailSender<UserAccount>>(
-            emailDeliveryMode == "DevelopmentSink"
+            identityOptions.DeliveryMode == EmailDeliveryMode.DevelopmentSink
                 ? new DevelopmentSinkEmailSender()
                 : new UnconfiguredEmailSender());
     }
