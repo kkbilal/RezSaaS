@@ -19,6 +19,7 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 ## Bildirim
 
 - SMS sağlayıcısı ve gönderici adı operasyonu hangi sağlayıcı ile pilotlanacak?
+- Production e-posta sağlayıcısı hangisi olacak?
 - Telefon doğrulaması MVP lansman kapısı mı, yoksa kontrollü pilot özelliği mi?
 - İşletme onay bekleyen talepleri e-posta dışında hangi kanaldan alacak?
 
@@ -27,3 +28,9 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - İlk pilot şehir ve işletme kategorileri hangileri?
 - KVKK aydınlatma, saklama ve silme politikası için hukuk danışmanlığı takvimi nedir?
 - Platform support erişiminde kim, hangi gerekçeyle ve ne kadar süreyle tenant verisi görebilir?
+
+## Identity/Auth Kapısı
+
+- Production e-posta sağlayıcısı seçilip confirmation ve password reset teslimatı uçtan uca doğrulanmalıdır.
+- Platform admin ve işletme yönetim hesapları için MFA enrollment/enforcement davranışı netleştirilmelidir.
+- İlk `PlatformAdmin` hesabının güvenli bootstrap prosedürü belirlenmelidir.

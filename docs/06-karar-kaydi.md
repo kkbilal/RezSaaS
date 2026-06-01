@@ -18,6 +18,12 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-012 | Kabul | API host composition root olur; her domain modülü ayrı assembly olarak yalnızca `BuildingBlocks` referansı alır | Modüler monolith sınırlarını derleme ve mimari test seviyesinde görünür kılar |
 | ADR-013 | Kabul | Yerel geliştirme PostgreSQL `18.4-alpine3.23` container ile çalışır | PostgreSQL range/exclusion constraint hedefiyle uyumlu, tekrar üretilebilir geliştirme ortamı sağlar |
 | ADR-014 | Kabul | Ortak analyzer ayarlarında warnings-as-errors aktiftir; NuGet sürümleri merkezi tutulur | Kod kalitesini başlangıçtan itibaren tutarlı tutar |
+| ADR-015 | Kabul | Visual Studio geliştirmesi için klasik `RezSaaS.sln` ana solution dosyasıdır | Mevcut Visual Studio kurulumlarıyla doğrudan açılabilirlik sağlar |
+| ADR-016 | Kabul | Auth temeli ASP.NET Core Identity API endpoint'leri ve PostgreSQL store ile kurulur | Olgun framework güvenlik davranışlarını kullanır; özel auth protokolü yazmayı önler |
+| ADR-017 | Kabul | Browser istemcileri cookie auth tercih eder; bearer token kontrollü istemciler için açık tutulur | Browser token sızıntısı yüzeyini azaltır ve resmi Identity yaklaşımıyla uyumludur |
+| ADR-018 | Kabul | Platform rolleri Identity içinde; tenant işletme rolleri tenant membership içinde tutulur | Global hesap ve tenant kapsamlı yetkilendirmeyi birbirine karıştırmaz |
+| ADR-019 | Kabul | Production confirmed e-posta ister ve gerçek sağlayıcı olmadan fail-fast olur; development token loglamayan sink kullanır | Güvenli production varsayılanı ve yerel geliştirme akışını birlikte korur |
+| ADR-020 | Kabul | Auth yüzeyi IP bazlı `10/dakika` rate limit, `429` cevabı ve Identity lockout ile korunur | Brute-force ve otomatik kaynak tüketimini ilk günden sınırlar |
 
 ## Değişiklik Süreci
 

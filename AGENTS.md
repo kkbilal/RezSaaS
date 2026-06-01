@@ -181,6 +181,18 @@ En azından şu aksiyonlar auditlenir:
 - Audit log append-only tutulur; geçmiş kayıtlar uygulama üzerinden değiştirilemez.
 - CI içinde secret taraması, dependency taraması ve temel statik analiz planlanır.
 
+### 6.6 Identity ve rol sınırları
+
+- Platform-global kullanıcı hesabı `Identity` modülündeki `UserAccount`'tır.
+- `PlatformAdmin` ve `PlatformSupport` global platform rolleridir; `Identity` modülünde yönetilir.
+- `Customer` bir global Identity rolü değildir; aktif ve doğrulanmış platform hesabının temel kullanım bağlamıdır.
+- `BusinessOwner`, `BranchManager` ve `Staff` tenant üyelik rolleridir; global Identity rolü olarak eklenmez.
+- Browser tabanlı istemciler cookie auth tercih eder. Bearer token yalnızca kontrollü istemciler ve gerekli entegrasyonlar için kullanılır.
+- Production ortamında confirmed e-posta zorunludur. Gerçek e-posta sağlayıcısı olmadan production API başlamaz.
+- `DevelopmentSinkEmailSender` yalnızca local development/test içindir; token veya doğrulama linki loglamaz.
+- Login/register/password reset yüzeyi IP bazlı rate limit ve Identity lockout ile korunur.
+- Ayrıcalıklı hesaplar için MFA/step-up policy tamamlanmadan platform admin veya işletme yönetim endpoint'i yayınlanmaz.
+
 ---
 
 ## 7) Abuse / Yaptırım Sistemi (Slot Spam, Kötüye Kullanım)

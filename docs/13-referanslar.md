@@ -10,6 +10,8 @@ Bu liste dokümanlardaki teknik yönü destekleyen bir başlangıç setidir. Fiy
 - PostgreSQL constraints: <https://www.postgresql.org/docs/current/ddl-constraints.html>
 - PostgreSQL Docker Official Image: <https://hub.docker.com/_/postgres>
 - .NET Windows kurulumu: <https://learn.microsoft.com/en-us/dotnet/core/install/windows>
+- ASP.NET Core Identity API authorization: <https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity-api-authorization>
+- ASP.NET Core rate limiting middleware: <https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit>
 
 ## Güvenlik
 

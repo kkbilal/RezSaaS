@@ -26,9 +26,11 @@ docker compose ps
 Solution'ı doğrula:
 
 ```powershell
-dotnet restore RezSaaS.slnx
-dotnet build RezSaaS.slnx --no-restore
-dotnet test RezSaaS.slnx --no-build
+dotnet tool restore
+dotnet restore RezSaaS.sln
+dotnet tool run dotnet-ef database update --project src/Modules/RezSaaS.Modules.Identity --startup-project src/Apps/RezSaaS.Api --context IdentityDbContext
+dotnet build RezSaaS.sln --no-restore
+dotnet test RezSaaS.sln --no-build
 ```
 
 API'yi çalıştır:
@@ -64,6 +66,14 @@ tests/
 ```
 
 Her modül bağımsız assembly'dir. API host modülleri bir araya getirir; bir modül diğer modül assembly'sine doğrudan referans vermez.
+
+Visual Studio üzerinde repo kökündeki `RezSaaS.sln` dosyasını aç.
+
+## Identity Development Notu
+
+- Local development `DevelopmentSink` e-posta modunu kullanır.
+- Sink doğrulama token veya linklerini loglamaz.
+- Production ortamında gerçek e-posta sağlayıcısı konfigüre edilmeden API fail-fast olur.
 
 ## Docker Desktop Notu
 

@@ -5,6 +5,9 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | Terim | Anlam | Not |
 | --- | --- | --- |
 | `Tenant` | RezSaaS üzerinde veri izolasyonu sınırı olan müşteri organizasyonu | İlk sürümde bir tenant genellikle bir işletme hesabıdır |
+| `UserAccount` | Platform-global kimlik hesabı | Tenant üyeliğinden ayrıdır |
+| `PlatformRole` | Platform operasyon yetkisi | Yalnızca `PlatformAdmin`, `PlatformSupport` |
+| `TenantMembershipRole` | İşletme kapsamlı yetki | `BusinessOwner`, `BranchManager`, `Staff` |
 | `Business` | Müşteriye açık marka/işletme profili | Tek domain altında paylaşılabilir sayfası vardır |
 | `Branch` | İşletmenin fiziksel hizmet noktası | Timezone ve çalışma saatleri şube bazlıdır |
 | `StaffMember` | Hizmeti gerçekleştirebilen işletme üyesi | Login hesabı olmak zorunda değildir |
@@ -27,5 +30,6 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 
 - UI ve kodda `resource` yerine yalnızca `chair` kullanma.
 - `StaffMember` ile login olabilen `User` kavramını birleştirme.
+- Tenant rollerini global platform rolleriyle birleştirme.
 - `AppointmentRequest` ile `Appointment` kavramını tek tablo veya tek durum listesine sıkıştırma; yaşam döngüleri ayrıdır.
 - Unvan (`Title`) bookability belirlemez; `Skill` ve hizmet uygunluğu belirler.

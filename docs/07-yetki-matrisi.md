@@ -4,12 +4,19 @@
 
 | Rol | Kapsam | Amaç |
 | --- | --- | --- |
-| `Customer` | Platform hesabı | Keşif, talep oluşturma, kendi taleplerini yönetme |
+| `Customer` | Aktif platform hesabı | Keşif, talep oluşturma, kendi taleplerini yönetme; global Identity rolü değildir |
 | `Staff` | Atandığı şubeler | Kendi takvimi ve izin verilen randevu detayları |
 | `BranchManager` | Atandığı şubeler | Şube operasyonu, talep onay/ret, staff/resource yönetimi |
 | `BusinessOwner` | Tenant | İşletme ayarları, üyelikler, tüm şubeler ve raporlar |
 | `PlatformSupport` | Sınırlı platform scope | Destek incelemesi; varsayılan read-only ve gerekçeli erişim |
 | `PlatformAdmin` | Platform | Abuse yaptırımı, güvenlik ve operasyon yönetimi |
+
+## Rol Sınırı
+
+- Global Identity rolleri: `PlatformAdmin`, `PlatformSupport`
+- Tenant membership rolleri: `BusinessOwner`, `BranchManager`, `Staff`
+- `Customer`: aktif/doğrulanmış platform hesabının varsayılan kullanım bağlamı
+- Tenant rolleri global `AspNetRoles` tablosuna eklenmez.
 
 ## Yetki Özeti
 

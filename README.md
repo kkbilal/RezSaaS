@@ -31,12 +31,16 @@ Gereksinimler: `.NET SDK 10.0.300`, Docker Desktop ve Docker Compose.
 
 ```powershell
 docker compose up -d postgres
-dotnet restore RezSaaS.slnx
-dotnet build RezSaaS.slnx --no-restore
-dotnet test RezSaaS.slnx --no-build
+dotnet tool restore
+dotnet restore RezSaaS.sln
+dotnet tool run dotnet-ef database update --project src/Modules/RezSaaS.Modules.Identity --startup-project src/Apps/RezSaaS.Api --context IdentityDbContext
+dotnet build RezSaaS.sln --no-restore
+dotnet test RezSaaS.sln --no-build
 dotnet run --project src/Apps/RezSaaS.Api
 ```
 
 API healthcheck: `GET /health`
 
 Ayrıntılı kurulum: `docs/14-gelistirici-kurulumu.md`
+
+Visual Studio ile geliştirme için `RezSaaS.sln` dosyasını aç.

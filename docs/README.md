@@ -22,6 +22,7 @@
 - `13-referanslar.md`: Resmi kaynaklar
 - `14-gelistirici-kurulumu.md`: Yerel geliştirme kurulumu
 - `15-phase-1-uygulama-plani.md`: Phase 1 uygulama sırası ve mevcut durum
+- `16-identity-auth-temeli.md`: Identity/Auth güvenlik kapısı ve mevcut uygulama
 
 ## Bakım Kuralı
 

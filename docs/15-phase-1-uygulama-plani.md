@@ -14,9 +14,25 @@ Durum: tamamlandı.
 - Modüller arası doğrudan assembly bağımlılığını engelleyen mimari test
 - PostgreSQL 18.4 local compose
 
-## Dilim 1 - Identity, Tenant ve Organization Temeli
+## Dilim 1A - Identity/Auth Kapısı
 
-- Platform-global `User`
+Durum: temel uygulandı; production teslimat adımları açık.
+
+- Tamamlandı: ASP.NET Core Identity + PostgreSQL store
+- Tamamlandı: register, cookie/bearer login, refresh ve manage endpoint yüzeyi
+- Tamamlandı: platform-global `UserAccount` ve hesap durumu (`Active`, `Suspended`, `Closed`)
+- Tamamlandı: global `PlatformAdmin`, `PlatformSupport` seed rolleri ve policy'leri
+- Tamamlandı: IP bazlı auth rate limit (`10/dakika`, `429`) ve Identity lockout
+- Tamamlandı: production confirmed e-posta fail-fast; local token loglamayan sink
+- Tamamlandı: migration ve gerçek PostgreSQL entegrasyon testleri
+- Açık: production e-posta sağlayıcısı ve uçtan uca confirmation/password reset testi
+- Açık: ayrıcalıklı hesap MFA enrollment/enforcement politikası
+- Açık: ilk `PlatformAdmin` bootstrap prosedürü
+
+Bu kapı kapanmadan tenant veya diğer domain modüllerinin API endpoint'leri yayınlanmaz.
+
+## Dilim 1B - Tenant ve Organization Temeli
+
 - Tenant-scoped `Tenant`, `TenantMembership`, `Business`, `Branch`
 - Tenant context çözümleme ve explicit background scope kontratı
 - Rol/scope başlangıç modeli
@@ -50,8 +66,8 @@ Durum: tamamlandı.
 
 ## Her Dilimde Kapanış
 
-- `dotnet build RezSaaS.slnx --no-restore`
-- `dotnet test RezSaaS.slnx --no-build`
+- `dotnet build RezSaaS.sln --no-restore`
+- `dotnet test RezSaaS.sln --no-build`
 - İlgili ADR/domain/yetki/veri envanteri güncellemeleri
 - Migration ve rollback/forward-fix notu
 - Tenant isolation, authz, audit, idempotency ve abuse etkisi incelemesi

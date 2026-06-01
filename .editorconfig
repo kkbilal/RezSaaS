@@ -16,3 +16,7 @@ indent_size = 2
 
 [*.{json,jsonc}]
 indent_size = 2
+
+[**/Infrastructure/Persistence/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none

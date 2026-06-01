@@ -2,11 +2,13 @@
 
 ## Kimlik doğrulama ve abuse önleme
 
-- Login/OTP endpoint’lerinde global + endpoint bazlı rate limit
+- Login/register/password reset yüzeyinde IP bazlı auth rate limit (`10/dakika`, reddetme `429`)
+- Identity lockout: 5 başarısız giriş sonrası 15 dakika
 - IP/account/device sayaçları, cooldown, retry-after
 - OTP maliyetini kontrol için kota ve/veya kullanım bazlı ücret
 - Müşteri hesabı için e-posta doğrulaması MVP zorunludur.
 - Telefon doğrulaması, SMS sağlayıcısı ve maliyet/onboarding kararı kesinleştikten sonra kademeli açılır.
+- Production e-posta sağlayıcısı olmadan API fail-fast olur; development sink token veya link loglamaz.
 
 ## Rezervasyon abuse (slot spam) ve yaptırımlar
 
@@ -44,6 +46,7 @@ Operasyon:
 
 - Müşteri tarafı: e-posta/telefon doğrulama **iletişim sahipliği doğrulaması** olarak konumlanır.
 - İşletme/admin tarafı: kritik aksiyonlar için MFA (TOTP/passkey) ve step-up auth.
+- Platform admin veya işletme yönetim endpoint'leri MFA enforcement tamamlanmadan yayınlanmaz.
 
 ## Log ve token hijyeni
 

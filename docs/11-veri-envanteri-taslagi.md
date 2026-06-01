@@ -4,7 +4,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 
 | Veri Grubu | Örnekler | Amaç | Erişim | Saklama Kararı |
 | --- | --- | --- | --- | --- |
-| Hesap kimliği | Ad, e-posta, telefon | Kimlik ve iletişim | Kullanıcı, sınırlı destek | Netleştirilecek |
+| Hesap kimliği | Ad, e-posta, telefon, doğrulama durumu, hesap durumu, lockout | Kimlik, iletişim ve güvenlik | Kullanıcı, sınırlı destek | Netleştirilecek |
 | İşletme üyeliği | Rol, tenant, branch scope | Yetkilendirme | İşletme sahibi, admin | Netleştirilecek |
 | Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |
 | Audit | Actor, aksiyon, zaman, gerekçe | Güvenlik ve inceleme | Yetkili admin | Netleştirilecek |

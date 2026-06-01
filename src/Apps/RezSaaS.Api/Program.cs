@@ -34,6 +34,9 @@ builder.Services.AddModules(modules, builder.Configuration);
 WebApplication app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapModuleEndpoints(modules);
 
