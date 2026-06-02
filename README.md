@@ -46,6 +46,7 @@ dosyasını otomatik okur. Ortam değişkeniyle override etmek için
 `ConnectionStrings__IdentityDatabase` kullanılabilir.
 
 API healthcheck: `GET /health`
+Development Swagger UI: `GET /swagger`
 
 Ayrıntılı kurulum: `docs/14-gelistirici-kurulumu.md`
 

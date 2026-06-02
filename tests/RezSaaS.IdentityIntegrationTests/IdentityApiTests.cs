@@ -15,6 +15,14 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task SwaggerDocumentIsAvailableInDevelopment()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RegistrationAndBearerLoginAllowProtectedAccountAccess()
     {
         string email = CreateEmail();

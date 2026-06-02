@@ -230,6 +230,7 @@ IP ban sadece güçlü sinyal ve ağır abuse durumunda; NAT/CGNAT nedeniyle “
 ## 8) API Tasarım Kuralları (taslak)
 
 - Public (müşteri) ve Admin (işletme) yüzeyleri ayrıştırılır.
+- Swagger/OpenAPI yalnızca Development ortamında açık tutulur; production ortamında dokümantasyon UI veya JSON endpoint'i yayınlanmaz.
 - Idempotency:
   - “onay” ve “iptal” gibi komutlar idempotent tasarlanır.
 - Hata yönetimi:

@@ -50,6 +50,12 @@ Healthcheck:
 GET /health
 ```
 
+Swagger UI yalnızca Development ortamında açıktır:
+
+```text
+GET /swagger
+```
+
 ## Yerel PostgreSQL
 
 - Image: `postgres:18.4-alpine3.23`
