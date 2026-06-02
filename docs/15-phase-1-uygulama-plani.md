@@ -26,7 +26,7 @@ Durum: temel uygulandı; production teslimat adımları açık.
 - Tamamlandı: production confirmed e-posta fail-fast; local token loglamayan sink
 - Tamamlandı: migration ve gerçek PostgreSQL entegrasyon testleri
 - Açık: production e-posta sağlayıcısı ve uçtan uca confirmation/password reset testi
-- Açık: ayrıcalıklı hesap MFA enrollment/enforcement politikası
+- Açık: ayrıcalıklı hesap MFA enrollment/enforcement ve güvenilir cihaz/oturum politikası
 - Açık: ilk `PlatformAdmin` bootstrap prosedürü
 
 Bu kapı kapanmadan tenant veya diğer domain modüllerinin API endpoint'leri yayınlanmaz.

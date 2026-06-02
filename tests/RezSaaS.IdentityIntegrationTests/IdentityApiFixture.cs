@@ -29,6 +29,14 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Development");
+                builder.UseSetting("Identity:AuthenticationPermitLimit", "100");
+                builder.UseSetting("Identity:AuthenticationWindowMinutes", "1");
+                builder.UseSetting("Identity:DeliveryMode", "DevelopmentSink");
+                builder.UseSetting("Identity:LockoutMinutes", "15");
+                builder.UseSetting("Identity:MaxFailedAccessAttempts", "5");
+                builder.UseSetting("Identity:PasswordRequiredLength", "12");
+                builder.UseSetting("Identity:PasswordRequiredUniqueChars", "4");
+                builder.UseSetting("Identity:RequireConfirmedEmail", "false");
                 builder.ConfigureAppConfiguration((_, configuration) =>
                 {
                     configuration.Sources.Clear();

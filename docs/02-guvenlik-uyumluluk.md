@@ -46,6 +46,8 @@ Operasyon:
 
 - Müşteri tarafı: e-posta/telefon doğrulama **iletişim sahipliği doğrulaması** olarak konumlanır.
 - İşletme/admin tarafı: kritik aksiyonlar için MFA (TOTP/passkey) ve step-up auth.
+- Normal müşteri login akışı her girişte tek kullanımlık kod istemez.
+- Ayrıcalıklı MFA tasarımında güvenilir cihaz/oturum stratejisi belirlenmeden her login'de kod dayatılmaz.
 - Platform admin veya işletme yönetim endpoint'leri MFA enforcement tamamlanmadan yayınlanmaz.
 
 ## Log ve token hijyeni

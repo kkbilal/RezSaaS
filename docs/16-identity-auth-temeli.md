@@ -43,6 +43,13 @@ Identity API endpoint'leri `/api/auth` altında map edilir:
 
 Browser istemcileri cookie auth tercih eder. Bearer token yalnızca gerekli kontrollü istemciler için kullanılır.
 
+## MFA / Kod Politikası
+
+- Normal müşteri login akışı her girişte tek kullanımlık kod istemez.
+- MFA ayrıcalıklı hesaplar, yüksek riskli oturumlar ve kritik aksiyonlar için step-up olarak tasarlanır.
+- Ayrıcalıklı MFA tamamlandığında kullanıcıyı yormamak için makul süreli güvenilir cihaz/oturum stratejisi belirlenir.
+- Production admin veya işletme yönetim endpoint'leri bu step-up politikası tamamlanmadan yayınlanmaz.
+
 ## Environment Davranışı
 
 - Development: `Identity:DeliveryMode=DevelopmentSink`, `RequireConfirmedEmail=false`
@@ -65,5 +72,5 @@ dotnet tool run dotnet-ef database update --project src/Modules/RezSaaS.Modules.
 
 - Production e-posta sağlayıcısı seçimi ve implementasyonu
 - Confirmation/password reset teslimatının gerçek sağlayıcıyla uçtan uca testi
-- Ayrıcalıklı hesap MFA enrollment ve enforcement politikası
+- Ayrıcalıklı hesap MFA enrollment, enforcement ve güvenilir cihaz/oturum politikası
 - İlk `PlatformAdmin` hesabı için auditli bootstrap prosedürü

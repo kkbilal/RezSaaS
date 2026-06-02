@@ -192,7 +192,7 @@ En azından şu aksiyonlar auditlenir:
 - Production ortamında confirmed e-posta zorunludur. Gerçek e-posta sağlayıcısı olmadan production API başlamaz.
 - `DevelopmentSinkEmailSender` yalnızca local development/test içindir; token veya doğrulama linki loglamaz.
 - Login/register/password reset yüzeyi IP bazlı rate limit ve Identity lockout ile korunur.
-- Ayrıcalıklı hesaplar için MFA/step-up policy tamamlanmadan platform admin veya işletme yönetim endpoint'i yayınlanmaz.
+- Normal müşteri login akışı her girişte tek kullanımlık kod istemez. Ayrıcalıklı hesaplar için MFA/step-up ve güvenilir cihaz/oturum policy tamamlanmadan platform admin veya işletme yönetim endpoint'i yayınlanmaz.
 
 ---
 

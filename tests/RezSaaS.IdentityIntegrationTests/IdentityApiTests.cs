@@ -46,6 +46,25 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task DefaultLoginDoesNotRequireOneTimeCode()
+    {
+        string email = CreateEmail();
+        const string password = "RezSaaS!Auth1234";
+        await RegisterAsync(email, password);
+
+        HttpResponseMessage login = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/login?useCookies=false",
+            new { email, password });
+
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await login.Content.ReadAsStringAsync());
+        Assert.True(body.RootElement.TryGetProperty("accessToken", out JsonElement accessToken));
+        Assert.False(string.IsNullOrWhiteSpace(accessToken.GetString()));
+        Assert.False(body.RootElement.TryGetProperty("requiresTwoFactor", out _));
+    }
+
+    [Fact]
     public async Task InvalidPasswordIsRejected()
     {
         string email = CreateEmail();
