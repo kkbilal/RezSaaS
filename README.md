@@ -32,8 +32,6 @@ Gereksinimler: `.NET SDK 10.0.300`, Docker Desktop ve Docker Compose.
 ```powershell
 Copy-Item .env.example .env
 # .env içindeki REZSAAS_POSTGRES_PASSWORD değerini değiştir.
-Set-ExecutionPolicy -Scope Process Bypass
-. .\scripts\Import-LocalEnvironment.ps1
 docker compose up -d postgres
 dotnet tool restore
 dotnet restore RezSaaS.sln
@@ -43,9 +41,9 @@ dotnet test RezSaaS.sln --no-build
 dotnet run --project src/Apps/RezSaaS.Api
 ```
 
-Her yeni terminal oturumunda API veya entegrasyon testlerini çalıştırmadan önce
-`Set-ExecutionPolicy -Scope Process Bypass` ve ardından
-`. .\scripts\Import-LocalEnvironment.ps1` komutunu yürüt.
+Development ortamında API ve entegrasyon testleri repo kökündeki ignored `.env`
+dosyasını otomatik okur. Ortam değişkeniyle override etmek için
+`ConnectionStrings__IdentityDatabase` kullanılabilir.
 
 API healthcheck: `GET /health`
 

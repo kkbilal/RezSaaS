@@ -288,7 +288,7 @@ tests/
 - NuGet sürümleri `Directory.Packages.props` içinde merkezi tutulur.
 - Ortak analyzer/build ayarları `Directory.Build.props` içindedir; warnings-as-errors gevşetilmez.
 - Yerel PostgreSQL `compose.yaml` üzerinden çalışır. Local varsayılanlar staging/production ortamında kullanılmaz.
-- Parola, connection string, token, kullanıcı hesabı veya değiştirilebilir operasyon verisi kaynak koda ve migration seed'ine gömülmez. Yerel değerler ignored `.env`, shared ortam değerleri secret manager üzerinden sağlanır.
+- Parola, connection string, token, kullanıcı hesabı veya değiştirilebilir operasyon verisi kaynak koda ve migration seed'ine gömülmez. Yerel değerler ignored `.env` dosyasından yalnızca Development ortamında okunabilir; shared ortam değerleri secret manager üzerinden sağlanır.
 - Clock bağımlılığı için .NET `TimeProvider` kullanılır; domain/application kodunda `DateTime.UtcNow` doğrudan çağrılmaz.
 
 ---

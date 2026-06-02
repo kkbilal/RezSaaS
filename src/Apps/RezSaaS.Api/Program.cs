@@ -1,3 +1,4 @@
+using RezSaaS.Api.Configuration;
 using RezSaaS.BuildingBlocks.Modularity;
 using RezSaaS.Modules.Admin;
 using RezSaaS.Modules.Availability;
@@ -11,6 +12,7 @@ using RezSaaS.Modules.Reviews;
 using RezSaaS.Modules.TenantManagement;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddLocalDevelopmentEnvironment(builder.Environment);
 
 IModule[] modules =
 [

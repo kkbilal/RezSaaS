@@ -15,8 +15,6 @@ Yerel environment dosyasını oluştur:
 ```powershell
 Copy-Item .env.example .env
 # .env içindeki REZSAAS_POSTGRES_PASSWORD değerini değiştir.
-Set-ExecutionPolicy -Scope Process Bypass
-. .\scripts\Import-LocalEnvironment.ps1
 ```
 
 PostgreSQL container'ını başlat:
@@ -36,9 +34,9 @@ dotnet build RezSaaS.sln --no-restore
 dotnet test RezSaaS.sln --no-build
 ```
 
-Her yeni terminal oturumunda API veya entegrasyon testlerinden önce
-`Set-ExecutionPolicy -Scope Process Bypass` ve ardından
-`. .\scripts\Import-LocalEnvironment.ps1` komutunu yeniden çalıştır.
+Development ortamında API ve entegrasyon testleri repo kökündeki ignored `.env`
+dosyasını otomatik okur. Ortam değişkeniyle override etmek için
+`ConnectionStrings__IdentityDatabase` kullanılabilir.
 
 API'yi çalıştır:
 
@@ -62,6 +60,9 @@ GET /health
 `.env.example` yalnızca şablondur. Parola repo dışında tutulan ignored `.env` dosyasında
 değiştirilmelidir. Shared, staging veya production ortamlarında secret manager ve ayrı
 kimlik bilgileri zorunludur.
+
+`scripts/Import-LocalEnvironment.ps1`, `.env` değerlerini geçerli PowerShell sürecine
+elle yüklemek gerektiğinde opsiyonel yardımcıdır; API çalıştırmak için zorunlu değildir.
 
 ## Solution Yapısı
 

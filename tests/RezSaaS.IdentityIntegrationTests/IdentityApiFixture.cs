@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -102,9 +103,104 @@ public sealed class IdentityApiFixture : IAsyncLifetime
     private static string GetAdminConnectionString()
     {
         return Environment.GetEnvironmentVariable("REZSAAS_TEST_POSTGRES_CONNECTION_STRING")
+            ?? CreateAdminConnectionStringFromLocalEnvironment()
             ?? throw new InvalidOperationException(
-                "Environment variable 'REZSAAS_TEST_POSTGRES_CONNECTION_STRING' is required. "
-                + "Run '. .\\scripts\\Import-LocalEnvironment.ps1' before executing integration tests.");
+                "Integration tests require either 'REZSAAS_TEST_POSTGRES_CONNECTION_STRING' "
+                + "or a local '.env' file at the repository root.");
+    }
+
+    private static string? CreateAdminConnectionStringFromLocalEnvironment()
+    {
+        string? environmentPath = FindEnvironmentPath();
+
+        if (environmentPath is null)
+        {
+            return null;
+        }
+
+        Dictionary<string, string> values = ReadEnvironmentFile(environmentPath);
+        NpgsqlConnectionStringBuilder builder = new()
+        {
+            Host = GetRequiredValue(values, "REZSAAS_POSTGRES_HOST"),
+            Port = int.Parse(
+                GetRequiredValue(values, "REZSAAS_POSTGRES_PORT"),
+                CultureInfo.InvariantCulture),
+            Database = "postgres",
+            Username = GetRequiredValue(values, "REZSAAS_POSTGRES_USER"),
+            Password = GetRequiredValue(values, "REZSAAS_POSTGRES_PASSWORD"),
+        };
+
+        return builder.ConnectionString;
+    }
+
+    private static string? FindEnvironmentPath()
+    {
+        DirectoryInfo? directory = new(Directory.GetCurrentDirectory());
+
+        while (directory is not null)
+        {
+            string environmentPath = Path.Combine(directory.FullName, ".env");
+
+            if (File.Exists(environmentPath))
+            {
+                return environmentPath;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return null;
+    }
+
+    private static string GetRequiredValue(
+        Dictionary<string, string> values,
+        string key)
+    {
+        if (!values.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException(
+                $"Local '.env' value '{key}' is required for integration tests.");
+        }
+
+        return value;
+    }
+
+    private static Dictionary<string, string> ReadEnvironmentFile(string path)
+    {
+        Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string rawLine in File.ReadAllLines(path))
+        {
+            string line = rawLine.Trim();
+
+            if (line.Length == 0 || line.StartsWith('#'))
+            {
+                continue;
+            }
+
+            string[] parts = line.Split('=', 2);
+
+            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]))
+            {
+                throw new InvalidOperationException($"Invalid local '.env' entry: '{line}'.");
+            }
+
+            values[parts[0].Trim()] = TrimOptionalQuotes(parts[1].Trim());
+        }
+
+        return values;
+    }
+
+    private static string TrimOptionalQuotes(string value)
+    {
+        if (value.Length >= 2
+            && ((value[0] == '"' && value[^1] == '"')
+                || (value[0] == '\'' && value[^1] == '\'')))
+        {
+            return value[1..^1];
+        }
+
+        return value;
     }
 
     private string CreateDatabaseConnectionString()

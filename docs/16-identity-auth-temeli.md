@@ -49,7 +49,8 @@ Browser istemcileri cookie auth tercih eder. Bearer token yalnızca gerekli kont
 - Production: `Identity:DeliveryMode=Unconfigured`, `RequireConfirmedEmail=true`
 
 Parola ve connection string repoya yazılmaz. Local geliştirme değerleri ignored `.env`
-dosyasından `. .\scripts\Import-LocalEnvironment.ps1` komutuyla süreç ortamına alınır.
+dosyasından Development başlangıcında otomatik okunur. Gerçek ortamlar
+`ConnectionStrings__IdentityDatabase` veya secret manager ile override eder.
 
 Production e-posta sağlayıcısı bağlanmadan API başlangıçta hata verir. Bu kasıtlı güvenli varsayılandır.
 
