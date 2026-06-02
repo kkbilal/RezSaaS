@@ -25,8 +25,9 @@
 - Tamamlandı: modülden modüle doğrudan referansı engelleyen mimari test
 - Tamamlandı: PostgreSQL 18.4 yerel compose tanımı ve healthcheck
 - Tamamlandı: Identity/Auth temeli, platform rol policy kontratları, seedsiz migration ve auth entegrasyon testleri
+- Tamamlandı: Tenant Management domain/persistence temeli, seedsiz migration ve PostgreSQL entegrasyon testleri
 - Sıradaki kapı: production e-posta sağlayıcısı + MFA enforcement + ilk admin bootstrap
-- Sonraki dilim: Tenant context + Tenant Management + Organization temel veri modeli
+- Sonraki dilim: Tenant context + Organization temel veri modeli
 
 ## Kabul kriterleri (örnek)
 

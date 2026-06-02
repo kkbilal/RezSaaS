@@ -37,6 +37,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                 builder.UseSetting("Identity:PasswordRequiredLength", "12");
                 builder.UseSetting("Identity:PasswordRequiredUniqueChars", "4");
                 builder.UseSetting("Identity:RequireConfirmedEmail", "false");
+                builder.UseSetting("ConnectionStrings:IdentityDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:TenantManagementDatabase", databaseConnectionString);
                 builder.ConfigureAppConfiguration((_, configuration) =>
                 {
                     configuration.Sources.Clear();
@@ -44,6 +46,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                         new Dictionary<string, string?>
                         {
                             ["ConnectionStrings:IdentityDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:TenantManagementDatabase"] = databaseConnectionString,
                             ["Identity:AuthenticationPermitLimit"] = "100",
                             ["Identity:AuthenticationWindowMinutes"] = "1",
                             ["Identity:DeliveryMode"] = "DevelopmentSink",

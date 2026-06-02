@@ -34,3 +34,9 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - Production e-posta sağlayıcısı seçilip confirmation ve password reset teslimatı uçtan uca doğrulanmalıdır.
 - Platform admin ve işletme yönetim hesapları için MFA enrollment/enforcement davranışı netleştirilmelidir.
 - İlk `PlatformAdmin` hesabının güvenli bootstrap prosedürü belirlenmelidir.
+
+## Tenant ve Organization
+
+- İlk tenant oluşturma akışı self-service mi, platform onaylı bootstrap mı olacak?
+- Tenant slug değiştirilebilir mi; değiştirilirse eski URL için redirect/alias tutulacak mı?
+- Bir tenant içinde birden fazla `Business` desteklenecekse MVP sınırı hangi noktada açılacak?

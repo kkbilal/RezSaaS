@@ -17,6 +17,9 @@
 - Tenant membership rolleri: `BusinessOwner`, `BranchManager`, `Staff`
 - `Customer`: aktif/doğrulanmış platform hesabının varsayılan kullanım bağlamı
 - Tenant rolleri global `AspNetRoles` tablosuna eklenmez.
+- `BusinessOwner` tenant kapsamlıdır ve branch scope alamaz.
+- `BranchManager` ve `Staff` üyelikleri branch scope ile sınırlandırılabilir.
+- Tenant/işletme yönetim endpoint'leri privileged MFA/step-up ve ilk `PlatformAdmin` bootstrap prosedürü tamamlanmadan yayınlanmaz.
 
 ## Yetki Özeti
 

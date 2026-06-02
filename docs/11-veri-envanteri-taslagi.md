@@ -5,8 +5,10 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Veri Grubu | Örnekler | Amaç | Erişim | Saklama Kararı |
 | --- | --- | --- | --- | --- |
 | Hesap kimliği | Ad, e-posta, telefon, doğrulama durumu, hesap durumu, lockout | Kimlik, iletişim ve güvenlik | Kullanıcı, sınırlı destek | Netleştirilecek |
-| İşletme üyeliği | Rol, tenant, branch scope | Yetkilendirme | İşletme sahibi, admin | Netleştirilecek |
+| Tenant kaydı | Slug, görünen ad, durum, oluşturma/kapatma zamanı | Veri izolasyonu ve işletme yaşam döngüsü | İşletme sahibi, yetkili admin | Netleştirilecek |
+| İşletme üyeliği | User account id, tenant, rol, branch scope, durum | Yetkilendirme | İşletme sahibi, yetkili admin | Netleştirilecek |
 | Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |
+| Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |
 | Audit | Actor, aksiyon, zaman, gerekçe | Güvenlik ve inceleme | Yetkili admin | Netleştirilecek |
 | Abuse | Strike, sinyal, yaptırım, itiraz | Platform güvenliği | Platform admin | Netleştirilecek |
 | Bildirim | Kanal, alıcı maskesi, template, provider sonucu | Teslimat ve hata çözümü | Sınırlı destek | Netleştirilecek |

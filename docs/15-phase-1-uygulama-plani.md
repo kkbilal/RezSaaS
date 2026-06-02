@@ -33,11 +33,17 @@ Bu kapı kapanmadan tenant veya diğer domain modüllerinin API endpoint'leri ya
 
 ## Dilim 1B - Tenant ve Organization Temeli
 
-- Tenant-scoped `Tenant`, `TenantMembership`, `Business`, `Branch`
-- Tenant context çözümleme ve explicit background scope kontratı
-- Rol/scope başlangıç modeli
-- Audit log omurgası
-- Tenant izolasyon entegrasyon testleri
+Durum: başladı; Tenant Management persistence temeli uygulandı, Organization henüz açık.
+
+- Tamamlandı: `Tenant`, `TenantMembership`, `TenantStatus`, `TenantAuditLogEntry` domain modeli
+- Tamamlandı: ayrı `tenant_management` PostgreSQL schema'sı ve EF Core migration
+- Tamamlandı: tenant slug benzersizliği, membership benzersizliği ve `BusinessOwner` branch scope engeli
+- Tamamlandı: audit log omurgası için append-only veri modeli başlangıcı
+- Tamamlandı: migration'ın tenant/üyelik/audit seed verisi üretmediğini doğrulayan entegrasyon testi
+- Açık: tenant context çözümleme ve explicit background scope kontratı
+- Açık: `Business`, `Branch`, branch timezone ve organization profile modeli
+- Açık: tenant izolasyon testleri; tenant-scoped tablolar geldikçe merkezi filtre/contract ile genişletilecek
+- Bloklu: tenant/işletme yönetim endpoint'leri; privileged MFA/step-up ve `PlatformAdmin` bootstrap kapısı kapanmadan yayınlanmaz
 
 ## Dilim 2 - Catalog, Resources ve Availability
 

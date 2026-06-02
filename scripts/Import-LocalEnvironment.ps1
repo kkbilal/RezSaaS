@@ -51,6 +51,8 @@ $passwordValue = ConvertTo-ConnectionStringValue $env:REZSAAS_POSTGRES_PASSWORD
 
 $env:ConnectionStrings__IdentityDatabase =
     "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
+$env:ConnectionStrings__TenantManagementDatabase =
+    "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
 $env:REZSAAS_TEST_POSTGRES_CONNECTION_STRING =
     "Host=$hostValue;Port=$portValue;Database=""postgres"";Username=$userValue;Password=$passwordValue"
 

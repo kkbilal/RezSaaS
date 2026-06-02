@@ -34,6 +34,7 @@ public static class LocalDevelopmentConfiguration
         Dictionary<string, string?> localConfiguration = new(StringComparer.OrdinalIgnoreCase)
         {
             ["ConnectionStrings:IdentityDatabase"] = CreateIdentityConnectionString(values),
+            ["ConnectionStrings:TenantManagementDatabase"] = CreateIdentityConnectionString(values),
         };
 
         configuration.AddInMemoryCollection(localConfiguration);
