@@ -26,6 +26,10 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-020 | Kabul | Auth yüzeyi IP bazlı `10/dakika` rate limit, `429` cevabı ve Identity lockout ile korunur | Brute-force ve otomatik kaynak tüketimini ilk günden sınırlar |
 | ADR-021 | Kabul | Değiştirilebilir çalışma verileri ve secret değerleri kaynak koda veya migration seed'ine gömülmez; platform rolleri auditli bootstrap ile üretilir | Ortamlar arası veri sızıntısını önler ve ayrıcalıklı yetki üretimini denetlenebilir tutar |
 | ADR-022 | Kabul | Tenant Management kendi `tenant_management` schema'sında başlar; persistence/migration hazır olsa da yönetim endpoint'leri privileged auth kapısı kapanmadan yayınlanmaz | Tenant izolasyon temelini erken test ederken yetki, MFA ve bootstrap eksikleriyle yönetim yüzeyi açılmasını önler |
+| ADR-023 | Kabul | Phase 1 modülleri kendi PostgreSQL schema'sı ve DbContext'i ile persistence temeli kurar; modülden modüle assembly referansı eklenmez | Modüler monolith sınırları korunurken gerçek DB invariant'ları erken test edilir |
+| ADR-024 | Kabul | Tenant-scoped DbContext sorguları request-scope tenant context yoksa veri döndürmez | Tenant filtresinin unutulması yerine güvenli varsayılanla veri sızıntısı riski azaltılır |
+| ADR-025 | Kabul | Confirmed booking çakışmaları PostgreSQL exclusion constraint ile staff ve resource için ayrı ayrı engellenir | Application kontrolü atlansa bile double-booking DB seviyesinde durdurulur |
+| ADR-026 | Kabul | İlk `PlatformAdmin` hesabı SMTP/secret gibi dış ayarlardan bağımsız, token-hash kontrollü servisle ve audit kaydıyla oluşturulur | Migration seed'i olmadan denetlenebilir ve tekrar çalıştırılamayan bootstrap sağlar |
 
 ## Değişiklik Süreci
 

@@ -4,4 +4,5 @@ public enum EmailDeliveryMode
 {
     Unconfigured,
     DevelopmentSink,
+    Smtp,
 }

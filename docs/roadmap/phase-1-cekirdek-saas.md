@@ -16,7 +16,7 @@
 
 ## Faz çıktıları
 
-- Minimum yönetim paneli: işletme kurulumu + personel/hizmet/kaynak tanımlama + takvim görünümü
+- Minimum yönetim paneli için backend domain/persistence temeli
 - Audit log + tenant sınırları için temel güvenlik testleri
 
 ## Mevcut Durum
@@ -24,10 +24,11 @@
 - Tamamlandı: `.NET 10` solution, API composition root ve modül assembly iskeleti
 - Tamamlandı: modülden modüle doğrudan referansı engelleyen mimari test
 - Tamamlandı: PostgreSQL 18.4 yerel compose tanımı ve healthcheck
-- Tamamlandı: Identity/Auth temeli, platform rol policy kontratları, seedsiz migration ve auth entegrasyon testleri
-- Tamamlandı: Tenant Management domain/persistence temeli, seedsiz migration ve PostgreSQL entegrasyon testleri
-- Sıradaki kapı: production e-posta sağlayıcısı + MFA enforcement + ilk admin bootstrap
-- Sonraki dilim: Tenant context + Organization temel veri modeli
+- Tamamlandı: Identity/Auth temeli, SMTP delivery mode, step-up policy, auditli admin bootstrap ve auth entegrasyon testleri
+- Tamamlandı: Tenant Management, Organization, Catalog, Resources, Availability, Booking, Messaging ve Admin persistence temelleri
+- Tamamlandı: tenant context middleware, tenant-scoped query filter testleri ve seedsiz migration kontrolleri
+- Tamamlandı: booking TTL hesabı, pending request slot bloklamama ve staff/resource exclusion constraint testleri
+- Sonraki kapı: endpoint/application service katmanı, production SMTP secret'ları ve MFA enrollment UX'i
 
 ## Kabul kriterleri (örnek)
 

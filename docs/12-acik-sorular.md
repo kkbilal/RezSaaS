@@ -31,9 +31,9 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 
 ## Identity/Auth Kapısı
 
-- Production e-posta sağlayıcısı seçilip confirmation ve password reset teslimatı uçtan uca doğrulanmalıdır.
-- Platform admin ve işletme yönetim hesapları için MFA enrollment/enforcement davranışı netleştirilmelidir.
-- İlk `PlatformAdmin` hesabının güvenli bootstrap prosedürü belirlenmelidir.
+- Production SMTP sağlayıcısı seçilip secret yönetimi ve confirmation/password reset teslimatı uçtan uca doğrulanmalıdır.
+- Platform admin ve işletme yönetim hesapları için MFA enrollment UI'ı ve güvenilir cihaz/oturum davranışı netleştirilmelidir.
+- İlk `PlatformAdmin` bootstrap token'ının kim tarafından, hangi runbook ile ve ne kadar süre geçerli üretileceği belirlenmelidir.
 
 ## Tenant ve Organization
 

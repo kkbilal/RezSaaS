@@ -14,20 +14,26 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `Business` | Müşteriye açık marka/işletme profili | Tek domain altında paylaşılabilir sayfası vardır |
 | `Branch` | İşletmenin fiziksel hizmet noktası | Timezone ve çalışma saatleri şube bazlıdır |
 | `StaffMember` | Hizmeti gerçekleştirebilen işletme üyesi | Login hesabı olmak zorunda değildir |
+| `StaffSkill` | Staff ile skill arasındaki tenant-scoped ilişki | Bookability hesaplamasında kullanılır |
 | `ResourceType` | Fiziksel kapasitenin tipi | Koltuk, oda, yatak, istasyon, cihaz |
 | `Resource` | Rezervasyonda kullanılan fiziksel kapasite örneği | MVP'de her randevuda tam olarak bir tane zorunludur |
+| `ResourceBlock` | Resource'un belirli zaman aralığında kullanılamama kaydı | Bakım/arıza gibi |
 | `Skill` | Staff'ın sunabileceği yetkinlik | Unvan ile karıştırılmaz |
 | `Service` | Müşteriye sunulan hizmet ailesi | Saç kesimi gibi |
 | `ServiceVariant` | Süre, fiyat ve gereksinimleri belirleyen seçilebilir hizmet varyantı | Uzun saç kesimi gibi |
-| `AvailabilityRule` | Uygunluk hesaplamasına katılan çalışma/engel kuralı | Çalışma saati, izin, kullanım dışı resource |
+| `ServiceRequiredSkill` | Hizmet varyantının gerektirdiği skill | Modüller arası doğrudan reference değil GUID kontrat kullanır |
+| `BranchWorkingHours` | Şubenin haftalık çalışma saatleri | Branch timezone ile yorumlanır |
+| `StaffUnavailableTime` | Staff'ın belirli UTC aralıkta çalışamama kaydı | İzin/kapalı zaman |
 | `AppointmentRequest` | Müşterinin işletmeye gönderdiği rezervasyon talebi | Slotu bloklamaz, en fazla 24 saat açık kalır |
 | `AppointmentRequestLine` | Talep içindeki hizmet satırı | Süre ve fiyat snapshot içerir |
 | `Appointment` | İşletme tarafından onaylanmış kesin rezervasyon | Staff ve resource zamanını bloklar |
 | `AppointmentLine` | Kesin rezervasyon içindeki hizmet satırı | Talep satırından snapshot taşır |
 | `TransactionalMessage` | Rezervasyon gibi mevcut işlemle ilgili operasyonel bildirim | Pazarlama mesajından ayrıdır |
 | `CommercialMessage` | Kampanya, yeniden aktivasyon veya satış amaçlı ileti | İzin ve İYS değerlendirmesi gerektirir |
-| `Strike` | Abuse şüphesi veya doğrulanmış ihlal kaydı | Otomatik veya manuel kaynaktan gelebilir |
-| `Sanction` | Kullanıcıya uygulanan kısıt veya ban | Süreli, gerekçeli ve auditlenebilir |
+| `AbuseEvent` | Abuse şüphesi veya doğrulanmış ihlal olayı | Otomatik veya manuel kaynaktan gelebilir |
+| `UserSanction` | Kullanıcıya uygulanan kısıt veya ban | Süreli, gerekçeli ve auditlenebilir |
+| `AdminAuditLogEntry` | Platform operasyon aksiyon kaydı | Append-only tutulur |
+| `IdentityAuditLogEntry` | Identity ve privileged bootstrap aksiyon kaydı | Append-only tutulur |
 
 ## Dil Kuralları
 

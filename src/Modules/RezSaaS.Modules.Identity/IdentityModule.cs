@@ -34,13 +34,29 @@ public sealed class IdentityModule : ModuleBase
                 $"Configuration section '{IdentitySecurityOptions.SectionName}' is required.");
 
         identityOptions.Validate();
+        IdentitySmtpEmailOptions smtpOptions =
+            configuration.GetSection(IdentitySmtpEmailOptions.SectionName)
+                .Get<IdentitySmtpEmailOptions>()
+            ?? new IdentitySmtpEmailOptions();
+
+        if (identityOptions.DeliveryMode == EmailDeliveryMode.Smtp)
+        {
+            smtpOptions.Validate();
+        }
 
         services.AddDbContext<IdentityDbContext>(options => options.UseNpgsql(connectionString));
+        services.Configure<PlatformAdminBootstrapOptions>(
+            configuration.GetSection(PlatformAdminBootstrapOptions.SectionName));
         services.AddAuthorization(options =>
         {
             options.AddPolicy(
                 AuthorizationPolicies.PlatformAdminOnly,
                 policy => policy.RequireRole(PlatformRoleNames.Administrator));
+            options.AddPolicy(
+                AuthorizationPolicies.PlatformAdminWithStepUp,
+                policy => policy
+                    .RequireRole(PlatformRoleNames.Administrator)
+                    .RequireClaim("amr", "mfa"));
             options.AddPolicy(
                 AuthorizationPolicies.PlatformSupportOrAdmin,
                 policy => policy.RequireRole(
@@ -76,10 +92,14 @@ public sealed class IdentityModule : ModuleBase
             .AddEntityFrameworkStores<IdentityDbContext>();
 
         services.AddScoped<SignInManager<UserAccount>, UserAccountSignInManager>();
+        services.AddScoped<IPlatformAdminBootstrapService, PlatformAdminBootstrapService>();
         services.AddSingleton<IEmailSender<UserAccount>>(
-            identityOptions.DeliveryMode == EmailDeliveryMode.DevelopmentSink
-                ? new DevelopmentSinkEmailSender()
-                : new UnconfiguredEmailSender());
+            identityOptions.DeliveryMode switch
+            {
+                EmailDeliveryMode.DevelopmentSink => new DevelopmentSinkEmailSender(),
+                EmailDeliveryMode.Smtp => new SmtpEmailSender(smtpOptions),
+                _ => new UnconfiguredEmailSender(),
+            });
     }
 
     public override void MapEndpoints(IEndpointRouteBuilder endpoints)

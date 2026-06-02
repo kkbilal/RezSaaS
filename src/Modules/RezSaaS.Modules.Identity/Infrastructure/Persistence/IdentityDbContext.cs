@@ -15,6 +15,8 @@ public sealed class IdentityDbContext
     {
     }
 
+    public DbSet<IdentityAuditLogEntry> IdentityAuditLogEntries => Set<IdentityAuditLogEntry>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -26,6 +28,19 @@ public sealed class IdentityDbContext
             user.Property(account => account.Status)
                 .HasConversion<string>()
                 .HasMaxLength(32);
+        });
+
+        builder.Entity<IdentityAuditLogEntry>(audit =>
+        {
+            audit.ToTable("IdentityAuditLogEntries");
+            audit.HasKey(entity => entity.Id);
+            audit.Property(entity => entity.Action)
+                .HasMaxLength(128)
+                .IsRequired();
+            audit.Property(entity => entity.DetailsJson)
+                .HasColumnType("jsonb")
+                .IsRequired();
+            audit.HasIndex(entity => new { entity.SubjectUserAccountId, entity.OccurredAtUtc });
         });
     }
 }

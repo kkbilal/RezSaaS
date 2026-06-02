@@ -16,7 +16,7 @@ Durum: tamamlandı.
 
 ## Dilim 1A - Identity/Auth Kapısı
 
-Durum: temel uygulandı; production teslimat adımları açık.
+Durum: backend güvenlik kapısı tamamlandı; gerçek sağlayıcı ve UX/onboarding kararları sonraki teslimat kapısında doğrulanacak.
 
 - Tamamlandı: ASP.NET Core Identity + PostgreSQL store
 - Tamamlandı: register, cookie/bearer login, refresh ve manage endpoint yüzeyi
@@ -24,51 +24,63 @@ Durum: temel uygulandı; production teslimat adımları açık.
 - Tamamlandı: global `PlatformAdmin`, `PlatformSupport` policy kontratları; migration rol seed'i kullanılmaz
 - Tamamlandı: IP bazlı auth rate limit (`10/dakika`, `429`) ve Identity lockout
 - Tamamlandı: production confirmed e-posta fail-fast; local token loglamayan sink
+- Tamamlandı: production için `Smtp` delivery mode konfigürasyonu
+- Tamamlandı: `PlatformAdminWithStepUp` policy; admin aksiyonları MFA claim'i ister
+- Tamamlandı: ilk `PlatformAdmin` için token-hash kontrollü, auditli bootstrap servisi; rol/user migration seed'i yok
+- Tamamlandı: identity audit log migration'ı
 - Tamamlandı: migration ve gerçek PostgreSQL entegrasyon testleri
-- Açık: production e-posta sağlayıcısı ve uçtan uca confirmation/password reset testi
-- Açık: ayrıcalıklı hesap MFA enrollment/enforcement ve güvenilir cihaz/oturum politikası
-- Açık: ilk `PlatformAdmin` bootstrap prosedürü
+- Açık: production SMTP sağlayıcısı seçimi, secret yükleme ve uçtan uca confirmation/password reset testi
+- Açık: ayrıcalıklı hesap MFA enrollment ekranı ve güvenilir cihaz/oturum UX'i
 
-Bu kapı kapanmadan tenant veya diğer domain modüllerinin API endpoint'leri yayınlanmaz.
+Admin/işletme yönetim endpoint'leri bu step-up policy'yi kullanmadan yayınlanmaz.
 
 ## Dilim 1B - Tenant ve Organization Temeli
 
-Durum: başladı; Tenant Management persistence temeli uygulandı, Organization henüz açık.
+Durum: backend domain/persistence temeli tamamlandı; yönetim endpoint'leri yayınlanmadı.
 
 - Tamamlandı: `Tenant`, `TenantMembership`, `TenantStatus`, `TenantAuditLogEntry` domain modeli
 - Tamamlandı: ayrı `tenant_management` PostgreSQL schema'sı ve EF Core migration
 - Tamamlandı: tenant slug benzersizliği, membership benzersizliği ve `BusinessOwner` branch scope engeli
 - Tamamlandı: audit log omurgası için append-only veri modeli başlangıcı
 - Tamamlandı: migration'ın tenant/üyelik/audit seed verisi üretmediğini doğrulayan entegrasyon testi
-- Açık: tenant context çözümleme ve explicit background scope kontratı
-- Açık: `Business`, `Branch`, branch timezone ve organization profile modeli
-- Açık: tenant izolasyon testleri; tenant-scoped tablolar geldikçe merkezi filtre/contract ile genişletilecek
-- Bloklu: tenant/işletme yönetim endpoint'leri; privileged MFA/step-up ve `PlatformAdmin` bootstrap kapısı kapanmadan yayınlanmaz
+- Tamamlandı: request-scope tenant context accessor ve `X-RezSaaS-Tenant` parse middleware'i
+- Tamamlandı: `Business`, `Branch`, `StaffMember`, `Skill`, `StaffSkill` organization modeli
+- Tamamlandı: branch timezone alanı ve tenant-scoped global query filter kalıbı
+- Tamamlandı: tenant izolasyon entegrasyon testi
+- Açık: public/admin endpoint tasarımı; endpoint açılırken authz, rate limit, audit ve idempotency eklenecek
 
 ## Dilim 2 - Catalog, Resources ve Availability
 
-- `StaffMember`, `Skill`, `ResourceType`, `Resource`
-- `Service`, `ServiceVariant`
-- Çalışma saatleri, izin ve resource kullanım dışı zamanları
-- UTC + branch timezone kuralları
-- Uygunluk sorgusu için ilk read model
+Durum: backend domain/persistence temeli tamamlandı.
+
+- Tamamlandı: `Service`, `ServiceVariant`, `ServiceRequiredSkill`
+- Tamamlandı: `ResourceType`, `Resource`, `ResourceBlock`
+- Tamamlandı: `BranchWorkingHours`, `StaffUnavailableTime`
+- Tamamlandı: tenant-scoped EF query filter ve seed'siz migration
+- Açık: uygunluk sorgusu read model'i ve endpoint yüzeyi
 
 ## Dilim 3 - Booking Request ve Approval
 
-- `AppointmentRequest`, satırlar ve snapshot alanları
-- `PendingApproval`, `Declined`, `Expired`, `Superseded`
-- `responseBuffer` ve TTL expiry job
-- `Appointment`, satırlar ve `Confirmed` akışı
-- Staff ve resource için ayrı PostgreSQL exclusion constraint
-- Transactional onay ve yarış koşulu entegrasyon testleri
+Durum: booking çekirdeği backend seviyesinde tamamlandı; approval endpoint/job yüzeyi sonraki dikey dilimde açılacak.
+
+- Tamamlandı: `AppointmentRequest`, `AppointmentRequestLine`, `Appointment`, `AppointmentLine`
+- Tamamlandı: `PendingApproval`, `Declined`, `Expired`, `Superseded`, `CancelledByCustomer`
+- Tamamlandı: `responseBuffer` ve 24 saat TTL hesabı domain seviyesinde
+- Tamamlandı: snapshot hizmet adı, süre, fiyat ve para birimi alanları
+- Tamamlandı: staff ve resource için ayrı PostgreSQL exclusion constraint
+- Tamamlandı: pending request'in slot bloklamadığını ve confirmed overlap'in DB'de engellendiğini doğrulayan entegrasyon testleri
+- Açık: transactional onay application service'i, TTL expiry background job ve `Superseded` kapatma akışı
 
 ## Dilim 4 - MVP Güvenlik Minimumları
 
-- Booking request rate limit ve kullanıcı limitleri
-- E-posta bildirim kuyruğu
-- Abuse event, strike başlangıcı ve işletme spam işaretleme
-- PII masking ve audit doğrulaması
-- Healthcheck, structured logging ve correlation id
+Durum: güvenlik/operasyon omurgası tamamlandı; endpoint bazlı limitler endpoint açıldıkça eklenecek.
+
+- Tamamlandı: auth rate limit ve Identity lockout
+- Tamamlandı: transactional messaging queue modeli (`TransactionalMessage`)
+- Tamamlandı: admin abuse/audit/sanction başlangıç modeli
+- Tamamlandı: PII masking helper ve test
+- Tamamlandı: healthcheck ve correlation id middleware
+- Açık: booking request endpoint'i açıldığında kullanıcı/tenant bazlı request limitleri ve abuse event üretimi
 
 ## Her Dilimde Kapanış
 

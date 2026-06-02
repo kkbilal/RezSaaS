@@ -153,6 +153,37 @@ namespace RezSaaS.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", "identity");
                 });
 
+            modelBuilder.Entity("RezSaaS.Modules.Identity.Domain.IdentityAuditLogEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("ActorUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SubjectUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectUserAccountId", "OccurredAtUtc");
+
+                    b.ToTable("IdentityAuditLogEntries", "identity");
+                });
+
             modelBuilder.Entity("RezSaaS.Modules.Identity.Domain.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")

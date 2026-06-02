@@ -4,7 +4,7 @@
 
 Tenant Management modülü; RezSaaS içindeki tenant yaşam döngüsü, tenant üyeliği ve tenant yönetim audit omurgasının başlangıç noktasıdır.
 
-Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işletme yönetim endpoint'leri, privileged MFA/step-up ve ilk `PlatformAdmin` bootstrap prosedürü tamamlanmadan yayınlanmaz.
+Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işletme yönetim endpoint'leri `PlatformAdminWithStepUp` ve tenant membership authz kontrolleri kullanılmadan yayınlanmaz.
 
 ## Uygulanan Temel
 
@@ -45,8 +45,6 @@ Doğrulananlar:
 
 ## Açık İşler
 
-- Tenant context çözümleme kontratı
 - Explicit tenant scope taşıyan background job kontratı
-- `Business` ve `Branch` organization modeli
-- Branch timezone ve çalışma saatleriyle ilişki
-- Tenant-scoped tablolar geldikçe merkezi tenant filter/contract yaklaşımı
+- Tenant/işletme yönetim application service ve endpoint yüzeyi
+- Bootstrap sonrası ilk tenant oluşturma ürün akışı

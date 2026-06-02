@@ -7,11 +7,15 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Hesap kimliği | Ad, e-posta, telefon, doğrulama durumu, hesap durumu, lockout | Kimlik, iletişim ve güvenlik | Kullanıcı, sınırlı destek | Netleştirilecek |
 | Tenant kaydı | Slug, görünen ad, durum, oluşturma/kapatma zamanı | Veri izolasyonu ve işletme yaşam döngüsü | İşletme sahibi, yetkili admin | Netleştirilecek |
 | İşletme üyeliği | User account id, tenant, rol, branch scope, durum | Yetkilendirme | İşletme sahibi, yetkili admin | Netleştirilecek |
+| Organizasyon | Business, branch, timezone, staff, skill | İşletme kurulumu ve operasyon | İşletme sahibi, branch manager | Netleştirilecek |
+| Katalog ve kaynak | Hizmet, varyant, fiyat, resource type, resource, block | Rezervasyon uygunluğu ve planlama | İşletme rolleri | Netleştirilecek |
+| Uygunluk | Çalışma saatleri, staff unavailable time | Slot hesaplama | İşletme rolleri | Netleştirilecek |
 | Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |
+| Identity audit | Actor, subject, aksiyon, zaman, JSON detay | Güvenlik ve privileged bootstrap kanıtı | Platform admin | Append-only; saklama süresi netleştirilecek |
 | Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |
-| Audit | Actor, aksiyon, zaman, gerekçe | Güvenlik ve inceleme | Yetkili admin | Netleştirilecek |
-| Abuse | Strike, sinyal, yaptırım, itiraz | Platform güvenliği | Platform admin | Netleştirilecek |
-| Bildirim | Kanal, alıcı maskesi, template, provider sonucu | Teslimat ve hata çözümü | Sınırlı destek | Netleştirilecek |
+| Admin audit | Actor, aksiyon, zaman, JSON detay | Platform operasyon incelemesi | Platform admin | Append-only; saklama süresi netleştirilecek |
+| Abuse | Event, severity, user, tenant, sanction | Platform güvenliği | Platform admin | Netleştirilecek |
+| Bildirim | Kanal, maskelenmiş alıcı, template, payload, provider sonucu | Teslimat ve hata çözümü | Sınırlı destek | Netleştirilecek |
 | Teknik telemetri | IP, device sinyali, correlation id | Abuse ve hata çözümü | Sınırlı güvenlik ekibi | Netleştirilecek |
 
 ## İlkeler

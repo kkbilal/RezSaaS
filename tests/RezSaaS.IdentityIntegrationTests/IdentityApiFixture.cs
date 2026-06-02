@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Persistence;
+using RezSaaS.Modules.Identity.Infrastructure.Security;
 
 namespace RezSaaS.IdentityIntegrationTests;
 
@@ -37,7 +38,17 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                 builder.UseSetting("Identity:PasswordRequiredLength", "12");
                 builder.UseSetting("Identity:PasswordRequiredUniqueChars", "4");
                 builder.UseSetting("Identity:RequireConfirmedEmail", "false");
+                builder.UseSetting(
+                    "Identity:Bootstrap:PlatformAdminBootstrapTokenSha256",
+                    "99ECD312D2F24FFD7011532BA5579DAE00103767862BD5B7A79E6EFCEF99E05E");
+                builder.UseSetting("ConnectionStrings:AdminDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:AvailabilityDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:BookingDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:CatalogDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:IdentityDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:MessagingDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:OrganizationDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:ResourcesDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:TenantManagementDatabase", databaseConnectionString);
                 builder.ConfigureAppConfiguration((_, configuration) =>
                 {
@@ -45,7 +56,14 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                     configuration.AddInMemoryCollection(
                         new Dictionary<string, string?>
                         {
+                            ["ConnectionStrings:AdminDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:AvailabilityDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:BookingDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:CatalogDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:IdentityDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:MessagingDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:OrganizationDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:ResourcesDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:TenantManagementDatabase"] = databaseConnectionString,
                             ["Identity:AuthenticationPermitLimit"] = "100",
                             ["Identity:AuthenticationWindowMinutes"] = "1",
@@ -55,6 +73,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                             ["Identity:PasswordRequiredLength"] = "12",
                             ["Identity:PasswordRequiredUniqueChars"] = "4",
                             ["Identity:RequireConfirmedEmail"] = "false",
+                            ["Identity:Bootstrap:PlatformAdminBootstrapTokenSha256"] =
+                                "99ECD312D2F24FFD7011532BA5579DAE00103767862BD5B7A79E6EFCEF99E05E",
                         });
                 });
                 builder.ConfigureTestServices(services =>
@@ -101,6 +121,41 @@ public sealed class IdentityApiFixture : IAsyncLifetime
     public HttpClient CreateClient()
     {
         return factory!.CreateClient();
+    }
+
+    public async Task<PlatformAdminBootstrapResult> BootstrapPlatformAdminAsync(
+        string email,
+        string password,
+        string token)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        IPlatformAdminBootstrapService service =
+            scope.ServiceProvider.GetRequiredService<IPlatformAdminBootstrapService>();
+
+        return await service.BootstrapAsync(
+            new PlatformAdminBootstrapRequest(email, password, token));
+    }
+
+    public async Task<int> GetIdentityAuditLogCountAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
+        return await dbContext.IdentityAuditLogEntries.CountAsync();
+    }
+
+    public async Task<int> GetPlatformAdminAssignmentCountAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
+        return await dbContext.UserRoles
+            .Join(
+                dbContext.Roles,
+                userRole => userRole.RoleId,
+                role => role.Id,
+                (_, role) => role.Name)
+            .CountAsync(roleName => roleName == PlatformRoleNames.Administrator);
     }
 
     public async Task<int> GetPlatformRoleCountAsync()

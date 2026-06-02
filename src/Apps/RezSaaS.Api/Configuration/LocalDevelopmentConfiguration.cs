@@ -33,7 +33,14 @@ public static class LocalDevelopmentConfiguration
         Dictionary<string, string> values = ReadEnvironmentFile(environmentPath);
         Dictionary<string, string?> localConfiguration = new(StringComparer.OrdinalIgnoreCase)
         {
+            ["ConnectionStrings:AdminDatabase"] = CreatePostgresConnectionString(values),
+            ["ConnectionStrings:AvailabilityDatabase"] = CreatePostgresConnectionString(values),
+            ["ConnectionStrings:BookingDatabase"] = CreatePostgresConnectionString(values),
+            ["ConnectionStrings:CatalogDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:IdentityDatabase"] = CreateIdentityConnectionString(values),
+            ["ConnectionStrings:MessagingDatabase"] = CreatePostgresConnectionString(values),
+            ["ConnectionStrings:OrganizationDatabase"] = CreatePostgresConnectionString(values),
+            ["ConnectionStrings:ResourcesDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:TenantManagementDatabase"] = CreateIdentityConnectionString(values),
         };
 
@@ -41,6 +48,11 @@ public static class LocalDevelopmentConfiguration
     }
 
     private static string CreateIdentityConnectionString(Dictionary<string, string> values)
+    {
+        return CreatePostgresConnectionString(values);
+    }
+
+    private static string CreatePostgresConnectionString(Dictionary<string, string> values)
     {
         return "Host=" + Quote(GetRequiredValue(values, HostKey))
             + ";Port=" + Quote(GetRequiredValue(values, PortKey))

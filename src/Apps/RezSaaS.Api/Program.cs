@@ -10,6 +10,7 @@ using RezSaaS.Modules.Organization;
 using RezSaaS.Modules.Resources;
 using RezSaaS.Modules.Reviews;
 using RezSaaS.Modules.TenantManagement;
+using RezSaaS.BuildingBlocks.Tenancy;
 using Microsoft.OpenApi;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -53,12 +54,14 @@ builder.Services.AddSwaggerGen(options =>
             Type = SecuritySchemeType.Http,
         });
 });
+builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddModules(modules, builder.Configuration);
 
 WebApplication app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -71,6 +74,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRateLimiter();
+app.UseMiddleware<TenantContextMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");

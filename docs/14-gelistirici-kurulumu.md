@@ -29,14 +29,32 @@ Solution'ı doğrula:
 ```powershell
 dotnet tool restore
 dotnet restore RezSaaS.sln
-dotnet tool run dotnet-ef database update --project src/Modules/RezSaaS.Modules.Identity --startup-project src/Apps/RezSaaS.Api --context IdentityDbContext
+
+$contexts = @(
+    @{ Project = "src/Modules/RezSaaS.Modules.Identity"; Context = "IdentityDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.TenantManagement"; Context = "TenantManagementDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.Admin"; Context = "AdminDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.Organization"; Context = "OrganizationDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.Catalog"; Context = "CatalogDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.Messaging"; Context = "MessagingDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.Resources"; Context = "ResourcesDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.Availability"; Context = "AvailabilityDbContext" },
+    @{ Project = "src/Modules/RezSaaS.Modules.Booking"; Context = "BookingDbContext" }
+)
+
+foreach ($item in $contexts) {
+    dotnet tool run dotnet-ef database update --project $item.Project --startup-project src/Apps/RezSaaS.Api --context $item.Context
+}
+
 dotnet build RezSaaS.sln --no-restore
 dotnet test RezSaaS.sln --no-build
 ```
 
 Development ortamında API ve entegrasyon testleri repo kökündeki ignored `.env`
 dosyasını otomatik okur. Ortam değişkeniyle override etmek için
-`ConnectionStrings__IdentityDatabase` kullanılabilir.
+`ConnectionStrings__IdentityDatabase` ve diğer `ConnectionStrings__*Database`
+değerleri kullanılabilir. Local helper aynı PostgreSQL database'ini tüm Phase 1
+schema'ları için map eder.
 
 API'yi çalıştır:
 
