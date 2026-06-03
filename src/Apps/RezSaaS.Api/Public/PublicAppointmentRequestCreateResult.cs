@@ -7,14 +7,29 @@ public sealed record PublicAppointmentRequestCreateResult(
 {
     public static PublicAppointmentRequestCreateResult Created(
         Guid appointmentRequestId,
-        DateTimeOffset expiresAtUtc)
+        DateTimeOffset expiresAtUtc,
+        string status)
     {
         return new PublicAppointmentRequestCreateResult(
             PublicAppointmentRequestCreateOutcome.Created,
             new PublicAppointmentRequestCreateResponse(
                 appointmentRequestId,
                 expiresAtUtc,
-                "PendingApproval"),
+                status),
+            ErrorCode: null);
+    }
+
+    public static PublicAppointmentRequestCreateResult Replayed(
+        Guid appointmentRequestId,
+        DateTimeOffset expiresAtUtc,
+        string status)
+    {
+        return new PublicAppointmentRequestCreateResult(
+            PublicAppointmentRequestCreateOutcome.Replayed,
+            new PublicAppointmentRequestCreateResponse(
+                appointmentRequestId,
+                expiresAtUtc,
+                status),
             ErrorCode: null);
     }
 

@@ -4,16 +4,22 @@ public sealed record CreateAppointmentRequestResult(
     bool Succeeded,
     Guid? AppointmentRequestId,
     DateTimeOffset? ExpiresAtUtc,
+    string? Status,
+    bool IsReplay,
     string? ErrorCode)
 {
     public static CreateAppointmentRequestResult Success(
         Guid appointmentRequestId,
-        DateTimeOffset expiresAtUtc)
+        DateTimeOffset expiresAtUtc,
+        string status = "PendingApproval",
+        bool isReplay = false)
     {
         return new CreateAppointmentRequestResult(
             true,
             appointmentRequestId,
             expiresAtUtc,
+            status,
+            isReplay,
             ErrorCode: null);
     }
 
@@ -23,6 +29,8 @@ public sealed record CreateAppointmentRequestResult(
             false,
             AppointmentRequestId: null,
             ExpiresAtUtc: null,
+            Status: null,
+            IsReplay: false,
             errorCode);
     }
 }

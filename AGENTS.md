@@ -153,8 +153,14 @@ Slot bloklanmadığı için onay ekranında yarış olur:
 - Slot response UTC başlangıç/bitiş zamanını ve branch timezone/local gösterim bilgisini birlikte taşır.
 - Public rezervasyon isteği oluşturma auth zorunludur; tenant header beklemez, tenant context doğrulanmış `businessSlug` üzerinden geçici set edilir ve request `PendingApproval` olarak kalır.
 - Create öncesi staff/resource/variant/branch eşleşmesi ve slot uygunluğu doğrulanmadan `AppointmentRequest` üretilmez.
+- Public slot ve create doğrulaması `ServiceRequiredSkill` + `StaffSkill` eşleşmesini zorunlu uygular; unvan veya display name bookability yerine kullanılamaz.
+- Branch public slot ayarları (`SlotIntervalMinutes`, `MaxPublicSlots`) varsa config default'larını override eder; ayarlar pozitif değer olmak zorundadır.
 - İşletme onay/ret endpoint'leri tenant header + authenticated user + tenant membership authz ister; `BusinessOwner` tenant-wide, `BranchManager` branch-scoped, `Staff` varsayılan deny.
 - Approve/decline API'leri mevcut Booking application servislerini kullanır; audit, transactional outbox ve `Superseded` davranışı bypass edilmez.
+- Booking create/approve/decline/customer-cancel komutları `Idempotency-Key` destekler; raw key asla saklanmaz, yalnızca tenant+actor+operation kapsamlı hash tutulur.
+- Müşteri kendi request listesi/detayı/cancel akışı public business slug ile tenant context set ederek çalışır; başka kullanıcıya ait request `404` kabul edilir.
+- Business panel appointment request response'larında müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII response veya log'a eklenmez.
+- `PendingApproval` expiry worker aktif tenant'ları Tenant Management üzerinden enumerate eder ve her tenant için explicit `TenantId` set eder; implicit HTTP context'e güvenmez.
 
 ---
 

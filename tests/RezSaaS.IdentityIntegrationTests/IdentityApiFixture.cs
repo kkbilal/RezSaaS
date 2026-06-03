@@ -139,7 +139,9 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         return factory!.CreateClient();
     }
 
-    public async Task<PublicBusinessProfileSeed> SeedPublicBusinessProfileAsync(DateOnly? slotDate = null)
+    public async Task<PublicBusinessProfileSeed> SeedPublicBusinessProfileAsync(
+        DateOnly? slotDate = null,
+        bool includeUnqualifiedStaff = false)
     {
         using IServiceScope scope = factory!.Services.CreateScope();
         ITenantContextAccessor tenantContextAccessor =
@@ -185,6 +187,12 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             "hair",
             createdAtUtc,
             "Kadikoy'de modern sac ve bakim salonu.");
+        business.UpdatePublicProfile(
+            "Randevu saatinden 10 dakika once salonda olunuz.",
+            "Atlas Hair Kadikoy",
+            "Kadikoy'de sac kesimi ve bakim rezervasyonu.",
+            PublicStaffDisplayPolicy.ShowNames);
+        business.UpdateRatingSummary(4.8m, 12);
         Branch branch = Branch.Create(
             tenantId,
             business.Id,
@@ -195,15 +203,40 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             "Istanbul",
             "Kadikoy",
             "Caferaga Mahallesi");
+        branch.SetPublicSlotSettings(15, 25);
         StaffMember staffMember = StaffMember.Create(
             tenantId,
             branch.Id,
             "Ayse Usta",
             createdAtUtc);
+        StaffMember? unqualifiedStaffMember = includeUnqualifiedStaff
+            ? StaffMember.Create(
+                tenantId,
+                branch.Id,
+                "Deniz Asistan",
+                createdAtUtc)
+            : null;
+        Skill haircutSkill = Skill.Create(tenantId, "Haircut");
+        StaffSkill staffSkill = StaffSkill.Create(tenantId, staffMember.Id, haircutSkill.Id);
+        BusinessGalleryImage galleryImage = BusinessGalleryImage.Create(
+            tenantId,
+            business.Id,
+            "https://cdn.example.test/atlas/gallery-1.jpg",
+            createdAtUtc,
+            "Atlas Hair salon ic mekan",
+            sortOrder: 1);
 
         organizationDbContext.Businesses.Add(business);
         organizationDbContext.Branches.Add(branch);
         organizationDbContext.StaffMembers.Add(staffMember);
+        if (unqualifiedStaffMember is not null)
+        {
+            organizationDbContext.StaffMembers.Add(unqualifiedStaffMember);
+        }
+
+        organizationDbContext.Skills.Add(haircutSkill);
+        organizationDbContext.StaffSkills.Add(staffSkill);
+        organizationDbContext.BusinessGalleryImages.Add(galleryImage);
         await organizationDbContext.SaveChangesAsync();
 
         ResourceType chairType = ResourceType.Create(tenantId, "chair", "Chair");
@@ -231,6 +264,11 @@ public sealed class IdentityApiFixture : IAsyncLifetime
 
         catalogDbContext.Services.Add(service);
         catalogDbContext.ServiceVariants.Add(variant);
+        catalogDbContext.ServiceRequiredSkills.Add(
+            ServiceRequiredSkill.Create(
+                tenantId,
+                variant.Id,
+                haircutSkill.Id));
         await catalogDbContext.SaveChangesAsync();
 
         availabilityDbContext.BranchWorkingHours.Add(
@@ -285,7 +323,9 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             slug,
             branchSlug,
             variant.Id,
+            haircutSkill.Id,
             staffMember.Id,
+            unqualifiedStaffMember?.Id,
             chair.Id,
             availableSlotStartUtc);
     }

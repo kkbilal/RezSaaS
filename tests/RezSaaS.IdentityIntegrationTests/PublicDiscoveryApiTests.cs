@@ -40,10 +40,17 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         Assert.Equal(750, variant.GetProperty("priceAmount").GetDecimal());
         Assert.Equal("TRY", variant.GetProperty("currencyCode").GetString());
 
+        JsonElement metadata = root.GetProperty("metadata");
+        Assert.Equal("Atlas Hair Kadikoy", metadata.GetProperty("seoTitle").GetString());
+        Assert.Equal(4.8m, metadata.GetProperty("ratingAverage").GetDecimal());
+        Assert.Equal(12, metadata.GetProperty("reviewCount").GetInt32());
+        Assert.Single(metadata.GetProperty("galleryImages").EnumerateArray());
+
         JsonElement branch = root.GetProperty("branches").EnumerateArray().Single();
         Assert.Equal("Kadikoy", branch.GetProperty("displayName").GetString());
         JsonElement staffMember = branch.GetProperty("staffMembers").EnumerateArray().Single();
         Assert.Equal("Ayse Usta", staffMember.GetProperty("displayName").GetString());
+        Assert.Equal(seed.RequiredSkillId, staffMember.GetProperty("skillIds").EnumerateArray().Single().GetGuid());
 
         JsonElement workingHours = branch.GetProperty("workingHours").EnumerateArray().Single();
         Assert.Equal("Monday", workingHours.GetProperty("dayOfWeek").GetString());
@@ -84,6 +91,31 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task PublicBusinessSlotsExcludeStaffWithoutRequiredSkills()
+    {
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(includeUnqualifiedStaff: true);
+
+        HttpResponseMessage response = await fixture.Client.GetAsync(
+            $"/api/public/businesses/{seed.Slug}/slots"
+            + $"?branchSlug={seed.BranchSlug}"
+            + $"&serviceVariantIds={seed.ServiceVariantId}"
+            + "&date=2026-01-05");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        JsonElement slot = body.RootElement.GetProperty("slots").EnumerateArray().Single();
+        Guid[] staffIds = slot.GetProperty("staffCandidates")
+            .EnumerateArray()
+            .Select(entity => entity.GetProperty("id").GetGuid())
+            .ToArray();
+
+        Assert.Contains(seed.StaffMemberId, staffIds);
+        Assert.DoesNotContain(seed.UnqualifiedStaffMemberId!.Value, staffIds);
+    }
+
+    [Fact]
     public async Task AuthenticatedCustomerCanCreatePendingAppointmentRequestFromPublicBusiness()
     {
         string email = $"public-booking-{Guid.NewGuid():N}@example.test";
@@ -119,6 +151,42 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task PublicAppointmentRequestCreateIsIdempotentForSameKey()
+    {
+        string email = $"idempotent-booking-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(19)));
+        string accessToken = await RegisterAndLoginWithBearerTokenAsync(email, password);
+        string idempotencyKey = $"idem-{Guid.NewGuid():N}";
+
+        using HttpRequestMessage firstRequest = CreatePublicAppointmentRequestMessage(
+            seed,
+            accessToken,
+            idempotencyKey);
+        HttpResponseMessage firstResponse = await fixture.Client.SendAsync(firstRequest);
+
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+
+        using JsonDocument firstBody =
+            JsonDocument.Parse(await firstResponse.Content.ReadAsStringAsync());
+        Guid firstId = firstBody.RootElement.GetProperty("appointmentRequestId").GetGuid();
+
+        using HttpRequestMessage secondRequest = CreatePublicAppointmentRequestMessage(
+            seed,
+            accessToken,
+            idempotencyKey);
+        HttpResponseMessage secondResponse = await fixture.Client.SendAsync(secondRequest);
+
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+
+        using JsonDocument secondBody =
+            JsonDocument.Parse(await secondResponse.Content.ReadAsStringAsync());
+        Assert.Equal(firstId, secondBody.RootElement.GetProperty("appointmentRequestId").GetGuid());
+    }
+
+    [Fact]
     public async Task PublicAppointmentRequestRequiresAuthentication()
     {
         PublicBusinessProfileSeed seed =
@@ -137,6 +205,58 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
             });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AuthenticatedCustomerCanListViewAndCancelOwnAppointmentRequest()
+    {
+        string email = $"public-booking-owner-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(20)));
+        string accessToken = await RegisterAndLoginWithBearerTokenAsync(email, password);
+        Guid appointmentRequestId = await CreatePublicAppointmentRequestAsync(seed, accessToken);
+
+        using HttpRequestMessage listRequest = new(
+            HttpMethod.Get,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests?status=PendingApproval");
+        listRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        HttpResponseMessage listResponse = await fixture.Client.SendAsync(listRequest);
+
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+
+        using JsonDocument listBody =
+            JsonDocument.Parse(await listResponse.Content.ReadAsStringAsync());
+        JsonElement listedRequest = listBody.RootElement
+            .GetProperty("requests")
+            .EnumerateArray()
+            .Single();
+        Assert.Equal(appointmentRequestId, listedRequest.GetProperty("id").GetGuid());
+
+        using HttpRequestMessage detailRequest = new(
+            HttpMethod.Get,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests/{appointmentRequestId}");
+        detailRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        HttpResponseMessage detailResponse = await fixture.Client.SendAsync(detailRequest);
+
+        Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
+
+        using HttpRequestMessage cancelRequest = new(
+            HttpMethod.Post,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests/{appointmentRequestId}/cancel");
+        cancelRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        cancelRequest.Headers.Add("Idempotency-Key", $"cancel-{Guid.NewGuid():N}");
+
+        HttpResponseMessage cancelResponse = await fixture.Client.SendAsync(cancelRequest);
+
+        Assert.Equal(HttpStatusCode.OK, cancelResponse.StatusCode);
+
+        using JsonDocument cancelBody =
+            JsonDocument.Parse(await cancelResponse.Content.ReadAsStringAsync());
+        Assert.Equal("CancelledByCustomer", cancelBody.RootElement.GetProperty("status").GetString());
     }
 
     [Fact]
@@ -175,12 +295,25 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
             .Single();
         Assert.Equal(appointmentRequestId, pendingItem.GetProperty("id").GetGuid());
         Assert.Equal("PendingApproval", pendingItem.GetProperty("status").GetString());
+        Assert.Equal("b***@example.test", pendingItem.GetProperty("customer").GetProperty("maskedEmail").GetString());
 
+        using HttpRequestMessage detailRequest = new(
+            HttpMethod.Get,
+            $"/api/business/appointment-requests/{appointmentRequestId}");
+        detailRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+        detailRequest.Headers.Add(TenantContextHeaders.TenantId, seed.TenantId.ToString());
+
+        HttpResponseMessage detailResponse = await fixture.Client.SendAsync(detailRequest);
+
+        Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
+
+        string approveIdempotencyKey = $"approve-{Guid.NewGuid():N}";
         using HttpRequestMessage approveRequest = new(
             HttpMethod.Post,
             $"/api/business/appointment-requests/{appointmentRequestId}/approve");
         approveRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
         approveRequest.Headers.Add(TenantContextHeaders.TenantId, seed.TenantId.ToString());
+        approveRequest.Headers.Add("Idempotency-Key", approveIdempotencyKey);
 
         HttpResponseMessage approveResponse = await fixture.Client.SendAsync(approveRequest);
 
@@ -189,8 +322,26 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         using JsonDocument approveBody =
             JsonDocument.Parse(await approveResponse.Content.ReadAsStringAsync());
         JsonElement approval = approveBody.RootElement;
-        Assert.NotEqual(Guid.Empty, approval.GetProperty("appointmentId").GetGuid());
+        Guid appointmentId = approval.GetProperty("appointmentId").GetGuid();
+        Assert.NotEqual(Guid.Empty, appointmentId);
         Assert.Equal("Approved", approval.GetProperty("status").GetString());
+
+        using HttpRequestMessage approveReplayRequest = new(
+            HttpMethod.Post,
+            $"/api/business/appointment-requests/{appointmentRequestId}/approve");
+        approveReplayRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+        approveReplayRequest.Headers.Add(TenantContextHeaders.TenantId, seed.TenantId.ToString());
+        approveReplayRequest.Headers.Add("Idempotency-Key", approveIdempotencyKey);
+
+        HttpResponseMessage approveReplayResponse = await fixture.Client.SendAsync(approveReplayRequest);
+
+        Assert.Equal(HttpStatusCode.OK, approveReplayResponse.StatusCode);
+
+        using JsonDocument approveReplayBody =
+            JsonDocument.Parse(await approveReplayResponse.Content.ReadAsStringAsync());
+        Assert.Equal(
+            appointmentId,
+            approveReplayBody.RootElement.GetProperty("appointmentId").GetGuid());
     }
 
     [Fact]
@@ -253,10 +404,29 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         PublicBusinessProfileSeed seed,
         string accessToken)
     {
-        using HttpRequestMessage request = new(
+        using HttpRequestMessage request = CreatePublicAppointmentRequestMessage(seed, accessToken);
+        HttpResponseMessage response = await fixture.Client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return body.RootElement.GetProperty("appointmentRequestId").GetGuid();
+    }
+
+    private static HttpRequestMessage CreatePublicAppointmentRequestMessage(
+        PublicBusinessProfileSeed seed,
+        string accessToken,
+        string? idempotencyKey = null)
+    {
+        HttpRequestMessage request = new(
             HttpMethod.Post,
             $"/api/public/businesses/{seed.Slug}/appointment-requests");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        if (idempotencyKey is not null)
+        {
+            request.Headers.Add("Idempotency-Key", idempotencyKey);
+        }
+
         request.Content = JsonContent.Create(
             new
             {
@@ -267,11 +437,7 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
                 startUtc = seed.AvailableSlotStartUtc,
             });
 
-        HttpResponseMessage response = await fixture.Client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        return body.RootElement.GetProperty("appointmentRequestId").GetGuid();
+        return request;
     }
 
     private async Task<string> RegisterAndLoginWithBearerTokenAsync(string email, string password)

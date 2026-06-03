@@ -6,6 +6,8 @@ public sealed record PublicBusinessProfileSeed(
     string Slug,
     string BranchSlug,
     Guid ServiceVariantId,
+    Guid RequiredSkillId,
     Guid StaffMemberId,
+    Guid? UnqualifiedStaffMemberId,
     Guid ResourceId,
     DateTimeOffset AvailableSlotStartUtc);

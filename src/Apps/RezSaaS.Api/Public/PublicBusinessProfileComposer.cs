@@ -53,6 +53,10 @@ public sealed class PublicBusinessProfileComposer
                     await availabilityQueryService.GetBranchWorkingHoursAsync(
                         branch.Id,
                         cancellationToken);
+                bool showStaffNames = string.Equals(
+                    business.StaffDisplayPolicy,
+                    "ShowNames",
+                    StringComparison.OrdinalIgnoreCase);
 
                 branches.Add(new PublicBusinessBranchProfileResponse(
                     branch.Slug,
@@ -61,11 +65,14 @@ public sealed class PublicBusinessProfileComposer
                         branch.City,
                         branch.District,
                         branch.AddressLine,
-                        branch.StaffMembers
-                            .Select(staffMember => new PublicStaffMemberProfileResponse(
-                                staffMember.Id,
-                                staffMember.DisplayName))
-                            .ToArray(),
+                        showStaffNames
+                            ? branch.StaffMembers
+                                .Select(staffMember => new PublicStaffMemberProfileResponse(
+                                    staffMember.Id,
+                                    staffMember.DisplayName,
+                                    staffMember.SkillIds))
+                                .ToArray()
+                            : [],
                         workingHours
                             .Select(hours => new PublicBranchWorkingHoursProfileResponse(
                                 hours.DayOfWeek.ToString(),
@@ -80,6 +87,19 @@ public sealed class PublicBusinessProfileComposer
                 business.DisplayName,
                 business.CategoryKey,
                 business.Description,
+                new PublicBusinessProfileMetadataResponse(
+                    business.PublicRules,
+                    business.SeoTitle,
+                    business.SeoDescription,
+                    business.StaffDisplayPolicy,
+                    business.RatingAverage,
+                    business.ReviewCount,
+                    business.GalleryImages
+                        .Select(image => new PublicBusinessGalleryImageProfileResponse(
+                            image.ImageUrl,
+                            image.AltText,
+                            image.SortOrder))
+                        .ToArray()),
                 branches,
                 services
                     .Select(service => new PublicServiceProfileResponse(

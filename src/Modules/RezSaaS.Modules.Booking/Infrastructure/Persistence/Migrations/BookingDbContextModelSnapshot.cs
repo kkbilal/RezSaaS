@@ -203,6 +203,61 @@ namespace RezSaaS.Modules.Booking.Infrastructure.Persistence.Migrations
                     b.ToTable("AppointmentRequestLines", "booking");
                 });
 
+            modelBuilder.Entity("RezSaaS.Modules.Booking.Domain.BookingIdempotencyRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AffectedRequests")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(96)
+                        .HasColumnType("character varying(96)");
+
+                    b.Property<Guid?>("RelatedResourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("ResponseExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResponseResourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResponseStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "ActorUserAccountId", "Operation", "KeyHash")
+                        .IsUnique();
+
+                    b.ToTable("BookingIdempotencyRecords", "booking");
+                });
+
             modelBuilder.Entity("RezSaaS.Modules.Booking.Domain.AppointmentLine", b =>
                 {
                     b.HasOne("RezSaaS.Modules.Booking.Domain.Appointment", null)

@@ -122,6 +122,11 @@ public sealed class AppointmentRequest
         Status = AppointmentRequestStatus.Declined;
     }
 
+    public void CancelByCustomer()
+    {
+        Status = AppointmentRequestStatus.CancelledByCustomer;
+    }
+
     public void Expire()
     {
         Status = AppointmentRequestStatus.Expired;

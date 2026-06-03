@@ -163,7 +163,9 @@ public sealed class PublicBusinessDirectoryService
                 entity.TimeZoneId,
                 entity.City,
                 entity.District,
-                entity.AddressLine))
+                entity.AddressLine,
+                entity.SlotIntervalMinutes,
+                entity.MaxPublicSlots))
             .ToListAsync(cancellationToken);
         Guid[] branchIds = branchSeeds
             .Select(entity => entity.Id)
@@ -180,12 +182,41 @@ public sealed class PublicBusinessDirectoryService
                 entity.Id,
                 entity.DisplayName))
             .ToListAsync(cancellationToken);
+        Guid[] staffMemberIds = staffMembers
+            .Select(entity => entity.Id)
+            .ToArray();
+        List<PublicStaffSkillContextSeed> staffSkills = await dbContext.StaffSkills
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(entity => entity.TenantId == business.TenantId
+                && staffMemberIds.Contains(entity.StaffMemberId))
+            .Select(entity => new PublicStaffSkillContextSeed(
+                entity.StaffMemberId,
+                entity.SkillId))
+            .ToListAsync(cancellationToken);
+        ILookup<Guid, Guid> skillIdsByStaffMemberId = staffSkills
+            .ToLookup(
+                entity => entity.StaffMemberId,
+                entity => entity.SkillId);
         ILookup<Guid, PublicStaffMemberView> staffMembersByBranchId = staffMembers
             .ToLookup(
                 entity => entity.BranchId,
                 entity => new PublicStaffMemberView(
                     entity.Id,
-                    entity.DisplayName));
+                    entity.DisplayName,
+                    skillIdsByStaffMemberId[entity.Id].ToArray()));
+        List<PublicBusinessGalleryImageView> galleryImages = await dbContext.BusinessGalleryImages
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(entity => entity.TenantId == business.TenantId
+                && entity.BusinessId == business.Id
+                && entity.IsPublished)
+            .OrderBy(entity => entity.SortOrder)
+            .Select(entity => new PublicBusinessGalleryImageView(
+                entity.ImageUrl,
+                entity.AltText,
+                entity.SortOrder))
+            .ToListAsync(cancellationToken);
         PublicBusinessBranchContext[] branches = branchSeeds
             .Select(branch => new PublicBusinessBranchContext(
                 branch.Id,
@@ -195,6 +226,8 @@ public sealed class PublicBusinessDirectoryService
                 branch.City,
                 branch.District,
                 branch.AddressLine,
+                branch.SlotIntervalMinutes,
+                branch.MaxPublicSlots,
                 staffMembersByBranchId[branch.Id].ToArray()))
             .ToArray();
 
@@ -205,6 +238,13 @@ public sealed class PublicBusinessDirectoryService
             business.DisplayName,
             business.CategoryKey,
             business.Description,
+            business.PublicRules,
+            business.SeoTitle,
+            business.SeoDescription,
+            business.PublicStaffDisplayPolicy.ToString(),
+            business.RatingAverage,
+            business.ReviewCount,
+            galleryImages,
             branches);
     }
 
@@ -215,12 +255,18 @@ public sealed class PublicBusinessDirectoryService
         string TimeZoneId,
         string City,
         string District,
-        string AddressLine);
+        string AddressLine,
+        int? SlotIntervalMinutes,
+        int? MaxPublicSlots);
 
     private sealed record PublicStaffMemberContextSeed(
         Guid BranchId,
         Guid Id,
         string DisplayName);
+
+    private sealed record PublicStaffSkillContextSeed(
+        Guid StaffMemberId,
+        Guid SkillId);
 
     private static string? NormalizeOptional(string? value)
     {

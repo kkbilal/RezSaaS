@@ -55,6 +55,9 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<int?>("MaxPublicSlots")
+                        .HasColumnType("integer");
+
                     b.Property<string>("NormalizedCity")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -69,6 +72,9 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<int?>("SlotIntervalMinutes")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -124,6 +130,34 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("PublicRules")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("PublicStaffDisplayPolicy")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasDefaultValue("ShowNames")
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<decimal>("RatingAverage")
+                        .HasPrecision(3, 2)
+                        .HasColumnType("numeric(3,2)");
+
+                    b.Property<int>("ReviewCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SeoDescription")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)");
+
+                    b.Property<string>("SeoTitle")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -143,6 +177,46 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Businesses", "organization");
+                });
+
+            modelBuilder.Entity("RezSaaS.Modules.Organization.Domain.BusinessGalleryImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AltText")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("TenantId", "BusinessId", "SortOrder");
+
+                    b.ToTable("BusinessGalleryImages", "organization");
                 });
 
             modelBuilder.Entity("RezSaaS.Modules.Organization.Domain.Skill", b =>
@@ -233,6 +307,17 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("RezSaaS.Modules.Organization.Domain.Branch", b =>
+                {
+                    b.HasOne("RezSaaS.Modules.Organization.Domain.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+                });
+
+            modelBuilder.Entity("RezSaaS.Modules.Organization.Domain.BusinessGalleryImage", b =>
                 {
                     b.HasOne("RezSaaS.Modules.Organization.Domain.Business", "Business")
                         .WithMany()

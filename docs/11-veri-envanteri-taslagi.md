@@ -7,10 +7,11 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Hesap kimliği | Ad, e-posta, telefon, doğrulama durumu, hesap durumu, lockout | Kimlik, iletişim ve güvenlik | Kullanıcı, sınırlı destek | Netleştirilecek |
 | Tenant kaydı | Slug, görünen ad, durum, oluşturma/kapatma zamanı | Veri izolasyonu ve işletme yaşam döngüsü | İşletme sahibi, yetkili admin | Netleştirilecek |
 | İşletme üyeliği | User account id, tenant, rol, branch scope, durum | Yetkilendirme | İşletme sahibi, yetkili admin | Netleştirilecek |
-| Organizasyon | Business, public slug, açıklama, branch şehir/ilçe/adres, timezone, staff, skill | İşletme kurulumu, public keşif ve operasyon | Public özet/profil alanları anonim; detay/yönetim işletme rolleri | Netleştirilecek |
+| Organizasyon | Business, public slug, açıklama, profil kuralları, SEO metadata, galeri URL/alt text, rating özeti, branch şehir/ilçe/adres, timezone, staff, skill | İşletme kurulumu, public keşif ve operasyon | Public özet/profil alanları anonim; detay/yönetim işletme rolleri | Netleştirilecek |
 | Katalog ve kaynak | Hizmet, varyant, fiyat, resource type, resource, block | Rezervasyon uygunluğu ve planlama | Public hizmet/varyant menüsü anonim; kaynak ve yönetim işletme rolleri | Netleştirilecek |
 | Uygunluk | Çalışma saatleri, staff unavailable time | Slot hesaplama | Public çalışma saatleri anonim; staff unavailable yönetimi işletme rolleri | Netleştirilecek |
 | Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |
+| Booking idempotency | Tenant, actor id, operation, key hash, request hash, response özeti | Komut retry güvenliği ve çift işlem engelleme | Sistem ve sınırlı operasyon | Saklama/temizleme süresi netleştirilecek |
 | Identity audit | Actor, subject, aksiyon, zaman, JSON detay | Güvenlik ve privileged bootstrap kanıtı | Platform admin | Append-only; saklama süresi netleştirilecek |
 | Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |
 | Admin audit | Actor, aksiyon, zaman, JSON detay | Platform operasyon incelemesi | Platform admin | Append-only; saklama süresi netleştirilecek |

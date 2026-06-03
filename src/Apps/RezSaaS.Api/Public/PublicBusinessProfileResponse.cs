@@ -5,5 +5,6 @@ public sealed record PublicBusinessProfileResponse(
     string DisplayName,
     string CategoryKey,
     string Description,
+    PublicBusinessProfileMetadataResponse Metadata,
     IReadOnlyCollection<PublicBusinessBranchProfileResponse> Branches,
     IReadOnlyCollection<PublicServiceProfileResponse> Services);

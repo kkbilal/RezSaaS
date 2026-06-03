@@ -48,6 +48,6 @@ Doğrulananlar:
 
 ## Açık İşler
 
-- Explicit tenant scope taşıyan background job kontratı
+- Explicit tenant scope taşıyan background job kontratı Phase 2 booking expiry worker ile ilk kez uygulandı; merkezi job dashboard/retry politikası sonraki fazda detaylandırılacak.
 - Tenant/işletme yönetim application service ve endpoint yüzeyi
 - Bootstrap sonrası ilk tenant oluşturma ürün akışı

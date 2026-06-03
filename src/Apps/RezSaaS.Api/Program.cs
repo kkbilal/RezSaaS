@@ -70,10 +70,19 @@ builder.Services.AddOptions<PublicSlotSearchOptions>()
         options => options.SlotIntervalMinutes > 0 && options.MaxSlots > 0,
         "Public slot search options must use positive values.")
     .ValidateOnStart();
+builder.Services.AddOptions<AppointmentRequestExpiryWorkerOptions>()
+    .Bind(builder.Configuration.GetSection(AppointmentRequestExpiryWorkerOptions.SectionName))
+    .Validate(
+        options => options.Interval > TimeSpan.Zero
+            && options.InitialDelay >= TimeSpan.Zero
+            && options.TenantBatchSize > 0,
+        "Appointment request expiry worker options must use positive values.")
+    .ValidateOnStart();
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
 builder.Services.AddScoped<BusinessAppointmentRequestComposer>();
+builder.Services.AddHostedService<AppointmentRequestExpiryHostedService>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();

@@ -12,6 +12,8 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `TenantMembershipRole` | İşletme kapsamlı yetki | `BusinessOwner`, `BranchManager`, `Staff` |
 | `TenantAuditLogEntry` | Tenant yönetimiyle ilgili denetlenebilir olay kaydı | Üyelik/ayar değişiklikleri gibi kritik işlemler için append-only tutulur |
 | `Business` | Müşteriye açık marka/işletme profili | Tek domain altında `/isletme/{businessSlug}` ile paylaşılır; public slug global benzersizdir |
+| `BusinessGalleryImage` | Public business profilinde yayınlanan galeri görseli | Upload/storage kuralları ayrı dosya yükleme fazında netleşir |
+| `PublicStaffDisplayPolicy` | Public profilde staff isimlerinin nasıl gösterileceğini belirleyen işletme ayarı | Slot kapasite hesabını değil yalnızca public gösterimi etkiler |
 | `Branch` | İşletmenin fiziksel hizmet noktası | Timezone, şehir/ilçe/adres ve çalışma saatleri şube bazlıdır |
 | `StaffMember` | Hizmeti gerçekleştirebilen işletme üyesi | Login hesabı olmak zorunda değildir |
 | `StaffSkill` | Staff ile skill arasındaki tenant-scoped ilişki | Bookability hesaplamasında kullanılır |
@@ -29,6 +31,7 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `AppointmentRequestLine` | Talep içindeki hizmet satırı | Süre ve fiyat snapshot içerir |
 | `Appointment` | İşletme tarafından onaylanmış kesin rezervasyon | Staff ve resource zamanını bloklar |
 | `AppointmentLine` | Kesin rezervasyon içindeki hizmet satırı | Talep satırından snapshot taşır |
+| `BookingIdempotencyRecord` | Booking komut tekrarlarını tenant+actor+operation kapsamında takip eden teknik kayıt | Raw idempotency key saklanmaz; hash ve response özeti tutulur |
 | `TransactionalMessage` | Rezervasyon gibi mevcut işlemle ilgili operasyonel bildirim | Pazarlama mesajından ayrıdır |
 | `CommercialMessage` | Kampanya, yeniden aktivasyon veya satış amaçlı ileti | İzin ve İYS değerlendirmesi gerektirir |
 | `AbuseEvent` | Abuse şüphesi veya doğrulanmış ihlal olayı | Otomatik veya manuel kaynaktan gelebilir |

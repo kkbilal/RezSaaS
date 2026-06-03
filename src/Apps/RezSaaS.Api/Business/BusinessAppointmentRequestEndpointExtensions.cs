@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using RezSaaS.Modules.Booking.Application;
 
 namespace RezSaaS.Api.Business;
@@ -33,10 +34,58 @@ public static class BusinessAppointmentRequestEndpointExtensions
                 return ToHttpResult(result);
             });
 
+        appointmentRequests.MapGet(
+            "/",
+            async (
+                Guid? branchId,
+                string? status,
+                DateTimeOffset? fromUtc,
+                DateTimeOffset? toUtc,
+                int? take,
+                ClaimsPrincipal user,
+                BusinessAppointmentRequestComposer composer,
+                CancellationToken cancellationToken) =>
+            {
+                BusinessAppointmentRequestListResult result =
+                    await composer.GetAsync(
+                        user,
+                        branchId,
+                        status,
+                        fromUtc,
+                        toUtc,
+                        take,
+                        cancellationToken);
+
+                return ToHttpResult(result);
+            });
+
+        appointmentRequests.MapGet(
+            "/{appointmentRequestId:guid}",
+            async (
+                Guid appointmentRequestId,
+                ClaimsPrincipal user,
+                BusinessAppointmentRequestComposer composer,
+                CancellationToken cancellationToken) =>
+            {
+                BusinessAppointmentRequestListResult result =
+                    await composer.GetByIdAsync(
+                        user,
+                        appointmentRequestId,
+                        cancellationToken);
+
+                if (result.Outcome == BusinessAppointmentRequestOutcome.Success)
+                {
+                    return Results.Ok(result.Requests.Single());
+                }
+
+                return ToErrorResult(result.Outcome, result.ErrorCode);
+            });
+
         appointmentRequests.MapPost(
             "/{appointmentRequestId:guid}/approve",
             async (
                 Guid appointmentRequestId,
+                [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
                 ClaimsPrincipal user,
                 BusinessAppointmentRequestComposer composer,
                 CancellationToken cancellationToken) =>
@@ -45,6 +94,7 @@ public static class BusinessAppointmentRequestEndpointExtensions
                     await composer.ApproveAsync(
                         user,
                         appointmentRequestId,
+                        idempotencyKey,
                         cancellationToken);
 
                 return ToHttpResult(result);
@@ -54,6 +104,7 @@ public static class BusinessAppointmentRequestEndpointExtensions
             "/{appointmentRequestId:guid}/decline",
             async (
                 Guid appointmentRequestId,
+                [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
                 ClaimsPrincipal user,
                 BusinessAppointmentRequestComposer composer,
                 CancellationToken cancellationToken) =>
@@ -62,6 +113,7 @@ public static class BusinessAppointmentRequestEndpointExtensions
                     await composer.DeclineAsync(
                         user,
                         appointmentRequestId,
+                        idempotencyKey,
                         cancellationToken);
 
                 return ToHttpResult(result);

@@ -58,6 +58,10 @@ public sealed class Branch
 
     public Guid TenantId { get; private set; }
 
+    public int? MaxPublicSlots { get; private set; }
+
+    public int? SlotIntervalMinutes { get; private set; }
+
     public string TimeZoneId { get; private set; } = string.Empty;
 
     public static Branch Create(
@@ -94,6 +98,26 @@ public sealed class Branch
         AddressLine = NormalizeOptionalText(addressLine);
         NormalizedCity = City.ToUpperInvariant();
         NormalizedDistrict = District.ToUpperInvariant();
+    }
+
+    public void SetPublicSlotSettings(int? slotIntervalMinutes, int? maxPublicSlots)
+    {
+        if (slotIntervalMinutes is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(slotIntervalMinutes),
+                "Slot interval must be positive when set.");
+        }
+
+        if (maxPublicSlots is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(maxPublicSlots),
+                "Max public slots must be positive when set.");
+        }
+
+        SlotIntervalMinutes = slotIntervalMinutes;
+        MaxPublicSlots = maxPublicSlots;
     }
 
     private static string NormalizeRequiredText(string value, string parameterName)

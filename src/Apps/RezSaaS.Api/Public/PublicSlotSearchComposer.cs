@@ -106,7 +106,14 @@ public sealed class PublicSlotSearchComposer
             Guid? requiredResourceTypeId = requiredResourceTypeIds.Length == 0
                 ? null
                 : requiredResourceTypeIds[0];
-            PublicStaffMemberView[] staffCandidates = GetStaffCandidates(branch, request.StaffMemberId);
+            Guid[] requiredSkillIds = variants
+                .SelectMany(entity => entity.RequiredSkillIds)
+                .Distinct()
+                .ToArray();
+            PublicStaffMemberView[] staffCandidates = GetStaffCandidates(
+                branch,
+                request.StaffMemberId,
+                requiredSkillIds);
 
             if (staffCandidates.Length == 0)
             {
@@ -176,7 +183,9 @@ public sealed class PublicSlotSearchComposer
                 resourceCandidates,
                 availabilitySnapshot.StaffUnavailableTimes,
                 resourceBlocks,
-                confirmedBusyTimes);
+                confirmedBusyTimes,
+                branch.SlotIntervalMinutes ?? options.Value.SlotIntervalMinutes,
+                branch.MaxPublicSlots ?? options.Value.MaxSlots);
 
             return CreateResponse(
                 business,
@@ -192,7 +201,7 @@ public sealed class PublicSlotSearchComposer
         }
     }
 
-    private List<PublicSlotResponse> GenerateSlots(
+    private static List<PublicSlotResponse> GenerateSlots(
         DateOnly date,
         BranchWorkingHoursView workingHours,
         int durationMinutes,
@@ -201,17 +210,18 @@ public sealed class PublicSlotSearchComposer
         IReadOnlyCollection<PublicResourceCandidateView> resourceCandidates,
         IReadOnlyCollection<StaffUnavailableTimeView> staffUnavailableTimes,
         IReadOnlyCollection<PublicResourceBlockView> resourceBlocks,
-        IReadOnlyCollection<ConfirmedAppointmentBusyTimeView> confirmedBusyTimes)
+        IReadOnlyCollection<ConfirmedAppointmentBusyTimeView> confirmedBusyTimes,
+        int slotIntervalMinutes,
+        int maxSlots)
     {
-        PublicSlotSearchOptions slotOptions = options.Value;
         List<PublicSlotResponse> slots = [];
         DateTime opensAtLocal = date.ToDateTime(workingHours.OpensAt, DateTimeKind.Unspecified);
         DateTime closesAtLocal = date.ToDateTime(workingHours.ClosesAt, DateTimeKind.Unspecified);
         DateTime latestStartLocal = closesAtLocal.AddMinutes(-durationMinutes);
 
         for (DateTime localStart = opensAtLocal;
-            localStart <= latestStartLocal && slots.Count < slotOptions.MaxSlots;
-            localStart = localStart.AddMinutes(slotOptions.SlotIntervalMinutes))
+            localStart <= latestStartLocal && slots.Count < maxSlots;
+            localStart = localStart.AddMinutes(slotIntervalMinutes))
         {
             DateTime localEnd = localStart.AddMinutes(durationMinutes);
             DateTimeOffset startUtc = PublicTimeZoneResolver.ConvertLocalToUtc(localStart, timeZoneInfo);
@@ -283,13 +293,20 @@ public sealed class PublicSlotSearchComposer
 
     private static PublicStaffMemberView[] GetStaffCandidates(
         PublicBusinessBranchContext branch,
-        Guid? staffMemberId)
+        Guid? staffMemberId,
+        Guid[] requiredSkillIds)
     {
         IEnumerable<PublicStaffMemberView> staffMembers = branch.StaffMembers;
 
         if (staffMemberId is not null)
         {
             staffMembers = staffMembers.Where(entity => entity.Id == staffMemberId);
+        }
+
+        if (requiredSkillIds.Length > 0)
+        {
+            staffMembers = staffMembers.Where(entity =>
+                requiredSkillIds.All(requiredSkillId => entity.SkillIds.Contains(requiredSkillId)));
         }
 
         return staffMembers.ToArray();

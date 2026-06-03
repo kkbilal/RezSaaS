@@ -26,6 +26,8 @@ public sealed class BookingDbContext : DbContext
 
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
+    public DbSet<BookingIdempotencyRecord> IdempotencyRecords => Set<BookingIdempotencyRecord>();
+
     private Guid? CurrentTenantId => tenantContextAccessor?.TenantId;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -87,6 +89,25 @@ public sealed class BookingDbContext : DbContext
             line.Property(entity => entity.CurrencyCode).HasMaxLength(3).IsRequired();
             line.Property(entity => entity.PriceAmount).HasPrecision(12, 2);
             line.HasQueryFilter(entity => entity.TenantId == CurrentTenantId);
+        });
+
+        modelBuilder.Entity<BookingIdempotencyRecord>(record =>
+        {
+            record.ToTable("BookingIdempotencyRecords");
+            record.HasKey(entity => entity.Id);
+            record.Property(entity => entity.Operation).HasMaxLength(96).IsRequired();
+            record.Property(entity => entity.KeyHash).HasMaxLength(64).IsRequired();
+            record.Property(entity => entity.RequestHash).HasMaxLength(64).IsRequired();
+            record.Property(entity => entity.ResponseStatus).HasMaxLength(32).IsRequired();
+            record.HasIndex(entity => new
+                {
+                    entity.TenantId,
+                    entity.ActorUserAccountId,
+                    entity.Operation,
+                    entity.KeyHash,
+                })
+                .IsUnique();
+            record.HasQueryFilter(entity => entity.TenantId == CurrentTenantId);
         });
     }
 }

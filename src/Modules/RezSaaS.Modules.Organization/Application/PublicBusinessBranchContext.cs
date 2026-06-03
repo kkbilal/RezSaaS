@@ -8,4 +8,6 @@ public sealed record PublicBusinessBranchContext(
     string City,
     string District,
     string AddressLine,
+    int? SlotIntervalMinutes,
+    int? MaxPublicSlots,
     IReadOnlyCollection<PublicStaffMemberView> StaffMembers);

@@ -20,6 +20,8 @@ public sealed class OrganizationDbContext : DbContext
 
     public DbSet<Branch> Branches => Set<Branch>();
 
+    public DbSet<BusinessGalleryImage> BusinessGalleryImages => Set<BusinessGalleryImage>();
+
     public DbSet<Business> Businesses => Set<Business>();
 
     public DbSet<Skill> Skills => Set<Skill>();
@@ -43,9 +45,32 @@ public sealed class OrganizationDbContext : DbContext
             business.Property(entity => entity.DisplayName).HasMaxLength(200).IsRequired();
             business.Property(entity => entity.Description).HasMaxLength(600).IsRequired();
             business.Property(entity => entity.CategoryKey).HasMaxLength(80).IsRequired();
+            business.Property(entity => entity.PublicRules).HasMaxLength(1000).IsRequired();
+            business.Property(entity => entity.PublicStaffDisplayPolicy)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .IsRequired()
+                .HasDefaultValue(PublicStaffDisplayPolicy.ShowNames);
+            business.Property(entity => entity.RatingAverage).HasPrecision(3, 2);
+            business.Property(entity => entity.SeoDescription).HasMaxLength(180).IsRequired();
+            business.Property(entity => entity.SeoTitle).HasMaxLength(120).IsRequired();
             business.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
             business.HasIndex(entity => entity.NormalizedSlug).IsUnique();
             business.HasQueryFilter(entity => entity.TenantId == CurrentTenantId);
+        });
+
+        modelBuilder.Entity<BusinessGalleryImage>(galleryImage =>
+        {
+            galleryImage.ToTable("BusinessGalleryImages");
+            galleryImage.HasKey(entity => entity.Id);
+            galleryImage.Property(entity => entity.ImageUrl).HasMaxLength(500).IsRequired();
+            galleryImage.Property(entity => entity.AltText).HasMaxLength(160).IsRequired();
+            galleryImage.HasIndex(entity => new { entity.TenantId, entity.BusinessId, entity.SortOrder });
+            galleryImage.HasOne(entity => entity.Business)
+                .WithMany()
+                .HasForeignKey(entity => entity.BusinessId)
+                .OnDelete(DeleteBehavior.Cascade);
+            galleryImage.HasQueryFilter(entity => entity.TenantId == CurrentTenantId);
         });
 
         modelBuilder.Entity<Branch>(branch =>
@@ -61,6 +86,8 @@ public sealed class OrganizationDbContext : DbContext
             branch.Property(entity => entity.District).HasMaxLength(120).IsRequired();
             branch.Property(entity => entity.NormalizedDistrict).HasMaxLength(120).IsRequired();
             branch.Property(entity => entity.AddressLine).HasMaxLength(300).IsRequired();
+            branch.Property(entity => entity.MaxPublicSlots);
+            branch.Property(entity => entity.SlotIntervalMinutes);
             branch.HasIndex(entity => new { entity.TenantId, entity.BusinessId, entity.NormalizedSlug }).IsUnique();
             branch.HasIndex(entity => new { entity.TenantId, entity.NormalizedCity, entity.NormalizedDistrict });
             branch.HasOne(entity => entity.Business)

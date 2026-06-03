@@ -25,6 +25,7 @@ public sealed class Business
         CategoryKey = NormalizeRequiredText(categoryKey, nameof(categoryKey));
         CreatedAtUtc = createdAtUtc;
         Description = NormalizeOptionalText(description);
+        SeoTitle = DisplayName;
     }
 
     public string CategoryKey { get; private set; } = string.Empty;
@@ -44,6 +45,19 @@ public sealed class Business
     public BusinessStatus Status { get; private set; } = BusinessStatus.Active;
 
     public Guid TenantId { get; private set; }
+
+    public string PublicRules { get; private set; } = string.Empty;
+
+    public PublicStaffDisplayPolicy PublicStaffDisplayPolicy { get; private set; } =
+        PublicStaffDisplayPolicy.ShowNames;
+
+    public decimal RatingAverage { get; private set; }
+
+    public int ReviewCount { get; private set; }
+
+    public string SeoDescription { get; private set; } = string.Empty;
+
+    public string SeoTitle { get; private set; } = string.Empty;
 
     public static Business Create(
         Guid tenantId,
@@ -71,6 +85,34 @@ public sealed class Business
     public void UpdateDescription(string description)
     {
         Description = NormalizeOptionalText(description);
+    }
+
+    public void UpdatePublicProfile(
+        string publicRules,
+        string seoTitle,
+        string seoDescription,
+        PublicStaffDisplayPolicy staffDisplayPolicy)
+    {
+        PublicRules = NormalizeOptionalText(publicRules);
+        SeoTitle = NormalizeOptionalText(seoTitle);
+        SeoDescription = NormalizeOptionalText(seoDescription);
+        PublicStaffDisplayPolicy = staffDisplayPolicy;
+    }
+
+    public void UpdateRatingSummary(decimal ratingAverage, int reviewCount)
+    {
+        if (ratingAverage is < 0 or > 5)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ratingAverage), "Rating must be between 0 and 5.");
+        }
+
+        if (reviewCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(reviewCount), "Review count cannot be negative.");
+        }
+
+        RatingAverage = ratingAverage;
+        ReviewCount = reviewCount;
     }
 
     public void Suspend()

@@ -8,4 +8,5 @@ public sealed record PublicServiceVariantSchedulingView(
     int DurationMinutes,
     decimal PriceAmount,
     string CurrencyCode,
-    Guid? RequiredResourceTypeId);
+    Guid? RequiredResourceTypeId,
+    IReadOnlyCollection<Guid> RequiredSkillIds);

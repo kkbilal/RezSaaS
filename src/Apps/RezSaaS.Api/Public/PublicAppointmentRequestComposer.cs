@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using RezSaaS.Api.Idempotency;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Availability.Application;
 using RezSaaS.Modules.Booking.Application;
@@ -24,8 +25,10 @@ public sealed class PublicAppointmentRequestComposer
 
     private readonly AvailabilityQueryService availabilityQueryService;
     private readonly PublicBusinessDirectoryService businessDirectoryService;
+    private readonly CancelAppointmentRequestService cancelAppointmentRequestService;
     private readonly ConfirmedAppointmentQueryService confirmedAppointmentQueryService;
     private readonly CreateAppointmentRequestService createAppointmentRequestService;
+    private readonly CustomerAppointmentRequestQueryService customerAppointmentRequestQueryService;
     private readonly PublicCatalogSchedulingService catalogSchedulingService;
     private readonly PublicResourceAvailabilityQueryService resourceAvailabilityQueryService;
     private readonly ITenantContextAccessor tenantContextAccessor;
@@ -37,6 +40,8 @@ public sealed class PublicAppointmentRequestComposer
         PublicResourceAvailabilityQueryService resourceAvailabilityQueryService,
         ConfirmedAppointmentQueryService confirmedAppointmentQueryService,
         CreateAppointmentRequestService createAppointmentRequestService,
+        CustomerAppointmentRequestQueryService customerAppointmentRequestQueryService,
+        CancelAppointmentRequestService cancelAppointmentRequestService,
         ITenantContextAccessor tenantContextAccessor)
     {
         this.businessDirectoryService = businessDirectoryService;
@@ -45,12 +50,15 @@ public sealed class PublicAppointmentRequestComposer
         this.resourceAvailabilityQueryService = resourceAvailabilityQueryService;
         this.confirmedAppointmentQueryService = confirmedAppointmentQueryService;
         this.createAppointmentRequestService = createAppointmentRequestService;
+        this.customerAppointmentRequestQueryService = customerAppointmentRequestQueryService;
+        this.cancelAppointmentRequestService = cancelAppointmentRequestService;
         this.tenantContextAccessor = tenantContextAccessor;
     }
 
     public async Task<PublicAppointmentRequestCreateResult> CreateAsync(
         string businessSlug,
         PublicAppointmentRequestCreateRequest request,
+        string? idempotencyKey,
         ClaimsPrincipal user,
         CancellationToken cancellationToken = default)
     {
@@ -84,7 +92,10 @@ public sealed class PublicAppointmentRequestComposer
             .SingleOrDefault(entity =>
                 string.Equals(entity.Slug, request.BranchSlug, StringComparison.OrdinalIgnoreCase));
 
-        if (branch is null || branch.StaffMembers.All(entity => entity.Id != request.StaffMemberId))
+        PublicStaffMemberView? selectedStaff = branch?.StaffMembers
+            .SingleOrDefault(entity => entity.Id == request.StaffMemberId);
+
+        if (branch is null || selectedStaff is null)
         {
             return PublicAppointmentRequestCreateResult.Failure(
                 PublicAppointmentRequestCreateOutcome.NotFound,
@@ -96,6 +107,17 @@ public sealed class PublicAppointmentRequestComposer
 
         try
         {
+            if (!BookingIdempotencyContextFactory.TryCreate(
+                idempotencyKey,
+                CreateIdempotencyMaterial(businessSlug, request),
+                out BookingIdempotencyContext? idempotency,
+                out string? idempotencyErrorCode))
+            {
+                return PublicAppointmentRequestCreateResult.Failure(
+                    PublicAppointmentRequestCreateOutcome.BadRequest,
+                    idempotencyErrorCode!);
+            }
+
             Guid[] serviceVariantIds = request.ServiceVariantIds
                 .Distinct()
                 .ToArray();
@@ -109,6 +131,18 @@ public sealed class PublicAppointmentRequestComposer
                 return PublicAppointmentRequestCreateResult.Failure(
                     PublicAppointmentRequestCreateOutcome.NotFound,
                     NotFound);
+            }
+
+            Guid[] requiredSkillIds = variants
+                .SelectMany(entity => entity.RequiredSkillIds)
+                .Distinct()
+                .ToArray();
+
+            if (requiredSkillIds.Any(requiredSkillId => !selectedStaff.SkillIds.Contains(requiredSkillId)))
+            {
+                return PublicAppointmentRequestCreateResult.Failure(
+                    PublicAppointmentRequestCreateOutcome.Conflict,
+                    SlotUnavailable);
             }
 
             Guid[] requiredResourceTypeIds = variants
@@ -181,7 +215,8 @@ public sealed class PublicAppointmentRequestComposer
                         selectedResource.Id,
                         request.StartUtc,
                         endUtc,
-                        lines),
+                        lines,
+                        Idempotency: idempotency),
                     cancellationToken);
 
             if (!result.Succeeded)
@@ -189,9 +224,201 @@ public sealed class PublicAppointmentRequestComposer
                 return MapCreateFailure(result.ErrorCode ?? InvalidRequest);
             }
 
-            return PublicAppointmentRequestCreateResult.Created(
-                result.AppointmentRequestId!.Value,
-                result.ExpiresAtUtc!.Value);
+            return result.IsReplay
+                ? PublicAppointmentRequestCreateResult.Replayed(
+                    result.AppointmentRequestId!.Value,
+                    result.ExpiresAtUtc!.Value,
+                    result.Status ?? "PendingApproval")
+                : PublicAppointmentRequestCreateResult.Created(
+                    result.AppointmentRequestId!.Value,
+                    result.ExpiresAtUtc!.Value,
+                    result.Status ?? "PendingApproval");
+        }
+        finally
+        {
+            tenantContextAccessor.TenantId = previousTenantId;
+        }
+    }
+
+    public async Task<PublicAppointmentRequestAccessResult> GetOwnAsync(
+        string businessSlug,
+        string? status,
+        int? take,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserAccountId(user, out Guid customerUserAccountId))
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.Unauthorized,
+                Unauthorized);
+        }
+
+        PublicBusinessCompositionContext? business =
+            await businessDirectoryService.GetCompositionContextBySlugAsync(
+                businessSlug,
+                cancellationToken);
+
+        if (business is null)
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.NotFound,
+                NotFound);
+        }
+
+        Guid? previousTenantId = tenantContextAccessor.TenantId;
+        tenantContextAccessor.TenantId = business.TenantId;
+
+        try
+        {
+            IReadOnlyCollection<CustomerAppointmentRequestView> requests =
+                await customerAppointmentRequestQueryService.GetOwnAsync(
+                    customerUserAccountId,
+                    business.Branches.Select(entity => entity.Id).ToArray(),
+                    status,
+                    take ?? 50,
+                    cancellationToken);
+
+            return PublicAppointmentRequestAccessResult.Success(
+                requests
+                    .Select(request => ToResponse(business, request))
+                    .ToArray());
+        }
+        finally
+        {
+            tenantContextAccessor.TenantId = previousTenantId;
+        }
+    }
+
+    public async Task<PublicAppointmentRequestAccessResult> GetOwnByIdAsync(
+        string businessSlug,
+        Guid appointmentRequestId,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserAccountId(user, out Guid customerUserAccountId))
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.Unauthorized,
+                Unauthorized);
+        }
+
+        PublicBusinessCompositionContext? business =
+            await businessDirectoryService.GetCompositionContextBySlugAsync(
+                businessSlug,
+                cancellationToken);
+
+        if (business is null)
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.NotFound,
+                NotFound);
+        }
+
+        Guid? previousTenantId = tenantContextAccessor.TenantId;
+        tenantContextAccessor.TenantId = business.TenantId;
+
+        try
+        {
+            CustomerAppointmentRequestView? request =
+                await customerAppointmentRequestQueryService.GetOwnByIdAsync(
+                    customerUserAccountId,
+                    appointmentRequestId,
+                    business.Branches.Select(entity => entity.Id).ToArray(),
+                    cancellationToken);
+
+            return request is null
+                ? PublicAppointmentRequestAccessResult.Failure(
+                    PublicAppointmentRequestAccessOutcome.NotFound,
+                    NotFound)
+                : PublicAppointmentRequestAccessResult.Success(ToResponse(business, request));
+        }
+        finally
+        {
+            tenantContextAccessor.TenantId = previousTenantId;
+        }
+    }
+
+    public async Task<PublicAppointmentRequestAccessResult> CancelOwnAsync(
+        string businessSlug,
+        Guid appointmentRequestId,
+        string? idempotencyKey,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetUserAccountId(user, out Guid customerUserAccountId))
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.Unauthorized,
+                Unauthorized);
+        }
+
+        PublicBusinessCompositionContext? business =
+            await businessDirectoryService.GetCompositionContextBySlugAsync(
+                businessSlug,
+                cancellationToken);
+
+        if (business is null)
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.NotFound,
+                NotFound);
+        }
+
+        if (!BookingIdempotencyContextFactory.TryCreate(
+            idempotencyKey,
+            CreateCancelIdempotencyMaterial(businessSlug, appointmentRequestId),
+            out BookingIdempotencyContext? idempotency,
+            out string? idempotencyErrorCode))
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.BadRequest,
+                idempotencyErrorCode!);
+        }
+
+        Guid? previousTenantId = tenantContextAccessor.TenantId;
+        tenantContextAccessor.TenantId = business.TenantId;
+
+        try
+        {
+            CustomerAppointmentRequestView? existingRequest =
+                await customerAppointmentRequestQueryService.GetOwnByIdAsync(
+                    customerUserAccountId,
+                    appointmentRequestId,
+                    business.Branches.Select(entity => entity.Id).ToArray(),
+                    cancellationToken);
+
+            if (existingRequest is null)
+            {
+                return PublicAppointmentRequestAccessResult.Failure(
+                    PublicAppointmentRequestAccessOutcome.NotFound,
+                    NotFound);
+            }
+
+            AppointmentRequestDecisionResult result =
+                await cancelAppointmentRequestService.CancelAsync(
+                    appointmentRequestId,
+                    customerUserAccountId,
+                    idempotency,
+                    cancellationToken);
+
+            if (!result.Succeeded)
+            {
+                return MapAccessFailure(result.ErrorCode ?? InvalidRequest);
+            }
+
+            CustomerAppointmentRequestView? cancelledRequest =
+                await customerAppointmentRequestQueryService.GetOwnByIdAsync(
+                    customerUserAccountId,
+                    appointmentRequestId,
+                    business.Branches.Select(entity => entity.Id).ToArray(),
+                    cancellationToken);
+
+            return cancelledRequest is null
+                ? PublicAppointmentRequestAccessResult.Failure(
+                    PublicAppointmentRequestAccessOutcome.NotFound,
+                    NotFound)
+                : PublicAppointmentRequestAccessResult.Success(ToResponse(business, cancelledRequest));
         }
         finally
         {
@@ -311,6 +538,7 @@ public sealed class PublicAppointmentRequestComposer
         PublicAppointmentRequestCreateOutcome outcome = errorCode switch
         {
             "INVALID_TIME_RANGE" or "APPOINTMENT_REQUEST_LINES_REQUIRED" => PublicAppointmentRequestCreateOutcome.BadRequest,
+            "IDEMPOTENCY_KEY_REUSED" => PublicAppointmentRequestCreateOutcome.Conflict,
             "APPOINTMENT_REQUEST_TOO_SOON" => PublicAppointmentRequestCreateOutcome.Unprocessable,
             _ => PublicAppointmentRequestCreateOutcome.Unprocessable,
         };
@@ -335,5 +563,80 @@ public sealed class PublicAppointmentRequestComposer
             ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return Guid.TryParse(rawUserId, out userAccountId);
+    }
+
+    private static PublicAppointmentRequestAccessResult MapAccessFailure(string errorCode)
+    {
+        PublicAppointmentRequestAccessOutcome outcome = errorCode switch
+        {
+            "APPOINTMENT_REQUEST_NOT_FOUND" => PublicAppointmentRequestAccessOutcome.NotFound,
+            "APPOINTMENT_REQUEST_ALREADY_CLOSED" or "IDEMPOTENCY_KEY_REUSED" =>
+                PublicAppointmentRequestAccessOutcome.Conflict,
+            "MISSING_TENANT_CONTEXT" => PublicAppointmentRequestAccessOutcome.BadRequest,
+            _ => PublicAppointmentRequestAccessOutcome.Unprocessable,
+        };
+
+        return PublicAppointmentRequestAccessResult.Failure(outcome, errorCode);
+    }
+
+    private static PublicAppointmentRequestResponse ToResponse(
+        PublicBusinessCompositionContext business,
+        CustomerAppointmentRequestView request)
+    {
+        PublicBusinessBranchContext branch = business.Branches
+            .Single(entity => entity.Id == request.BranchId);
+
+        return new PublicAppointmentRequestResponse(
+            request.Id,
+            business.Slug,
+            branch.Slug,
+            branch.DisplayName,
+            request.StaffMemberId,
+            request.ResourceId,
+            request.RequestedStartUtc,
+            request.RequestedEndUtc,
+            request.ExpiresAtUtc,
+            request.Status,
+            request.Lines
+                .Select(line => new PublicAppointmentRequestLineResponse(
+                    line.ServiceVariantId,
+                    line.ServiceNameSnapshot,
+                    line.DurationMinutes,
+                    line.PriceAmount,
+                    line.CurrencyCode))
+                .ToArray());
+    }
+
+    private static string CreateIdempotencyMaterial(
+        string businessSlug,
+        PublicAppointmentRequestCreateRequest request)
+    {
+        string serviceVariantIds = string.Join(
+            ',',
+            request.ServiceVariantIds
+                .Distinct()
+                .OrderBy(entity => entity)
+                .Select(entity => entity.ToString("D")));
+
+        return string.Join(
+            ';',
+            "operation=public.appointment-request.create",
+            $"business={businessSlug.Trim().ToUpperInvariant()}",
+            $"branch={request.BranchSlug.Trim().ToUpperInvariant()}",
+            $"variants={serviceVariantIds}",
+            $"staff={request.StaffMemberId:D}",
+            $"resource={request.ResourceId:D}",
+            $"startUtc={request.StartUtc.UtcDateTime:O}");
+    }
+
+    private static string CreateCancelIdempotencyMaterial(
+        string businessSlug,
+        Guid appointmentRequestId)
+    {
+        return string.Join(
+            ';',
+            "operation=public.appointment-request.cancel",
+            $"business={businessSlug.Trim().ToUpperInvariant()}",
+            $"appointmentRequestId={appointmentRequestId:D}");
     }
 }

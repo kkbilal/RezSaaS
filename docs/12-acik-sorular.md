@@ -13,9 +13,9 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 
 - `responseBuffer` kaç saat olacak? Örnek: başlangıca 2 saatten az kalan slot için talep açılamaz.
 - Hizmetler arası hazırlık/temizlik buffer süresi MVP'de olacak mı?
-- Staff seçimi MVP'de müşteri için opsiyonel; seçilmezse uygun staff adayları döner. Staff skill/service required skill eşlemesi slot motoruna hangi sırayla eklenecek?
+- Staff seçimi MVP'de müşteri için opsiyonel; seçilmezse uygun staff adayları döner. Skill eşlemesi Phase 2'de slot motoru ve create doğrulamasına eklendi.
 - İşletme manuel rezervasyon eklediğinde müşteri hesabı şart olacak mı?
-- Public rezervasyon isteği create endpoint'i için idempotency key formatı, saklama süresi ve tekrar denemede dönecek response netleştirilecek.
+- Booking idempotency kayıtları için saklama/temizleme süresi ve operasyonel dashboard ihtiyacı netleştirilecek.
 
 ## Bildirim
 

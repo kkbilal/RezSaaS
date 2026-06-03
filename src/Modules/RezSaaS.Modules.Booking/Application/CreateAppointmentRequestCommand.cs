@@ -8,4 +8,5 @@ public sealed record CreateAppointmentRequestCommand(
     DateTimeOffset RequestedStartUtc,
     DateTimeOffset RequestedEndUtc,
     IReadOnlyCollection<AppointmentRequestLineInput> Lines,
-    TimeSpan? ResponseBuffer = null);
+    TimeSpan? ResponseBuffer = null,
+    BookingIdempotencyContext? Idempotency = null);

@@ -10,8 +10,10 @@ namespace RezSaaS.Modules.Booking.Application;
 public sealed class ApproveAppointmentRequestService
 {
     private const string AlreadyClosed = "APPOINTMENT_REQUEST_ALREADY_CLOSED";
+    private const string ApproveOperation = "business.appointment-request.approve";
     private const string Conflict = "APPOINTMENT_CONFLICT";
     private const string Expired = "APPOINTMENT_REQUEST_EXPIRED";
+    private const string IdempotencyKeyReused = "IDEMPOTENCY_KEY_REUSED";
     private const string MissingTenantContext = "MISSING_TENANT_CONTEXT";
     private const string NotFound = "APPOINTMENT_REQUEST_NOT_FOUND";
 
@@ -40,9 +42,34 @@ public sealed class ApproveAppointmentRequestService
         Guid approverUserAccountId,
         CancellationToken cancellationToken = default)
     {
+        return await ApproveAsync(
+            appointmentRequestId,
+            approverUserAccountId,
+            idempotency: null,
+            cancellationToken);
+    }
+
+    public async Task<AppointmentRequestDecisionResult> ApproveAsync(
+        Guid appointmentRequestId,
+        Guid approverUserAccountId,
+        BookingIdempotencyContext? idempotency,
+        CancellationToken cancellationToken = default)
+    {
         if (tenantContextAccessor.TenantId is not { } tenantId)
         {
             return AppointmentRequestDecisionResult.Failure(MissingTenantContext);
+        }
+
+        AppointmentRequestDecisionResult? idempotentResult =
+            await TryReplayDecisionAsync(
+                tenantId,
+                approverUserAccountId,
+                idempotency,
+                cancellationToken);
+
+        if (idempotentResult is not null)
+        {
+            return idempotentResult;
         }
 
         DateTimeOffset now = timeProvider.GetUtcNow();
@@ -67,6 +94,18 @@ public sealed class ApproveAppointmentRequestService
                 .Where(entity => entity.AppointmentRequestId == request.Id)
                 .Select(entity => (Guid?)entity.Id)
                 .SingleOrDefaultAsync(cancellationToken);
+
+            AddIdempotencyRecord(
+                tenantId,
+                approverUserAccountId,
+                idempotency,
+                existingAppointmentId,
+                request.Id,
+                "Approved",
+                affectedRequests: 0,
+                now);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
 
             return AppointmentRequestDecisionResult.Success(existingAppointmentId);
         }
@@ -130,6 +169,16 @@ public sealed class ApproveAppointmentRequestService
             supersededRequest.Supersede();
         }
 
+        AddIdempotencyRecord(
+            tenantId,
+            approverUserAccountId,
+            idempotency,
+            appointment.Id,
+            request.Id,
+            "Approved",
+            supersededRequests.Count,
+            now);
+
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -137,6 +186,20 @@ public sealed class ApproveAppointmentRequestService
         }
         catch (DbUpdateException)
         {
+            await transaction.RollbackAsync(cancellationToken);
+
+            AppointmentRequestDecisionResult? replayedResult =
+                await TryReplayDecisionAsync(
+                    tenantId,
+                    approverUserAccountId,
+                    idempotency,
+                    cancellationToken);
+
+            if (replayedResult is not null)
+            {
+                return replayedResult;
+            }
+
             return AppointmentRequestDecisionResult.Failure(Conflict);
         }
 
@@ -161,6 +224,71 @@ public sealed class ApproveAppointmentRequestService
         return AppointmentRequestDecisionResult.Success(
             appointment.Id,
             supersededRequests.Count);
+    }
+
+    private async Task<AppointmentRequestDecisionResult?> TryReplayDecisionAsync(
+        Guid tenantId,
+        Guid actorUserAccountId,
+        BookingIdempotencyContext? idempotency,
+        CancellationToken cancellationToken)
+    {
+        if (idempotency is null)
+        {
+            return null;
+        }
+
+        BookingIdempotencyRecord? existingRecord = await dbContext.IdempotencyRecords
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                entity => entity.TenantId == tenantId
+                    && entity.ActorUserAccountId == actorUserAccountId
+                    && entity.Operation == ApproveOperation
+                    && entity.KeyHash == idempotency.KeyHash,
+                cancellationToken);
+
+        if (existingRecord is null)
+        {
+            return null;
+        }
+
+        if (existingRecord.RequestHash != idempotency.RequestHash)
+        {
+            return AppointmentRequestDecisionResult.Failure(IdempotencyKeyReused);
+        }
+
+        return AppointmentRequestDecisionResult.Success(
+            existingRecord.ResponseResourceId,
+            existingRecord.AffectedRequests);
+    }
+
+    private void AddIdempotencyRecord(
+        Guid tenantId,
+        Guid actorUserAccountId,
+        BookingIdempotencyContext? idempotency,
+        Guid? appointmentId,
+        Guid appointmentRequestId,
+        string status,
+        int affectedRequests,
+        DateTimeOffset now)
+    {
+        if (idempotency is null)
+        {
+            return;
+        }
+
+        dbContext.IdempotencyRecords.Add(
+            BookingIdempotencyRecord.Create(
+                tenantId,
+                actorUserAccountId,
+                ApproveOperation,
+                idempotency.KeyHash,
+                idempotency.RequestHash,
+                appointmentId,
+                appointmentRequestId,
+                status,
+                affectedRequests,
+                responseExpiresAtUtc: null,
+                createdAtUtc: now));
     }
 
     private Task RecordAuditAsync(

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.Identity.Application;
 using RezSaaS.Modules.Identity.Configuration;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Email;
@@ -92,6 +93,7 @@ public sealed class IdentityModule : ModuleBase
             .AddEntityFrameworkStores<IdentityDbContext>();
 
         services.AddScoped<SignInManager<UserAccount>, UserAccountSignInManager>();
+        services.AddScoped<CustomerAccountLookupService>();
         services.AddScoped<IPlatformAdminBootstrapService, PlatformAdminBootstrapService>();
         services.AddSingleton<IEmailSender<UserAccount>>(
             identityOptions.DeliveryMode switch

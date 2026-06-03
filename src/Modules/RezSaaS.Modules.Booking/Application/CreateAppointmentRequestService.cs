@@ -10,11 +10,13 @@ namespace RezSaaS.Modules.Booking.Application;
 public sealed class CreateAppointmentRequestService
 {
     private const string DailyLimitExceeded = "BOOKING_DAILY_LIMIT_EXCEEDED";
+    private const string IdempotencyKeyReused = "IDEMPOTENCY_KEY_REUSED";
     private const string InvalidTimeRange = "INVALID_TIME_RANGE";
     private const string LinesRequired = "APPOINTMENT_REQUEST_LINES_REQUIRED";
     private const string MissingTenantContext = "MISSING_TENANT_CONTEXT";
     private const string PendingLimitExceeded = "BOOKING_PENDING_LIMIT_EXCEEDED";
     private const string RequestTooSoon = "APPOINTMENT_REQUEST_TOO_SOON";
+    private const string CreateOperation = "public.appointment-request.create";
 
     private readonly IAbuseEventRecorder abuseEventRecorder;
     private readonly BookingDbContext dbContext;
@@ -48,6 +50,17 @@ public sealed class CreateAppointmentRequestService
         BookingSecurityOptions securityOptions = options.Value;
         DateTimeOffset now = timeProvider.GetUtcNow();
         TimeSpan responseBuffer = command.ResponseBuffer ?? securityOptions.DefaultResponseBuffer;
+        CreateAppointmentRequestResult? idempotentResult =
+            await TryReplayCreateAsync(
+                tenantId,
+                command.CustomerUserAccountId,
+                command.Idempotency,
+                cancellationToken);
+
+        if (idempotentResult is not null)
+        {
+            return idempotentResult;
+        }
 
         if (command.RequestedEndUtc <= command.RequestedStartUtc)
         {
@@ -123,11 +136,98 @@ public sealed class CreateAppointmentRequestService
         }
 
         dbContext.AppointmentRequests.Add(request);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        if (command.Idempotency is not null)
+        {
+            dbContext.IdempotencyRecords.Add(
+                BookingIdempotencyRecord.Create(
+                    tenantId,
+                    command.CustomerUserAccountId,
+                    CreateOperation,
+                    command.Idempotency.KeyHash,
+                    command.Idempotency.RequestHash,
+                    request.Id,
+                    relatedResourceId: null,
+                    responseStatus: request.Status.ToString(),
+                    affectedRequests: 0,
+                    responseExpiresAtUtc: request.ExpiresAtUtc,
+                    createdAtUtc: now));
+        }
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException) when (command.Idempotency is not null)
+        {
+            DetachAddedEntities();
+
+            CreateAppointmentRequestResult? replayedResult =
+                await TryReplayCreateAsync(
+                    tenantId,
+                    command.CustomerUserAccountId,
+                    command.Idempotency,
+                    cancellationToken);
+
+            if (replayedResult is not null)
+            {
+                return replayedResult;
+            }
+
+            throw;
+        }
 
         return CreateAppointmentRequestResult.Success(
             request.Id,
             request.ExpiresAtUtc);
+    }
+
+    private async Task<CreateAppointmentRequestResult?> TryReplayCreateAsync(
+        Guid tenantId,
+        Guid customerUserAccountId,
+        BookingIdempotencyContext? idempotency,
+        CancellationToken cancellationToken)
+    {
+        if (idempotency is null)
+        {
+            return null;
+        }
+
+        BookingIdempotencyRecord? existingRecord = await dbContext.IdempotencyRecords
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                entity => entity.TenantId == tenantId
+                    && entity.ActorUserAccountId == customerUserAccountId
+                    && entity.Operation == CreateOperation
+                    && entity.KeyHash == idempotency.KeyHash,
+                cancellationToken);
+
+        if (existingRecord is null)
+        {
+            return null;
+        }
+
+        if (existingRecord.RequestHash != idempotency.RequestHash
+            || existingRecord.ResponseResourceId is null
+            || existingRecord.ResponseExpiresAtUtc is null)
+        {
+            return CreateAppointmentRequestResult.Failure(IdempotencyKeyReused);
+        }
+
+        return CreateAppointmentRequestResult.Success(
+            existingRecord.ResponseResourceId.Value,
+            existingRecord.ResponseExpiresAtUtc.Value,
+            existingRecord.ResponseStatus,
+            isReplay: true);
+    }
+
+    private void DetachAddedEntities()
+    {
+        foreach (Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry in dbContext.ChangeTracker
+            .Entries()
+            .Where(entity => entity.State == EntityState.Added))
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private Task RecordLimitAbuseAsync(

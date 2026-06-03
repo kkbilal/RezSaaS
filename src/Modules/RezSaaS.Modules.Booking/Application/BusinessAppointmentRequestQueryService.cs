@@ -23,6 +23,20 @@ public sealed class BusinessAppointmentRequestQueryService
         int take = 50,
         CancellationToken cancellationToken = default)
     {
+        return await GetAsync(
+            new BusinessAppointmentRequestQuery(
+                branchId,
+                AppointmentRequestStatus.PendingApproval.ToString(),
+                FromUtc: null,
+                ToUtc: null,
+                take),
+            cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<BusinessAppointmentRequestListItemView>> GetAsync(
+        BusinessAppointmentRequestQuery requestQuery,
+        CancellationToken cancellationToken = default)
+    {
         if (tenantContextAccessor.TenantId is null)
         {
             return [];
@@ -31,38 +45,59 @@ public sealed class BusinessAppointmentRequestQueryService
         IQueryable<AppointmentRequest> query = dbContext.AppointmentRequests
             .AsNoTracking()
             .Include(entity => entity.Lines)
-            .Where(entity => entity.Status == AppointmentRequestStatus.PendingApproval);
+            .AsQueryable();
 
-        if (branchId is not null)
+        if (requestQuery.BranchId is not null)
         {
-            query = query.Where(entity => entity.BranchId == branchId);
+            query = query.Where(entity => entity.BranchId == requestQuery.BranchId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestQuery.Status)
+            && Enum.TryParse(
+                requestQuery.Status,
+                ignoreCase: true,
+                out AppointmentRequestStatus parsedStatus))
+        {
+            query = query.Where(entity => entity.Status == parsedStatus);
+        }
+
+        if (requestQuery.FromUtc is not null)
+        {
+            query = query.Where(entity => entity.RequestedStartUtc >= requestQuery.FromUtc);
+        }
+
+        if (requestQuery.ToUtc is not null)
+        {
+            query = query.Where(entity => entity.RequestedStartUtc < requestQuery.ToUtc);
         }
 
         List<AppointmentRequest> requests = await query
             .OrderBy(entity => entity.RequestedStartUtc)
-            .Take(Math.Clamp(take, 1, 100))
+            .Take(Math.Clamp(requestQuery.Take, 1, 100))
             .ToListAsync(cancellationToken);
 
         return requests
-            .Select(entity => new BusinessAppointmentRequestListItemView(
-                entity.Id,
-                entity.CustomerUserAccountId,
-                entity.BranchId,
-                entity.StaffMemberId,
-                entity.ResourceId,
-                entity.RequestedStartUtc,
-                entity.RequestedEndUtc,
-                entity.ExpiresAtUtc,
-                entity.Status.ToString(),
-                entity.Lines
-                    .Select(line => new BusinessAppointmentRequestLineView(
-                        line.ServiceVariantId,
-                        line.ServiceNameSnapshot,
-                        line.DurationMinutes,
-                        line.PriceAmount,
-                        line.CurrencyCode))
-                    .ToArray()))
+            .Select(ToListItemView)
             .ToArray();
+    }
+
+    public async Task<BusinessAppointmentRequestListItemView?> GetByIdAsync(
+        Guid appointmentRequestId,
+        CancellationToken cancellationToken = default)
+    {
+        if (tenantContextAccessor.TenantId is null || appointmentRequestId == Guid.Empty)
+        {
+            return null;
+        }
+
+        AppointmentRequest? request = await dbContext.AppointmentRequests
+            .AsNoTracking()
+            .Include(entity => entity.Lines)
+            .SingleOrDefaultAsync(
+                entity => entity.Id == appointmentRequestId,
+                cancellationToken);
+
+        return request is null ? null : ToListItemView(request);
     }
 
     public async Task<BusinessAppointmentRequestAuthorizationContext?> GetAuthorizationContextAsync(
@@ -82,5 +117,27 @@ public sealed class BusinessAppointmentRequestQueryService
                 entity.BranchId,
                 entity.Status.ToString()))
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private static BusinessAppointmentRequestListItemView ToListItemView(AppointmentRequest request)
+    {
+        return new BusinessAppointmentRequestListItemView(
+            request.Id,
+            request.CustomerUserAccountId,
+            request.BranchId,
+            request.StaffMemberId,
+            request.ResourceId,
+            request.RequestedStartUtc,
+            request.RequestedEndUtc,
+            request.ExpiresAtUtc,
+            request.Status.ToString(),
+            request.Lines
+                .Select(line => new BusinessAppointmentRequestLineView(
+                    line.ServiceVariantId,
+                    line.ServiceNameSnapshot,
+                    line.DurationMinutes,
+                    line.PriceAmount,
+                    line.CurrencyCode))
+                .ToArray());
     }
 }

@@ -18,23 +18,23 @@ Durum: tamamlandı.
 - Tamamlandı: anonymous public business search/profile read service
 - Tamamlandı: `/api/public/businesses` ve `/api/public/businesses/{slug}` endpoint yüzeyi
 - Tamamlandı: public discovery IP bazlı rate limit policy
-- Açık: business profil galeri, kurallar, puan ve SEO metadata alanları
+- Tamamlandı: business profil galeri, kurallar, puan ve SEO metadata alanları
 
 ## Dilim 2.1 - Public Profil Detayı
 
-Durum: başladı; temel public profil kompozisyonu tamamlandı.
+Durum: tamamlandı.
 
 - Tamamlandı: Catalog read service ile aktif hizmet menüsü ve varyant fiyat/süreleri
 - Tamamlandı: Organization read-only context ile aktif staff listesi
 - Tamamlandı: Availability read service ile branch çalışma saatleri
 - Tamamlandı: `/api/public/businesses/{slug}/profile` endpoint'i
 - Tamamlandı: API composition root içinde public profile response contract
-- Açık: staff gösterim politikasının işletme ayarına bağlanması
-- Açık: business profil galeri, işletme kuralları, puan/yorum özeti ve SEO metadata
+- Tamamlandı: staff gösterim politikası işletme ayarına bağlandı
+- Tamamlandı: business profil galeri, işletme kuralları, puan/yorum özeti ve SEO metadata
 
 ## Dilim 2.2 - Slot Bulma
 
-Durum: başladı; public slot read endpoint temeli tamamlandı.
+Durum: tamamlandı.
 
 - Tamamlandı: seçilen service variant toplam süre hesabı
 - Tamamlandı: staff tercihi optional; seçilmezse uygun staff adayları listelenir
@@ -42,12 +42,12 @@ Durum: başladı; public slot read endpoint temeli tamamlandı.
 - Tamamlandı: confirmed appointment, staff unavailable ve resource block kontrolleri
 - Tamamlandı: slot response UTC zaman + branch timezone + local gösterim bilgisi döndürür
 - Tamamlandı: `PendingApproval` talepler slot bulmada bloklayıcı sayılmaz
-- Açık: staff skill/service required skill eşlemesinin slot motoruna eklenmesi
-- Açık: slot interval ve max slot ayarlarının ürün panelinden yönetimi
+- Tamamlandı: staff skill/service required skill eşlemesi slot motoruna ve create doğrulamasına eklendi
+- Tamamlandı: slot interval ve max slot ayarları branch public slot ayarı olarak modele alındı
 
 ## Dilim 2.3 - Rezervasyon İsteği Endpoint'i
 
-Durum: başladı; public auth'lı request create endpoint temeli tamamlandı.
+Durum: tamamlandı.
 
 - Tamamlandı: auth zorunlu müşteri request create endpoint'i
 - Tamamlandı: `booking-appointment-requests` rate limit policy public slug + user + IP partition ile uygulanır
@@ -55,20 +55,21 @@ Durum: başladı; public auth'lı request create endpoint temeli tamamlandı.
 - Tamamlandı: staff, resource, service variant ve slot uygunluğu create öncesi doğrulanır
 - Tamamlandı: kullanıcı pending/günlük limitleri ve abuse event üretimi application service içinde devrede kalır
 - Tamamlandı: request sonucu `PendingApproval`; confirmed appointment yalnızca işletme onayıyla oluşur
-- Açık: idempotency key davranışı ve müşteri kendi talebini görüntüleme/iptal endpoint'i
+- Tamamlandı: idempotency key davranışı hash saklama ile eklendi
+- Tamamlandı: müşteri kendi taleplerini listeleme, detay görme ve pending talebi iptal endpoint'i
 
 ## Dilim 2.4 - İşletme Onay Paneli API'si
 
-Durum: başladı; business approval API temeli tamamlandı.
+Durum: tamamlandı.
 
 - Tamamlandı: BranchManager/BusinessOwner authz ve tenant membership scope kontrolü
 - Tamamlandı: pending request listesi
 - Tamamlandı: approve/decline endpoint'leri
 - Tamamlandı: approval audit, transactional email outbox ve `Superseded` kapanışları application service üzerinden korunur
 - Tamamlandı: business decision endpoint'leri için tenant + user + IP rate limit policy
-- Açık: TTL expiry scheduler için explicit tenant scope
-- Açık: işletme panelinde request detay, müşteri bilgisi maskeleme ve operasyonel filtreler
-- Açık: idempotency key davranışı approve/decline için API kontratına taşınacak
+- Tamamlandı: TTL expiry scheduler explicit active tenant enumerasyonu ve tenant context ile çalışır
+- Tamamlandı: işletme panelinde request detay, müşteri bilgisi maskeleme ve operasyonel filtreler
+- Tamamlandı: idempotency key davranışı approve/decline için API kontratına taşındı
 
 ## Kapanış Kriterleri
 
