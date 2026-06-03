@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace RezSaaS.IdentityIntegrationTests;
@@ -77,5 +79,78 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
 
         JsonElement resource = slot.GetProperty("resourceCandidates").EnumerateArray().Single();
         Assert.Equal("Chair 1", resource.GetProperty("displayName").GetString());
+    }
+
+    [Fact]
+    public async Task AuthenticatedCustomerCanCreatePendingAppointmentRequestFromPublicBusiness()
+    {
+        string email = $"public-booking-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14)));
+        string accessToken = await RegisterAndLoginWithBearerTokenAsync(email, password);
+
+        using HttpRequestMessage request = new(
+            HttpMethod.Post,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = JsonContent.Create(
+            new
+            {
+                branchSlug = seed.BranchSlug,
+                serviceVariantIds = new[] { seed.ServiceVariantId },
+                staffMemberId = seed.StaffMemberId,
+                resourceId = seed.ResourceId,
+                startUtc = seed.AvailableSlotStartUtc,
+            });
+
+        HttpResponseMessage response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        JsonElement root = body.RootElement;
+        Assert.NotEqual(Guid.Empty, root.GetProperty("appointmentRequestId").GetGuid());
+        Assert.Equal("PendingApproval", root.GetProperty("status").GetString());
+        Assert.True(root.GetProperty("expiresAtUtc").GetDateTimeOffset() > DateTimeOffset.UtcNow);
+    }
+
+    [Fact]
+    public async Task PublicAppointmentRequestRequiresAuthentication()
+    {
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(15)));
+
+        HttpResponseMessage response = await fixture.Client.PostAsJsonAsync(
+            $"/api/public/businesses/{seed.Slug}/appointment-requests",
+            new
+            {
+                branchSlug = seed.BranchSlug,
+                serviceVariantIds = new[] { seed.ServiceVariantId },
+                staffMemberId = seed.StaffMemberId,
+                resourceId = seed.ResourceId,
+                startUtc = seed.AvailableSlotStartUtc,
+            });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private async Task<string> RegisterAndLoginWithBearerTokenAsync(string email, string password)
+    {
+        HttpResponseMessage registration = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new { email, password });
+        Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
+
+        HttpResponseMessage login = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/login?useCookies=false",
+            new { email, password });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await login.Content.ReadAsStringAsync());
+        return body.RootElement.GetProperty("accessToken").GetString()
+            ?? throw new InvalidOperationException("The access token was not returned.");
     }
 }

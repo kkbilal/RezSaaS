@@ -47,11 +47,15 @@ Durum: başladı; public slot read endpoint temeli tamamlandı.
 
 ## Dilim 2.3 - Rezervasyon İsteği Endpoint'i
 
-- Auth zorunlu müşteri request create endpoint'i
-- `booking-appointment-requests` rate limit policy zorunlu
-- Tenant/branch/business eşlemesi public slug üzerinden doğrulanır
-- Kullanıcı pending/günlük limitleri ve abuse event üretimi devrede kalır
-- Request sonucu `PendingApproval`; confirmed appointment yalnızca işletme onayıyla oluşur
+Durum: başladı; public auth'lı request create endpoint temeli tamamlandı.
+
+- Tamamlandı: auth zorunlu müşteri request create endpoint'i
+- Tamamlandı: `booking-appointment-requests` rate limit policy public slug + user + IP partition ile uygulanır
+- Tamamlandı: tenant/branch/business eşlemesi public slug üzerinden doğrulanır
+- Tamamlandı: staff, resource, service variant ve slot uygunluğu create öncesi doğrulanır
+- Tamamlandı: kullanıcı pending/günlük limitleri ve abuse event üretimi application service içinde devrede kalır
+- Tamamlandı: request sonucu `PendingApproval`; confirmed appointment yalnızca işletme onayıyla oluşur
+- Açık: idempotency key davranışı ve müşteri kendi talebini görüntüleme/iptal endpoint'i
 
 ## Dilim 2.4 - İşletme Onay Paneli API'si
 

@@ -151,6 +151,8 @@ Slot bloklanmadığı için onay ekranında yarış olur:
 - Public slot bulma `PendingApproval` talepleri bloklayıcı kabul etmez; bu ürün kararını tersine çeviren kod ADR olmadan yazılmaz.
 - Slot hesaplama branch working hours, selected service variant toplam süresi, optional staff tercihi, required resource type, confirmed appointment, staff unavailable ve resource block sinyallerini birlikte değerlendirir.
 - Slot response UTC başlangıç/bitiş zamanını ve branch timezone/local gösterim bilgisini birlikte taşır.
+- Public rezervasyon isteği oluşturma auth zorunludur; tenant header beklemez, tenant context doğrulanmış `businessSlug` üzerinden geçici set edilir ve request `PendingApproval` olarak kalır.
+- Create öncesi staff/resource/variant/branch eşleşmesi ve slot uygunluğu doğrulanmadan `AppointmentRequest` üretilmez.
 
 ---
 

@@ -15,6 +15,7 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - Hizmetler arası hazırlık/temizlik buffer süresi MVP'de olacak mı?
 - Staff seçimi MVP'de müşteri için opsiyonel; seçilmezse uygun staff adayları döner. Staff skill/service required skill eşlemesi slot motoruna hangi sırayla eklenecek?
 - İşletme manuel rezervasyon eklediğinde müşteri hesabı şart olacak mı?
+- Public rezervasyon isteği create endpoint'i için idempotency key formatı, saklama süresi ve tekrar denemede dönecek response netleştirilecek.
 
 ## Bildirim
 

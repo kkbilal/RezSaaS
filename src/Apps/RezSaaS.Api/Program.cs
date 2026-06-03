@@ -71,6 +71,7 @@ builder.Services.AddOptions<PublicSlotSearchOptions>()
     .ValidateOnStart();
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
+builder.Services.AddScoped<PublicAppointmentRequestComposer>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();
@@ -93,14 +94,15 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy(BookingRateLimitPolicyNames.AppointmentRequests, httpContext =>
     {
         string remoteIpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        string tenantId = httpContext.Request.Headers[TenantContextHeaders.TenantId].FirstOrDefault()
+        string tenantOrPublicBusiness = httpContext.Request.Headers[TenantContextHeaders.TenantId].FirstOrDefault()
+            ?? httpContext.Request.RouteValues["slug"]?.ToString()
             ?? "tenant-missing";
         string userId = httpContext.User.FindFirst("sub")?.Value
             ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? "anonymous";
 
         return RateLimitPartition.GetFixedWindowLimiter(
-            $"{remoteIpAddress}:{tenantId}:{userId}",
+            $"{remoteIpAddress}:{tenantOrPublicBusiness}:{userId}",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = bookingSecurityOptions.AppointmentRequestPermitLimit,
@@ -132,6 +134,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapPublicBusinessProfileEndpoints();
 app.MapPublicBusinessSlotEndpoints();
+app.MapPublicAppointmentRequestEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();

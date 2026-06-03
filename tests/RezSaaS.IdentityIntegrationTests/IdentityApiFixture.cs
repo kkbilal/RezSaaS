@@ -135,7 +135,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         return factory!.CreateClient();
     }
 
-    public async Task<PublicBusinessProfileSeed> SeedPublicBusinessProfileAsync()
+    public async Task<PublicBusinessProfileSeed> SeedPublicBusinessProfileAsync(DateOnly? slotDate = null)
     {
         using IServiceScope scope = factory!.Services.CreateScope();
         ITenantContextAccessor tenantContextAccessor =
@@ -152,8 +152,16 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             scope.ServiceProvider.GetRequiredService<BookingDbContext>();
         Guid tenantId = Guid.CreateVersion7();
         DateTimeOffset createdAtUtc = new(2026, 1, 2, 9, 0, 0, TimeSpan.Zero);
+        DateOnly effectiveSlotDate = slotDate ?? new DateOnly(2026, 1, 5);
         string slug = $"atlas-{Guid.NewGuid():N}"[..22];
         string branchSlug = "kadikoy";
+        DateTimeOffset confirmedStartUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(9, 0));
+        DateTimeOffset confirmedEndUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(9, 45));
+        DateTimeOffset unavailableStartUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(9, 45));
+        DateTimeOffset unavailableEndUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(10, 30));
+        DateTimeOffset resourceBlockStartUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(10, 30));
+        DateTimeOffset resourceBlockEndUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(11, 15));
+        DateTimeOffset availableSlotStartUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(11, 15));
         tenantContextAccessor.TenantId = tenantId;
 
         Business business = Business.Create(
@@ -215,15 +223,15 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             BranchWorkingHours.Create(
                 tenantId,
                 branch.Id,
-                DayOfWeek.Monday,
+                effectiveSlotDate.DayOfWeek,
                 new TimeOnly(9, 0),
                 new TimeOnly(12, 0)));
         availabilityDbContext.StaffUnavailableTimes.Add(
             StaffUnavailableTime.Create(
                 tenantId,
                 staffMember.Id,
-                new DateTimeOffset(2026, 1, 5, 6, 45, 0, TimeSpan.Zero),
-                new DateTimeOffset(2026, 1, 5, 7, 30, 0, TimeSpan.Zero),
+                unavailableStartUtc,
+                unavailableEndUtc,
                 "Break"));
         await availabilityDbContext.SaveChangesAsync();
 
@@ -234,8 +242,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             branch.Id,
             staffMember.Id,
             chair.Id,
-            new DateTimeOffset(2026, 1, 5, 6, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 1, 5, 6, 45, 0, TimeSpan.Zero),
+            confirmedStartUtc,
+            confirmedEndUtc,
             createdAtUtc);
         confirmedAppointment.AddLine(
             variant.Id,
@@ -250,8 +258,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             ResourceBlock.Create(
                 tenantId,
                 chair.Id,
-                new DateTimeOffset(2026, 1, 5, 7, 30, 0, TimeSpan.Zero),
-                new DateTimeOffset(2026, 1, 5, 8, 15, 0, TimeSpan.Zero),
+                resourceBlockStartUtc,
+                resourceBlockEndUtc,
                 "Maintenance"));
         await resourcesDbContext.SaveChangesAsync();
 
@@ -261,7 +269,9 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             slug,
             branchSlug,
             variant.Id,
-            staffMember.Id);
+            staffMember.Id,
+            chair.Id,
+            availableSlotStartUtc);
     }
 
     public async Task<PlatformAdminBootstrapResult> BootstrapPlatformAdminAsync(
@@ -390,6 +400,13 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         }
 
         return value;
+    }
+
+    private static DateTimeOffset CreateTurkeyUtc(DateOnly date, TimeOnly localTime)
+    {
+        DateTime localDateTime = date.ToDateTime(localTime, DateTimeKind.Unspecified);
+        DateTime utcDateTime = localDateTime.AddHours(-3);
+        return new DateTimeOffset(utcDateTime, TimeSpan.Zero);
     }
 
     private static Dictionary<string, string> ReadEnvironmentFile(string path)

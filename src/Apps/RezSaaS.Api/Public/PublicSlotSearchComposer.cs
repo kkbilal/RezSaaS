@@ -87,7 +87,7 @@ public sealed class PublicSlotSearchComposer
                 durationMinutes,
                 []);
 
-            if (!TryFindTimeZone(branch.TimeZoneId, out TimeZoneInfo? timeZoneInfo))
+            if (!PublicTimeZoneResolver.TryFind(branch.TimeZoneId, out TimeZoneInfo? timeZoneInfo))
             {
                 return emptyResponse;
             }
@@ -125,10 +125,10 @@ public sealed class PublicSlotSearchComposer
             }
 
             TimeZoneInfo resolvedTimeZoneInfo = timeZoneInfo!;
-            DateTimeOffset dayStartUtc = ConvertLocalToUtc(
+            DateTimeOffset dayStartUtc = PublicTimeZoneResolver.ConvertLocalToUtc(
                 request.Date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified),
                 resolvedTimeZoneInfo);
-            DateTimeOffset dayEndUtc = ConvertLocalToUtc(
+            DateTimeOffset dayEndUtc = PublicTimeZoneResolver.ConvertLocalToUtc(
                 request.Date.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified),
                 resolvedTimeZoneInfo);
             AvailabilitySnapshot? availabilitySnapshot =
@@ -214,8 +214,8 @@ public sealed class PublicSlotSearchComposer
             localStart = localStart.AddMinutes(slotOptions.SlotIntervalMinutes))
         {
             DateTime localEnd = localStart.AddMinutes(durationMinutes);
-            DateTimeOffset startUtc = ConvertLocalToUtc(localStart, timeZoneInfo);
-            DateTimeOffset endUtc = ConvertLocalToUtc(localEnd, timeZoneInfo);
+            DateTimeOffset startUtc = PublicTimeZoneResolver.ConvertLocalToUtc(localStart, timeZoneInfo);
+            DateTimeOffset endUtc = PublicTimeZoneResolver.ConvertLocalToUtc(localEnd, timeZoneInfo);
             PublicSlotStaffResponse[] availableStaff = staffCandidates
                 .Where(staff => IsStaffAvailable(
                     staff.Id,
@@ -334,57 +334,4 @@ public sealed class PublicSlotSearchComposer
         return startUtc < busyEndUtc && endUtc > busyStartUtc;
     }
 
-    private static DateTimeOffset ConvertLocalToUtc(
-        DateTime localTime,
-        TimeZoneInfo timeZoneInfo)
-    {
-        DateTime utcDateTime = TimeZoneInfo.ConvertTimeToUtc(localTime, timeZoneInfo);
-        return new DateTimeOffset(utcDateTime, TimeSpan.Zero);
-    }
-
-    private static bool TryFindTimeZone(
-        string timeZoneId,
-        out TimeZoneInfo? timeZoneInfo)
-    {
-        if (TryFindTimeZoneById(timeZoneId, out timeZoneInfo))
-        {
-            return true;
-        }
-
-        if (TimeZoneInfo.TryConvertIanaIdToWindowsId(timeZoneId, out string? windowsTimeZoneId)
-            && TryFindTimeZoneById(windowsTimeZoneId, out timeZoneInfo))
-        {
-            return true;
-        }
-
-        if (TimeZoneInfo.TryConvertWindowsIdToIanaId(timeZoneId, out string? ianaTimeZoneId)
-            && TryFindTimeZoneById(ianaTimeZoneId, out timeZoneInfo))
-        {
-            return true;
-        }
-
-        timeZoneInfo = null;
-        return false;
-    }
-
-    private static bool TryFindTimeZoneById(
-        string timeZoneId,
-        out TimeZoneInfo? timeZoneInfo)
-    {
-        try
-        {
-            timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-            return true;
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            timeZoneInfo = null;
-            return false;
-        }
-        catch (InvalidTimeZoneException)
-        {
-            timeZoneInfo = null;
-            return false;
-        }
-    }
 }
