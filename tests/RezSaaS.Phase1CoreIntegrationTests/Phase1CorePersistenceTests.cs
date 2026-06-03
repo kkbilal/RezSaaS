@@ -403,6 +403,227 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ApproveAppointmentRequestWaitsForRowLockBeforeStateTransition()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid branchId = Guid.CreateVersion7();
+        Guid staffMemberId = Guid.CreateVersion7();
+        Guid resourceId = Guid.CreateVersion7();
+        Guid approverUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+        AppointmentRequest request = CreateRequest(
+            tenantId,
+            Guid.CreateVersion7(),
+            branchId,
+            staffMemberId,
+            resourceId);
+
+        await using (BookingDbContext seedDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor))
+        {
+            seedDbContext.AppointmentRequests.Add(request);
+            await seedDbContext.SaveChangesAsync();
+        }
+
+        await using NpgsqlConnection lockConnection = new(DatabaseConnectionString);
+        await lockConnection.OpenAsync();
+        await using NpgsqlTransaction lockTransaction =
+            await lockConnection.BeginTransactionAsync();
+        await LockAppointmentRequestRowAsync(
+            lockConnection,
+            lockTransaction,
+            tenantId,
+            request.Id);
+
+        await using BookingDbContext bookingDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor);
+        await using AdminDbContext adminDbContext =
+            new(CreateOptions<AdminDbContext>());
+        await using MessagingDbContext messagingDbContext =
+            new(CreateOptions<MessagingDbContext>(), tenantContextAccessor);
+        ApproveAppointmentRequestService service = new(
+            bookingDbContext,
+            new AdminAuditLogRecorder(adminDbContext),
+            new TransactionalMessageOutbox(messagingDbContext),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        Task<AppointmentRequestDecisionResult> approvalTask =
+            service.ApproveAsync(
+                request.Id,
+                approverUserAccountId);
+
+        Task firstCompletedTask = await Task.WhenAny(
+            approvalTask,
+            Task.Delay(TimeSpan.FromMilliseconds(300)));
+        Assert.NotSame(approvalTask, firstCompletedTask);
+
+        await lockTransaction.CommitAsync();
+
+        AppointmentRequestDecisionResult result =
+            await approvalTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.AppointmentId);
+    }
+
+    [Fact]
+    public async Task ExpireAppointmentRequestsServiceSkipsRowsLockedByConcurrentDecision()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+        AppointmentRequest request = AppointmentRequest.Create(
+            tenantId,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            testTime.AddHours(6),
+            testTime.AddHours(7),
+            testTime.AddDays(-2),
+            TimeSpan.FromHours(2));
+        request.AddLine(Guid.CreateVersion7(), "Haircut", 60, 500, "TRY");
+
+        await using (BookingDbContext seedDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor))
+        {
+            seedDbContext.AppointmentRequests.Add(request);
+            await seedDbContext.SaveChangesAsync();
+        }
+
+        await using NpgsqlConnection lockConnection = new(DatabaseConnectionString);
+        await lockConnection.OpenAsync();
+        await using NpgsqlTransaction lockTransaction =
+            await lockConnection.BeginTransactionAsync();
+        await LockAppointmentRequestRowAsync(
+            lockConnection,
+            lockTransaction,
+            tenantId,
+            request.Id);
+
+        await using BookingDbContext lockedDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor);
+        ExpireAppointmentRequestsService lockedService = new(
+            lockedDbContext,
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        int skippedCount =
+            await lockedService.ExpireDueAsync().WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(0, skippedCount);
+
+        await lockTransaction.CommitAsync();
+
+        await using BookingDbContext expiryDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor);
+        ExpireAppointmentRequestsService expiryService = new(
+            expiryDbContext,
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        int expiredCount = await expiryService.ExpireDueAsync();
+
+        Assert.Equal(1, expiredCount);
+    }
+
+    [Fact]
+    public async Task DeclineAppointmentRequestConcurrentSameIdempotencyKeyReplaysSingleDecision()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        BookingIdempotencyContext idempotency = new(
+            "decline-key-hash",
+            "decline-request-hash");
+        AppointmentRequest request = CreateRequest(
+            tenantId,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7());
+
+        await using (BookingDbContext seedDbContext =
+            new(CreateOptions<BookingDbContext>(), new TenantContextAccessor { TenantId = tenantId }))
+        {
+            seedDbContext.AppointmentRequests.Add(request);
+            await seedDbContext.SaveChangesAsync();
+        }
+
+        DeclineAppointmentRequestService firstService =
+            CreateDeclineAppointmentRequestService(tenantId);
+        DeclineAppointmentRequestService secondService =
+            CreateDeclineAppointmentRequestService(tenantId);
+
+        AppointmentRequestDecisionResult[] results = await Task.WhenAll(
+            firstService.DeclineAsync(request.Id, actorUserAccountId, idempotency),
+            secondService.DeclineAsync(request.Id, actorUserAccountId, idempotency));
+
+        Assert.All(results, result => Assert.True(result.Succeeded));
+
+        await using BookingDbContext verifyDbContext =
+            new(CreateOptions<BookingDbContext>(), new TenantContextAccessor { TenantId = tenantId });
+        AppointmentRequestStatus status = await verifyDbContext.AppointmentRequests
+            .Where(entity => entity.Id == request.Id)
+            .Select(entity => entity.Status)
+            .SingleAsync();
+        int idempotencyRecordCount = await verifyDbContext.IdempotencyRecords.CountAsync();
+
+        Assert.Equal(AppointmentRequestStatus.Declined, status);
+        Assert.Equal(1, idempotencyRecordCount);
+    }
+
+    [Fact]
+    public async Task CancelAppointmentRequestConcurrentSameIdempotencyKeyReplaysSingleDecision()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid customerUserAccountId = Guid.CreateVersion7();
+        BookingIdempotencyContext idempotency = new(
+            "cancel-key-hash",
+            "cancel-request-hash");
+        AppointmentRequest request = CreateRequest(
+            tenantId,
+            customerUserAccountId,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7());
+
+        await using (BookingDbContext seedDbContext =
+            new(CreateOptions<BookingDbContext>(), new TenantContextAccessor { TenantId = tenantId }))
+        {
+            seedDbContext.AppointmentRequests.Add(request);
+            await seedDbContext.SaveChangesAsync();
+        }
+
+        CancelAppointmentRequestService firstService =
+            CreateCancelAppointmentRequestService(tenantId);
+        CancelAppointmentRequestService secondService =
+            CreateCancelAppointmentRequestService(tenantId);
+
+        AppointmentRequestDecisionResult[] results = await Task.WhenAll(
+            firstService.CancelAsync(request.Id, customerUserAccountId, idempotency),
+            secondService.CancelAsync(request.Id, customerUserAccountId, idempotency));
+
+        Assert.All(results, result => Assert.True(result.Succeeded));
+
+        await using BookingDbContext verifyDbContext =
+            new(CreateOptions<BookingDbContext>(), new TenantContextAccessor { TenantId = tenantId });
+        AppointmentRequestStatus status = await verifyDbContext.AppointmentRequests
+            .Where(entity => entity.Id == request.Id)
+            .Select(entity => entity.Status)
+            .SingleAsync();
+        int idempotencyRecordCount = await verifyDbContext.IdempotencyRecords.CountAsync();
+
+        Assert.Equal(AppointmentRequestStatus.CancelledByCustomer, status);
+        Assert.Equal(1, idempotencyRecordCount);
+    }
+
+    [Fact]
     public async Task ExpireAppointmentRequestsServiceClosesDuePendingRequests()
     {
         Guid tenantId = Guid.CreateVersion7();
@@ -543,6 +764,34 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         return new BookingDbContext(CreateOptions<BookingDbContext>());
     }
 
+    private CancelAppointmentRequestService CreateCancelAppointmentRequestService(Guid tenantId)
+    {
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        return new CancelAppointmentRequestService(
+            new BookingDbContext(CreateOptions<BookingDbContext>(), tenantContextAccessor),
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+    }
+
+    private DeclineAppointmentRequestService CreateDeclineAppointmentRequestService(Guid tenantId)
+    {
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        return new DeclineAppointmentRequestService(
+            new BookingDbContext(CreateOptions<BookingDbContext>(), tenantContextAccessor),
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+    }
+
     private DbContextOptions<TContext> CreateOptions<TContext>()
         where TContext : DbContext
     {
@@ -561,6 +810,27 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
 
         object? value = await command.ExecuteScalarAsync();
         return Convert.ToInt32(value, CultureInfo.InvariantCulture);
+    }
+
+    private static async Task LockAppointmentRequestRowAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid tenantId,
+        Guid appointmentRequestId)
+    {
+        await using NpgsqlCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            """
+            SELECT 1
+            FROM booking."AppointmentRequests"
+            WHERE "TenantId" = @tenantId
+                AND "Id" = @appointmentRequestId
+            FOR UPDATE
+            """;
+        command.Parameters.AddWithValue("tenantId", tenantId);
+        command.Parameters.AddWithValue("appointmentRequestId", appointmentRequestId);
+        await command.ExecuteNonQueryAsync();
     }
 
     private static string GetAdminConnectionString()

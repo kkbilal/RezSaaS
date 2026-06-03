@@ -23,6 +23,23 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task UnsafePostWithMismatchedOriginIsRejected()
+    {
+        using HttpRequestMessage request = new(HttpMethod.Post, "/api/auth/register");
+        request.Headers.Add("Origin", "https://evil.example");
+        request.Content = JsonContent.Create(
+            new
+            {
+                email = CreateEmail(),
+                password = "RezSaaS!Auth1234",
+            });
+
+        HttpResponseMessage response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RegistrationAndBearerLoginAllowProtectedAccountAccess()
     {
         string email = CreateEmail();

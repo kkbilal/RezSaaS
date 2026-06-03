@@ -187,6 +187,35 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task PublicAppointmentRequestCreateRejectsStartOutsideSlotGrid()
+    {
+        string email = $"off-grid-booking-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(21)));
+        string accessToken = await RegisterAndLoginWithBearerTokenAsync(email, password);
+
+        using HttpRequestMessage request = new(
+            HttpMethod.Post,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = JsonContent.Create(
+            new
+            {
+                branchSlug = seed.BranchSlug,
+                serviceVariantIds = new[] { seed.ServiceVariantId },
+                staffMemberId = seed.StaffMemberId,
+                resourceId = seed.ResourceId,
+                startUtc = seed.AvailableSlotStartUtc.AddMinutes(1),
+            });
+
+        HttpResponseMessage response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
     public async Task PublicAppointmentRequestRequiresAuthentication()
     {
         PublicBusinessProfileSeed seed =
@@ -205,6 +234,26 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
             });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PublicAppointmentRequestListRejectsInvalidStatusFilter()
+    {
+        string email = $"invalid-status-customer-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(22)));
+        string accessToken = await RegisterAndLoginWithBearerTokenAsync(email, password);
+
+        using HttpRequestMessage request = new(
+            HttpMethod.Get,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests?status=NotAStatus");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        HttpResponseMessage response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -377,6 +426,32 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         JsonElement decline = declineBody.RootElement;
         Assert.Equal("Declined", decline.GetProperty("status").GetString());
         Assert.Equal(0, decline.GetProperty("affectedRequests").GetInt32());
+    }
+
+    [Fact]
+    public async Task BusinessAppointmentRequestListRejectsInvalidStatusFilter()
+    {
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(23)));
+        string ownerEmail = $"invalid-status-owner-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        string ownerToken = await RegisterAndLoginWithBearerTokenAsync(ownerEmail, password);
+        Guid ownerUserAccountId = await fixture.GetUserAccountIdAsync(ownerEmail);
+        await fixture.GrantTenantMembershipAsync(
+            seed.TenantId,
+            ownerUserAccountId,
+            TenantMembershipRole.BusinessOwner);
+
+        using HttpRequestMessage request = new(
+            HttpMethod.Get,
+            "/api/business/appointment-requests/?status=NotAStatus");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+        request.Headers.Add(TenantContextHeaders.TenantId, seed.TenantId.ToString());
+
+        HttpResponseMessage response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
