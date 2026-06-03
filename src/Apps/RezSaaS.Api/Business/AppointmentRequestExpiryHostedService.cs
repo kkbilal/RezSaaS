@@ -56,22 +56,26 @@ public sealed class AppointmentRequestExpiryHostedService : BackgroundService
     {
         try
         {
-            using IServiceScope scope = scopeFactory.CreateScope();
-            TenantLifecycleQueryService tenantQuery =
-                scope.ServiceProvider.GetRequiredService<TenantLifecycleQueryService>();
-            IReadOnlyCollection<Guid> tenantIds =
-                await tenantQuery.GetActiveTenantIdsAsync(
-                    workerOptions.TenantBatchSize,
-                    cancellationToken);
+            IReadOnlyCollection<Guid> tenantIds;
+            using (IServiceScope scope = scopeFactory.CreateScope())
+            {
+                TenantLifecycleQueryService tenantQuery =
+                    scope.ServiceProvider.GetRequiredService<TenantLifecycleQueryService>();
+                tenantIds =
+                    await tenantQuery.GetActiveTenantIdsAsync(
+                        workerOptions.TenantBatchSize,
+                        cancellationToken);
+            }
 
             foreach (Guid tenantId in tenantIds)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                using IServiceScope tenantScope = scopeFactory.CreateScope();
                 ITenantContextAccessor tenantContextAccessor =
-                    scope.ServiceProvider.GetRequiredService<ITenantContextAccessor>();
+                    tenantScope.ServiceProvider.GetRequiredService<ITenantContextAccessor>();
                 ExpireAppointmentRequestsService expiryService =
-                    scope.ServiceProvider.GetRequiredService<ExpireAppointmentRequestsService>();
+                    tenantScope.ServiceProvider.GetRequiredService<ExpireAppointmentRequestsService>();
                 Guid? previousTenantId = tenantContextAccessor.TenantId;
                 tenantContextAccessor.TenantId = tenantId;
 

@@ -52,11 +52,9 @@ public sealed class BusinessAppointmentRequestQueryService
             query = query.Where(entity => entity.BranchId == requestQuery.BranchId);
         }
 
-        if (!string.IsNullOrWhiteSpace(requestQuery.Status)
-            && Enum.TryParse(
-                requestQuery.Status,
-                ignoreCase: true,
-                out AppointmentRequestStatus parsedStatus))
+        if (AppointmentRequestStatusFilter.TryParse(
+            requestQuery.Status,
+            out AppointmentRequestStatus parsedStatus))
         {
             query = query.Where(entity => entity.Status == parsedStatus);
         }

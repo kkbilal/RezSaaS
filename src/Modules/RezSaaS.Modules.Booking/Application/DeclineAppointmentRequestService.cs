@@ -68,10 +68,13 @@ public sealed class DeclineAppointmentRequestService
         }
 
         DateTimeOffset now = timeProvider.GetUtcNow();
-        AppointmentRequest? request = await dbContext.AppointmentRequests
-            .SingleOrDefaultAsync(
-                entity => entity.Id == appointmentRequestId,
-                cancellationToken);
+        await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
+            await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        AppointmentRequest? request = await LockAppointmentRequestAsync(
+            tenantId,
+            appointmentRequestId,
+            cancellationToken);
 
         if (request is null)
         {
@@ -87,9 +90,16 @@ public sealed class DeclineAppointmentRequestService
                 request.Id,
                 "Declined",
                 now);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            AppointmentRequestDecisionResult replayResult = AppointmentRequestDecisionResult.Success(appointmentId: null);
+            AppointmentRequestDecisionResult? duplicateReplayResult =
+                await SaveDecisionAsync(
+                    transaction,
+                    tenantId,
+                    actorUserAccountId,
+                    idempotency,
+                    cancellationToken);
 
-            return AppointmentRequestDecisionResult.Success(appointmentId: null);
+            return duplicateReplayResult ?? replayResult;
         }
 
         if (request.Status != AppointmentRequestStatus.PendingApproval)
@@ -101,6 +111,7 @@ public sealed class DeclineAppointmentRequestService
         {
             request.Expire();
             await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
             await RecordAuditAsync(
                 tenantId,
                 actorUserAccountId,
@@ -120,7 +131,20 @@ public sealed class DeclineAppointmentRequestService
             request.Id,
             "Declined",
             now);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        AppointmentRequestDecisionResult result = AppointmentRequestDecisionResult.Success(appointmentId: null);
+        AppointmentRequestDecisionResult? duplicateReplay =
+            await SaveDecisionAsync(
+                transaction,
+                tenantId,
+                actorUserAccountId,
+                idempotency,
+                cancellationToken);
+
+        if (duplicateReplay is not null)
+        {
+            return duplicateReplay;
+        }
+
         await RecordAuditAsync(
             tenantId,
             actorUserAccountId,
@@ -129,7 +153,60 @@ public sealed class DeclineAppointmentRequestService
             now,
             cancellationToken);
 
-        return AppointmentRequestDecisionResult.Success(appointmentId: null);
+        return result;
+    }
+
+    private async Task<AppointmentRequestDecisionResult?> SaveDecisionAsync(
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction,
+        Guid tenantId,
+        Guid actorUserAccountId,
+        BookingIdempotencyContext? idempotency,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return null;
+        }
+        catch (DbUpdateException) when (idempotency is not null)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            DetachChangedEntities();
+
+            AppointmentRequestDecisionResult? replayedResult =
+                await TryReplayDecisionAsync(
+                    tenantId,
+                    actorUserAccountId,
+                    idempotency,
+                    cancellationToken);
+
+            if (replayedResult is not null)
+            {
+                return replayedResult;
+            }
+
+            throw;
+        }
+    }
+
+    private async Task<AppointmentRequest?> LockAppointmentRequestAsync(
+        Guid tenantId,
+        Guid appointmentRequestId,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.AppointmentRequests
+            .FromSqlInterpolated(
+                $"""
+                SELECT *
+                FROM booking."AppointmentRequests"
+                WHERE "TenantId" = {tenantId}
+                    AND "Id" = {appointmentRequestId}
+                FOR UPDATE
+                """)
+            .IgnoreQueryFilters()
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     private async Task<AppointmentRequestDecisionResult?> TryReplayDecisionAsync(
@@ -193,6 +270,16 @@ public sealed class DeclineAppointmentRequestService
                 affectedRequests: 0,
                 responseExpiresAtUtc: null,
                 createdAtUtc: now));
+    }
+
+    private void DetachChangedEntities()
+    {
+        foreach (Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry in dbContext.ChangeTracker
+            .Entries()
+            .Where(entity => entity.State is EntityState.Added or EntityState.Modified))
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private Task RecordAuditAsync(

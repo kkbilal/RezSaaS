@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.Extensions.Options;
 using RezSaaS.Api.Idempotency;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Availability.Application;
@@ -12,6 +13,7 @@ namespace RezSaaS.Api.PublicApi;
 public sealed class PublicAppointmentRequestComposer
 {
     private const string InvalidRequest = "PUBLIC_APPOINTMENT_REQUEST_INVALID";
+    private const string InvalidStatus = "PUBLIC_APPOINTMENT_REQUEST_INVALID_STATUS";
     private const string MultipleResourceTypesNotSupported = "MULTIPLE_RESOURCE_TYPES_NOT_SUPPORTED";
     private const string NotFound = "PUBLIC_APPOINTMENT_REQUEST_TARGET_NOT_FOUND";
     private const string SlotUnavailable = "PUBLIC_APPOINTMENT_REQUEST_SLOT_UNAVAILABLE";
@@ -31,6 +33,7 @@ public sealed class PublicAppointmentRequestComposer
     private readonly CustomerAppointmentRequestQueryService customerAppointmentRequestQueryService;
     private readonly PublicCatalogSchedulingService catalogSchedulingService;
     private readonly PublicResourceAvailabilityQueryService resourceAvailabilityQueryService;
+    private readonly IOptions<PublicSlotSearchOptions> slotSearchOptions;
     private readonly ITenantContextAccessor tenantContextAccessor;
 
     public PublicAppointmentRequestComposer(
@@ -42,6 +45,7 @@ public sealed class PublicAppointmentRequestComposer
         CreateAppointmentRequestService createAppointmentRequestService,
         CustomerAppointmentRequestQueryService customerAppointmentRequestQueryService,
         CancelAppointmentRequestService cancelAppointmentRequestService,
+        IOptions<PublicSlotSearchOptions> slotSearchOptions,
         ITenantContextAccessor tenantContextAccessor)
     {
         this.businessDirectoryService = businessDirectoryService;
@@ -52,6 +56,7 @@ public sealed class PublicAppointmentRequestComposer
         this.createAppointmentRequestService = createAppointmentRequestService;
         this.customerAppointmentRequestQueryService = customerAppointmentRequestQueryService;
         this.cancelAppointmentRequestService = cancelAppointmentRequestService;
+        this.slotSearchOptions = slotSearchOptions;
         this.tenantContextAccessor = tenantContextAccessor;
     }
 
@@ -264,6 +269,13 @@ public sealed class PublicAppointmentRequestComposer
             return PublicAppointmentRequestAccessResult.Failure(
                 PublicAppointmentRequestAccessOutcome.NotFound,
                 NotFound);
+        }
+
+        if (!AppointmentRequestStatusFilter.IsValidOrEmpty(status))
+        {
+            return PublicAppointmentRequestAccessResult.Failure(
+                PublicAppointmentRequestAccessOutcome.BadRequest,
+                InvalidStatus);
         }
 
         Guid? previousTenantId = tenantContextAccessor.TenantId;
@@ -483,6 +495,14 @@ public sealed class PublicAppointmentRequestComposer
             return false;
         }
 
+        if (!IsAlignedToSlotGrid(
+            localStart,
+            opensAtLocal,
+            branch.SlotIntervalMinutes ?? slotSearchOptions.Value.SlotIntervalMinutes))
+        {
+            return false;
+        }
+
         if (availabilitySnapshot.StaffUnavailableTimes.Any(entity =>
             entity.StaffMemberId == staffMemberId
             && Overlaps(startUtc, endUtc, entity.StartUtc, entity.EndUtc)))
@@ -524,6 +544,22 @@ public sealed class PublicAppointmentRequestComposer
             && request.StaffMemberId != Guid.Empty
             && request.ResourceId != Guid.Empty
             && request.StartUtc != default;
+    }
+
+    private static bool IsAlignedToSlotGrid(
+        DateTime localStart,
+        DateTime opensAtLocal,
+        int slotIntervalMinutes)
+    {
+        if (slotIntervalMinutes <= 0)
+        {
+            return false;
+        }
+
+        TimeSpan slotOffset = localStart - opensAtLocal;
+
+        return slotOffset >= TimeSpan.Zero
+            && slotOffset.Ticks % TimeSpan.FromMinutes(slotIntervalMinutes).Ticks == 0;
     }
 
     private static PublicAppointmentRequestCreateResult MapCreateFailure(string errorCode)

@@ -77,11 +77,11 @@ public sealed class ApproveAppointmentRequestService
         await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        AppointmentRequest? request = await dbContext.AppointmentRequests
-            .Include(entity => entity.Lines)
-            .SingleOrDefaultAsync(
-                entity => entity.Id == appointmentRequestId,
-                cancellationToken);
+        AppointmentRequest? request = await LockAppointmentRequestAsync(
+            tenantId,
+            appointmentRequestId,
+            includeLines: true,
+            cancellationToken);
 
         if (request is null)
         {
@@ -104,8 +104,30 @@ public sealed class ApproveAppointmentRequestService
                 "Approved",
                 affectedRequests: 0,
                 now);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (DbUpdateException) when (idempotency is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                DetachChangedEntities();
+
+                AppointmentRequestDecisionResult? replayedResult =
+                    await TryReplayDecisionAsync(
+                        tenantId,
+                        approverUserAccountId,
+                        idempotency,
+                        cancellationToken);
+
+                if (replayedResult is not null)
+                {
+                    return replayedResult;
+                }
+
+                throw;
+            }
 
             return AppointmentRequestDecisionResult.Success(existingAppointmentId);
         }
@@ -187,6 +209,7 @@ public sealed class ApproveAppointmentRequestService
         catch (DbUpdateException)
         {
             await transaction.RollbackAsync(cancellationToken);
+            DetachChangedEntities();
 
             AppointmentRequestDecisionResult? replayedResult =
                 await TryReplayDecisionAsync(
@@ -224,6 +247,34 @@ public sealed class ApproveAppointmentRequestService
         return AppointmentRequestDecisionResult.Success(
             appointment.Id,
             supersededRequests.Count);
+    }
+
+    private async Task<AppointmentRequest?> LockAppointmentRequestAsync(
+        Guid tenantId,
+        Guid appointmentRequestId,
+        bool includeLines,
+        CancellationToken cancellationToken)
+    {
+        AppointmentRequest? request = await dbContext.AppointmentRequests
+            .FromSqlInterpolated(
+                $"""
+                SELECT *
+                FROM booking."AppointmentRequests"
+                WHERE "TenantId" = {tenantId}
+                    AND "Id" = {appointmentRequestId}
+                FOR UPDATE
+                """)
+            .IgnoreQueryFilters()
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (request is not null && includeLines)
+        {
+            await dbContext.Entry(request)
+                .Collection(entity => entity.Lines)
+                .LoadAsync(cancellationToken);
+        }
+
+        return request;
     }
 
     private async Task<AppointmentRequestDecisionResult?> TryReplayDecisionAsync(
@@ -289,6 +340,16 @@ public sealed class ApproveAppointmentRequestService
                 affectedRequests,
                 responseExpiresAtUtc: null,
                 createdAtUtc: now));
+    }
+
+    private void DetachChangedEntities()
+    {
+        foreach (Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry in dbContext.ChangeTracker
+            .Entries()
+            .Where(entity => entity.State is EntityState.Added or EntityState.Modified))
+        {
+            entry.State = EntityState.Detached;
+        }
     }
 
     private Task RecordAuditAsync(

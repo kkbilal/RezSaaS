@@ -23,16 +23,29 @@ public sealed class ExpireAppointmentRequestsService
 
     public async Task<int> ExpireDueAsync(CancellationToken cancellationToken = default)
     {
-        if (tenantContextAccessor.TenantId is null)
+        if (tenantContextAccessor.TenantId is not { } tenantId)
         {
             return 0;
         }
 
         DateTimeOffset now = timeProvider.GetUtcNow();
+        string pendingStatus = AppointmentRequestStatus.PendingApproval.ToString();
+
+        await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
+            await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         List<AppointmentRequest> dueRequests = await dbContext.AppointmentRequests
-            .Where(entity => entity.Status == AppointmentRequestStatus.PendingApproval)
-            .Where(entity => entity.ExpiresAtUtc <= now)
+            .FromSqlInterpolated(
+                $"""
+                SELECT *
+                FROM booking."AppointmentRequests"
+                WHERE "TenantId" = {tenantId}
+                    AND "Status" = {pendingStatus}
+                    AND "ExpiresAtUtc" <= {now}
+                ORDER BY "ExpiresAtUtc"
+                FOR UPDATE SKIP LOCKED
+                """)
+            .IgnoreQueryFilters()
             .ToListAsync(cancellationToken);
 
         foreach (AppointmentRequest request in dueRequests)
@@ -41,6 +54,7 @@ public sealed class ExpireAppointmentRequestsService
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return dueRequests.Count;
     }

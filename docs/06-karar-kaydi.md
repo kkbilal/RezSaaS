@@ -44,6 +44,9 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-038 | Kabul | Müşteri kendi public business kapsamındaki taleplerini auth ile listeleyebilir, detay görebilir ve yalnızca `PendingApproval` talebi iptal edebilir | Confirmed appointment iptaliyle request iptalini karıştırmadan müşteri self-servis akışını tamamlar |
 | ADR-039 | Kabul | `PendingApproval` expiry worker aktif tenant'ları Tenant Management üzerinden enumerate eder ve her tenant için explicit tenant context set eder | Background job'larda implicit HTTP tenant context'e güvenilmez ve tenant izolasyonu korunur |
 | ADR-040 | Kabul | Public profil metadata, galeri, staff display policy ve branch slot ayarları Organization modelinde tenant-scoped tutulur | Public profil ve slot davranışını ürün ayarına bağlarken modül sınırları korunur |
+| ADR-041 | Kabul | Booking approve/decline/cancel/expire state geçişleri PostgreSQL row lock ile korunur; expiry batch `FOR UPDATE SKIP LOCKED` kullanır | Aynı request üzerindeki approve-vs-decline, approve-vs-expire ve retry yarışlarında son-yazan-kazan davranışını engeller |
+| ADR-042 | Kabul | Public request create, public slot search grid'iyle aynı branch slot interval hizasını zorunlu tutar | Müşterinin API ile UI'da gösterilmeyen ara dakika slotlarını talep etmesini engeller |
+| ADR-043 | Kabul | Unsafe HTTP method isteklerinde cross-origin `Origin`/`Referer` uyumsuzluğu API seviyesinde reddedilir | Cookie auth tercihinin CSRF yüzeyini azaltmak için token stratejisi öncesi minimum origin bariyeri sağlar |
 
 ## Değişiklik Süreci
 

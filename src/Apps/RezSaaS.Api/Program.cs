@@ -78,6 +78,8 @@ builder.Services.AddOptions<AppointmentRequestExpiryWorkerOptions>()
             && options.TenantBatchSize > 0,
         "Appointment request expiry worker options must use positive values.")
     .ValidateOnStart();
+builder.Services.AddOptions<UnsafeRequestOriginOptions>()
+    .Bind(builder.Configuration.GetSection(UnsafeRequestOriginOptions.SectionName));
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
@@ -158,6 +160,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 app.UseMiddleware<TenantContextMiddleware>();
+app.UseMiddleware<UnsafeRequestOriginMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");

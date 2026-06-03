@@ -10,6 +10,7 @@ namespace RezSaaS.Api.Business;
 public sealed class BusinessAppointmentRequestComposer
 {
     private const string Forbidden = "BUSINESS_APPOINTMENT_REQUEST_FORBIDDEN";
+    private const string InvalidStatus = "BUSINESS_APPOINTMENT_REQUEST_INVALID_STATUS";
     private const string MissingTenantContext = "MISSING_TENANT_CONTEXT";
     private const string NotFound = "BUSINESS_APPOINTMENT_REQUEST_NOT_FOUND";
     private const string Unauthorized = "BUSINESS_APPOINTMENT_REQUEST_UNAUTHORIZED";
@@ -99,6 +100,13 @@ public sealed class BusinessAppointmentRequestComposer
             return BusinessAppointmentRequestListResult.Failure(
                 BusinessAppointmentRequestOutcome.BadRequest,
                 MissingTenantContext);
+        }
+
+        if (!AppointmentRequestStatusFilter.IsValidOrEmpty(status))
+        {
+            return BusinessAppointmentRequestListResult.Failure(
+                BusinessAppointmentRequestOutcome.BadRequest,
+                InvalidStatus);
         }
 
         if (!await authorizationService.CanManageAppointmentRequestsAsync(

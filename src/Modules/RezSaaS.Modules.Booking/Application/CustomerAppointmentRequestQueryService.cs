@@ -38,8 +38,7 @@ public sealed class CustomerAppointmentRequestQueryService
             .Where(entity => entity.CustomerUserAccountId == customerUserAccountId
                 && branchIds.Contains(entity.BranchId));
 
-        if (!string.IsNullOrWhiteSpace(status)
-            && Enum.TryParse(status, ignoreCase: true, out AppointmentRequestStatus parsedStatus))
+        if (AppointmentRequestStatusFilter.TryParse(status, out AppointmentRequestStatus parsedStatus))
         {
             query = query.Where(entity => entity.Status == parsedStatus);
         }
