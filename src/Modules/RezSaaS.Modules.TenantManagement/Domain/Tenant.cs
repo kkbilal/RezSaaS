@@ -47,6 +47,20 @@ public sealed class Tenant
         return new Tenant(Guid.CreateVersion7(), slug, displayName, createdAtUtc);
     }
 
+    public static Tenant Create(
+        Guid id,
+        string slug,
+        string displayName,
+        DateTimeOffset createdAtUtc)
+    {
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Value is required.", nameof(id));
+        }
+
+        return new Tenant(id, slug, displayName, createdAtUtc);
+    }
+
     public TenantMembership AddMembership(
         Guid userAccountId,
         TenantMembershipRole role,

@@ -59,11 +59,16 @@ Durum: başladı; public auth'lı request create endpoint temeli tamamlandı.
 
 ## Dilim 2.4 - İşletme Onay Paneli API'si
 
-- BranchManager/BusinessOwner authz ve tenant membership scope kontrolü
-- Pending request listesi
-- Approve/decline endpoint'leri
-- Approval audit, transactional email outbox ve `Superseded` kapanışları
-- TTL expiry scheduler için explicit tenant scope
+Durum: başladı; business approval API temeli tamamlandı.
+
+- Tamamlandı: BranchManager/BusinessOwner authz ve tenant membership scope kontrolü
+- Tamamlandı: pending request listesi
+- Tamamlandı: approve/decline endpoint'leri
+- Tamamlandı: approval audit, transactional email outbox ve `Superseded` kapanışları application service üzerinden korunur
+- Tamamlandı: business decision endpoint'leri için tenant + user + IP rate limit policy
+- Açık: TTL expiry scheduler için explicit tenant scope
+- Açık: işletme panelinde request detay, müşteri bilgisi maskeleme ve operasyonel filtreler
+- Açık: idempotency key davranışı approve/decline için API kontratına taşınacak
 
 ## Kapanış Kriterleri
 

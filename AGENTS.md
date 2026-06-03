@@ -153,6 +153,8 @@ Slot bloklanmadığı için onay ekranında yarış olur:
 - Slot response UTC başlangıç/bitiş zamanını ve branch timezone/local gösterim bilgisini birlikte taşır.
 - Public rezervasyon isteği oluşturma auth zorunludur; tenant header beklemez, tenant context doğrulanmış `businessSlug` üzerinden geçici set edilir ve request `PendingApproval` olarak kalır.
 - Create öncesi staff/resource/variant/branch eşleşmesi ve slot uygunluğu doğrulanmadan `AppointmentRequest` üretilmez.
+- İşletme onay/ret endpoint'leri tenant header + authenticated user + tenant membership authz ister; `BusinessOwner` tenant-wide, `BranchManager` branch-scoped, `Staff` varsayılan deny.
+- Approve/decline API'leri mevcut Booking application servislerini kullanır; audit, transactional outbox ve `Superseded` davranışı bypass edilmez.
 
 ---
 

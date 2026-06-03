@@ -8,6 +8,10 @@ public sealed class BookingSecurityOptions
 
     public int AppointmentRequestWindowMinutes { get; init; } = 1;
 
+    public int BusinessDecisionPermitLimit { get; init; } = 60;
+
+    public int BusinessDecisionWindowMinutes { get; init; } = 1;
+
     public TimeSpan DefaultResponseBuffer { get; init; } = TimeSpan.FromHours(2);
 
     public int MaxConcurrentPendingRequestsPerUser { get; init; } = 3;

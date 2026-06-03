@@ -1,4 +1,5 @@
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.TenantManagement.Application;
 using RezSaaS.Modules.TenantManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,5 +19,6 @@ public sealed class TenantManagementModule : ModuleBase
 
         services.AddDbContext<TenantManagementDbContext>(
             options => options.UseNpgsql(connectionString));
+        services.AddScoped<TenantBookingAuthorizationService>();
     }
 }

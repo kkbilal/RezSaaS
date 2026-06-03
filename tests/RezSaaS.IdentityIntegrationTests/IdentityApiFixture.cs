@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using RezSaaS.BuildingBlocks.Tenancy;
+using RezSaaS.Modules.Admin.Infrastructure.Persistence;
 using RezSaaS.Modules.Availability.Domain;
 using RezSaaS.Modules.Availability.Infrastructure.Persistence;
 using RezSaaS.Modules.Booking.Domain;
@@ -18,10 +19,13 @@ using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Infrastructure.Security;
+using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 using RezSaaS.Modules.Organization.Domain;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
 using RezSaaS.Modules.Resources.Domain;
 using RezSaaS.Modules.Resources.Infrastructure.Persistence;
+using RezSaaS.Modules.TenantManagement.Domain;
+using RezSaaS.Modules.TenantManagement.Infrastructure.Persistence;
 
 namespace RezSaaS.IdentityIntegrationTests;
 
@@ -150,6 +154,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             scope.ServiceProvider.GetRequiredService<ResourcesDbContext>();
         BookingDbContext bookingDbContext =
             scope.ServiceProvider.GetRequiredService<BookingDbContext>();
+        TenantManagementDbContext tenantManagementDbContext =
+            scope.ServiceProvider.GetRequiredService<TenantManagementDbContext>();
         Guid tenantId = Guid.CreateVersion7();
         DateTimeOffset createdAtUtc = new(2026, 1, 2, 9, 0, 0, TimeSpan.Zero);
         DateOnly effectiveSlotDate = slotDate ?? new DateOnly(2026, 1, 5);
@@ -163,6 +169,14 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         DateTimeOffset resourceBlockEndUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(11, 15));
         DateTimeOffset availableSlotStartUtc = CreateTurkeyUtc(effectiveSlotDate, new TimeOnly(11, 15));
         tenantContextAccessor.TenantId = tenantId;
+
+        Tenant tenant = Tenant.Create(
+            tenantId,
+            slug,
+            "Atlas Tenant",
+            createdAtUtc);
+        tenantManagementDbContext.Tenants.Add(tenant);
+        await tenantManagementDbContext.SaveChangesAsync();
 
         Business business = Business.Create(
             tenantId,
@@ -266,12 +280,47 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         tenantContextAccessor.TenantId = null;
 
         return new PublicBusinessProfileSeed(
+            tenantId,
+            branch.Id,
             slug,
             branchSlug,
             variant.Id,
             staffMember.Id,
             chair.Id,
             availableSlotStartUtc);
+    }
+
+    public async Task GrantTenantMembershipAsync(
+        Guid tenantId,
+        Guid userAccountId,
+        TenantMembershipRole role,
+        Guid? branchId = null)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        TenantManagementDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<TenantManagementDbContext>();
+        bool tenantExists = await dbContext.Tenants.AnyAsync(entity => entity.Id == tenantId);
+        Assert.True(tenantExists);
+
+        dbContext.Memberships.Add(
+            TenantMembership.Create(
+                tenantId,
+                userAccountId,
+                role,
+                DateTimeOffset.UtcNow,
+                branchId));
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task<Guid> GetUserAccountIdAsync(string email)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        return await dbContext.Users
+            .Where(entity => entity.Email == email)
+            .Select(entity => entity.Id)
+            .SingleAsync();
     }
 
     public async Task<PlatformAdminBootstrapResult> BootstrapPlatformAdminAsync(
@@ -329,12 +378,21 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             serviceProvider.GetRequiredService<ResourcesDbContext>();
         BookingDbContext bookingDbContext =
             serviceProvider.GetRequiredService<BookingDbContext>();
+        TenantManagementDbContext tenantManagementDbContext =
+            serviceProvider.GetRequiredService<TenantManagementDbContext>();
+        AdminDbContext adminDbContext =
+            serviceProvider.GetRequiredService<AdminDbContext>();
+        MessagingDbContext messagingDbContext =
+            serviceProvider.GetRequiredService<MessagingDbContext>();
 
+        await adminDbContext.Database.MigrateAsync();
         await organizationDbContext.Database.MigrateAsync();
         await catalogDbContext.Database.MigrateAsync();
         await availabilityDbContext.Database.MigrateAsync();
         await resourcesDbContext.Database.MigrateAsync();
         await bookingDbContext.Database.MigrateAsync();
+        await messagingDbContext.Database.MigrateAsync();
+        await tenantManagementDbContext.Database.MigrateAsync();
     }
 
     private static string GetAdminConnectionString()

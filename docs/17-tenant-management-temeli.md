@@ -31,6 +31,7 @@ Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işlet
 - `BusinessOwner` tenant kapsamlıdır.
 - `BranchManager` ve `Staff` ileride branch scope ile sınırlandırılabilir.
 - Tenant membership rolleri global Identity rolleri değildir ve `AspNetRoles` içine eklenmez.
+- Booking approval yüzeyi için `BusinessOwner` tenant-wide, `BranchManager` branch-scoped authz kullanılır; `Staff` onay/ret yetkisi almaz.
 - Endpoint açıldığında her komut authn, authz, tenant isolation, audit, rate limit ve idempotency değerlendirmesinden geçmelidir.
 
 ## Test Kapsamı

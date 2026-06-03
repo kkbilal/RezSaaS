@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using RezSaaS.Api.Business;
 using RezSaaS.Api.Configuration;
 using RezSaaS.Api.PublicApi;
 using RezSaaS.BuildingBlocks.Modularity;
@@ -72,6 +73,7 @@ builder.Services.AddOptions<PublicSlotSearchOptions>()
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
+builder.Services.AddScoped<BusinessAppointmentRequestComposer>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();
@@ -110,6 +112,24 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(bookingSecurityOptions.AppointmentRequestWindowMinutes),
             });
     });
+    options.AddPolicy(BookingRateLimitPolicyNames.BusinessDecisions, httpContext =>
+    {
+        string remoteIpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        string tenantId = httpContext.Request.Headers[TenantContextHeaders.TenantId].FirstOrDefault()
+            ?? "tenant-missing";
+        string userId = httpContext.User.FindFirst("sub")?.Value
+            ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            $"{remoteIpAddress}:{tenantId}:{userId}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = bookingSecurityOptions.BusinessDecisionPermitLimit,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(bookingSecurityOptions.BusinessDecisionWindowMinutes),
+            });
+    });
 });
 
 WebApplication app = builder.Build();
@@ -135,6 +155,7 @@ app.MapHealthChecks("/health");
 app.MapPublicBusinessProfileEndpoints();
 app.MapPublicBusinessSlotEndpoints();
 app.MapPublicAppointmentRequestEndpoints();
+app.MapBusinessAppointmentRequestEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();

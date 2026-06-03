@@ -25,11 +25,14 @@ public sealed class BookingModule : ModuleBase
                 options => options.DefaultResponseBuffer > TimeSpan.Zero
                     && options.AppointmentRequestPermitLimit > 0
                     && options.AppointmentRequestWindowMinutes > 0
+                    && options.BusinessDecisionPermitLimit > 0
+                    && options.BusinessDecisionWindowMinutes > 0
                     && options.MaxConcurrentPendingRequestsPerUser > 0
                     && options.MaxRequestsPerUserPerDay > 0,
                 "Booking security options must use positive values.")
             .ValidateOnStart();
         services.AddScoped<CreateAppointmentRequestService>();
+        services.AddScoped<BusinessAppointmentRequestQueryService>();
         services.AddScoped<ConfirmedAppointmentQueryService>();
         services.AddScoped<ApproveAppointmentRequestService>();
         services.AddScoped<DeclineAppointmentRequestService>();

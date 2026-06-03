@@ -38,6 +38,7 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-032 | Kabul | Public profile detay response'u API composition root içinde birleştirilir; tenant context yalnızca doğrulanmış business slug üzerinden read-only servisler için geçici set edilir | Modüller arası doğrudan referans veya tablo erişimi eklemeden Organization, Catalog ve Availability verisi tek public kontratta sunulur |
 | ADR-033 | Kabul | Public slot bulma API composition root içinde çalışır; `PendingApproval` bloklamaz, yalnızca confirmed appointment, staff unavailable ve resource block gerçek kapasite engeli sayılır | İşletme onaylı modelin kötüye kullanılmasını önlerken müşteriye gerçek kesinleşmiş kapasiteye göre uygun slot gösterir |
 | ADR-034 | Kabul | Public rezervasyon isteği oluşturma auth zorunlu endpoint olarak API composition root içinde çalışır ve `AppointmentRequest` üretmeden önce public slug, branch, staff, resource, service variant ve slot uygunluğunu doğrular | Tenant header istemeyen müşteri akışını korurken application service limitlerini, abuse üretimini ve işletme onaylı `PendingApproval` modelini bozmadan kullanır |
+| ADR-035 | Kabul | İşletme onay paneli API'si tenant header + authenticated user + tenant membership authz ile açılır; `BusinessOwner` tenant-wide, `BranchManager` branch-scoped karar verebilir | Global Identity rolü üretmeden tenant kapsamlı operasyon yetkisini korur ve approve/decline komutlarını mevcut audit/outbox/supersede application servisleri üzerinden yürütür |
 
 ## Değişiklik Süreci
 

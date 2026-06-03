@@ -21,6 +21,7 @@
 - `BranchManager` ve `Staff` üyelikleri branch scope ile sınırlandırılabilir.
 - Tenant/işletme yönetim endpoint'leri privileged MFA/step-up ve ilk `PlatformAdmin` bootstrap prosedürü tamamlanmadan yayınlanmaz.
 - Public rezervasyon isteği oluşturma yalnızca authenticated platform hesabıyla yapılır; global `Customer` rol kaydı aranmaz, aktif hesap müşteri bağlamı kabul edilir.
+- İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
 
 ## Yetki Özeti
 
