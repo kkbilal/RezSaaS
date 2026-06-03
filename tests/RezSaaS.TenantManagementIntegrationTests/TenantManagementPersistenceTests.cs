@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using RezSaaS.Modules.TenantManagement.Application;
 using RezSaaS.Modules.TenantManagement.Domain;
 using RezSaaS.Modules.TenantManagement.Infrastructure.Persistence;
 
@@ -61,6 +62,48 @@ public sealed class TenantManagementPersistenceTests : IAsyncLifetime
         Assert.Equal(1, await dbContext.Tenants.CountAsync());
         Assert.Equal(1, await dbContext.Memberships.CountAsync());
         Assert.Equal(1, await dbContext.AuditLogEntries.CountAsync());
+    }
+
+    [Fact]
+    public async Task CreateTenantWithOwnerServiceProvisionsOwnerMembershipAndAudit()
+    {
+        await using TenantManagementDbContext dbContext = CreateDbContext();
+        CreateTenantWithOwnerService service = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        Guid ownerUserAccountId = Guid.CreateVersion7();
+        string slug = $"salon-{Guid.NewGuid():N}"[..16];
+
+        CreateTenantWithOwnerResult result =
+            await service.CreateAsync(
+                new CreateTenantWithOwnerCommand(
+                    actorUserAccountId,
+                    slug,
+                    "Salon Demo",
+                    ownerUserAccountId));
+
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.TenantId);
+        Assert.Equal(1, await dbContext.Tenants.CountAsync());
+        Assert.Equal(1, await dbContext.Memberships.CountAsync());
+        Assert.Equal(1, await dbContext.AuditLogEntries.CountAsync());
+
+        TenantMembership membership = await dbContext.Memberships.SingleAsync();
+        Assert.Equal(result.TenantId, membership.TenantId);
+        Assert.Equal(ownerUserAccountId, membership.UserAccountId);
+        Assert.Equal(TenantMembershipRole.BusinessOwner, membership.Role);
+
+        CreateTenantWithOwnerResult duplicateResult =
+            await service.CreateAsync(
+                new CreateTenantWithOwnerCommand(
+                    actorUserAccountId,
+                    slug.ToUpperInvariant(),
+                    "Salon Demo Copy",
+                    Guid.CreateVersion7()));
+
+        Assert.False(duplicateResult.Succeeded);
+        Assert.Equal("TENANT_SLUG_ALREADY_EXISTS", duplicateResult.ErrorCode);
     }
 
     [Fact]
@@ -259,5 +302,20 @@ public sealed class TenantManagementPersistenceTests : IAsyncLifetime
         }
 
         return value;
+    }
+
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        private readonly DateTimeOffset utcNow;
+
+        public FixedTimeProvider(DateTimeOffset utcNow)
+        {
+            this.utcNow = utcNow;
+        }
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return utcNow;
+        }
     }
 }

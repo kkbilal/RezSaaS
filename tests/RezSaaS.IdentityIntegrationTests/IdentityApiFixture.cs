@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -137,6 +138,32 @@ public sealed class IdentityApiFixture : IAsyncLifetime
     public HttpClient CreateClient()
     {
         return factory!.CreateClient();
+    }
+
+    public HttpClient CreatePlatformAdminStepUpClient(Guid userAccountId)
+    {
+        return factory!
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services
+                        .AddAuthentication(TestPlatformAdminAuthenticationHandler.AuthenticationScheme)
+                        .AddScheme<TestPlatformAdminAuthenticationOptions, TestPlatformAdminAuthenticationHandler>(
+                            TestPlatformAdminAuthenticationHandler.AuthenticationScheme,
+                            options => options.UserAccountId = userAccountId);
+                    services.PostConfigure<AuthenticationOptions>(options =>
+                    {
+                        options.DefaultAuthenticateScheme =
+                            TestPlatformAdminAuthenticationHandler.AuthenticationScheme;
+                        options.DefaultChallengeScheme =
+                            TestPlatformAdminAuthenticationHandler.AuthenticationScheme;
+                        options.DefaultForbidScheme =
+                            TestPlatformAdminAuthenticationHandler.AuthenticationScheme;
+                    });
+                });
+            })
+            .CreateClient();
     }
 
     public async Task<PublicBusinessProfileSeed> SeedPublicBusinessProfileAsync(
@@ -404,6 +431,39 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
 
         return await dbContext.Roles.CountAsync();
+    }
+
+    public async Task<int> GetTenantCountAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        TenantManagementDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<TenantManagementDbContext>();
+
+        return await dbContext.Tenants.CountAsync();
+    }
+
+    public async Task<int> GetTenantAuditLogCountAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        TenantManagementDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<TenantManagementDbContext>();
+
+        return await dbContext.AuditLogEntries.CountAsync();
+    }
+
+    public async Task<bool> HasBusinessOwnerMembershipAsync(
+        Guid tenantId,
+        Guid userAccountId)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        TenantManagementDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<TenantManagementDbContext>();
+
+        return await dbContext.Memberships.AnyAsync(entity =>
+            entity.TenantId == tenantId
+            && entity.UserAccountId == userAccountId
+            && entity.Role == TenantMembershipRole.BusinessOwner
+            && entity.Status == TenantMembershipStatus.Active);
     }
 
     private static async Task MigratePublicProfileContextsAsync(IServiceProvider serviceProvider)

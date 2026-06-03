@@ -15,6 +15,8 @@ Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işlet
 - `TenantAuditLogEntry`: tenant yönetim aksiyonları için append-only audit başlangıcı
 - EF Core `TenantManagementDbContext`
 - PostgreSQL `tenant_management` schema'sı
+- `CreateTenantWithOwnerService`: `Tenant` + ilk `BusinessOwner` membership + audit kaydını tek komutta üretir
+- `POST /api/admin/tenants`: API composition root altında `PlatformAdminWithStepUp` korumalı tenant provisioning yüzeyi
 
 ## DB Kuralları
 
@@ -33,6 +35,7 @@ Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işlet
 - Tenant membership rolleri global Identity rolleri değildir ve `AspNetRoles` içine eklenmez.
 - Booking approval yüzeyi için `BusinessOwner` tenant-wide, `BranchManager` branch-scoped authz kullanılır; `Staff` onay/ret yetkisi almaz.
 - Endpoint açıldığında her komut authn, authz, tenant isolation, audit, rate limit ve idempotency değerlendirmesinden geçmelidir.
+- Platform admin tenant provisioning endpoint'i owner kullanıcısının aktif `UserAccount` olduğunu Identity üzerinden doğrular; Tenant Management modülü Identity assembly'sine doğrudan referans almaz.
 
 ## Test Kapsamı
 
@@ -45,9 +48,10 @@ Doğrulananlar:
 - Slug benzersizliği case-insensitive davranır.
 - Bir kullanıcı aynı tenant içinde tek membership alabilir.
 - `BusinessOwner` branch scope ile oluşturulamaz.
+- Tenant provisioning service, ilk owner membership ve audit kaydını üretir.
 
 ## Açık İşler
 
 - Explicit tenant scope taşıyan background job kontratı Phase 2 booking expiry worker ile ilk kez uygulandı; merkezi job dashboard/retry politikası sonraki fazda detaylandırılacak.
-- Tenant/işletme yönetim application service ve endpoint yüzeyi
-- Bootstrap sonrası ilk tenant oluşturma ürün akışı
+- Tenant/işletme yönetim application service ve endpoint yüzeyinin genişletilmesi: listeleme, detay, suspend/close, membership revoke/suspend
+- Bootstrap sonrası ilk tenant oluşturma UI/runbook akışı

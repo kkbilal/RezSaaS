@@ -214,6 +214,8 @@ En azından şu aksiyonlar auditlenir:
 - `DevelopmentSinkEmailSender` yalnızca local development/test içindir; token veya doğrulama linki loglamaz.
 - Login/register/password reset yüzeyi IP bazlı rate limit ve Identity lockout ile korunur.
 - Normal müşteri login akışı her girişte tek kullanımlık kod istemez. Ayrıcalıklı hesaplar için MFA/step-up ve güvenilir cihaz/oturum policy tamamlanmadan platform admin veya işletme yönetim endpoint'i yayınlanmaz.
+- İlk `PlatformAdmin` bootstrap endpoint'i tek istisna olarak anonymous olabilir; bunun için token-hash doğrulama, rate limit, origin guard, audit ve "zaten admin varsa reddet" davranışı zorunludur. Bootstrap token/parola hiçbir response veya log içinde dönmez.
+- Tenant provisioning endpoint'leri `PlatformAdminWithStepUp` policy olmadan yayınlanmaz; owner kullanıcı Identity içinde aktif `UserAccount` olarak doğrulanır, tenant rolü global Identity rolüne dönüştürülmez.
 
 ---
 

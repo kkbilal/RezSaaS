@@ -47,6 +47,8 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-041 | Kabul | Booking approve/decline/cancel/expire state geçişleri PostgreSQL row lock ile korunur; expiry batch `FOR UPDATE SKIP LOCKED` kullanır | Aynı request üzerindeki approve-vs-decline, approve-vs-expire ve retry yarışlarında son-yazan-kazan davranışını engeller |
 | ADR-042 | Kabul | Public request create, public slot search grid'iyle aynı branch slot interval hizasını zorunlu tutar | Müşterinin API ile UI'da gösterilmeyen ara dakika slotlarını talep etmesini engeller |
 | ADR-043 | Kabul | Unsafe HTTP method isteklerinde cross-origin `Origin`/`Referer` uyumsuzluğu API seviyesinde reddedilir | Cookie auth tercihinin CSRF yüzeyini azaltmak için token stratejisi öncesi minimum origin bariyeri sağlar |
+| ADR-044 | Kabul | İlk `PlatformAdmin` HTTP bootstrap yüzeyi token-hash kontrollü, rate limited ve tek kullanımlık davranışla `/api/admin/bootstrap/platform-admin` altında açılır | Migration seed'i kullanmadan yerel/production ilk admin üretimini API üzerinden denetlenebilir ve otomasyona uygun hale getirir |
+| ADR-045 | Kabul | Tenant provisioning API'si yalnızca `PlatformAdminWithStepUp` policy ile çalışır ve owner kullanıcısını Identity üzerinden doğruladıktan sonra `BusinessOwner` membership üretir | Tenant yönetim yüzeyinin MFA/step-up kapısı olmadan açılmasını engeller; global Identity rolü ile tenant rolünü ayrı tutar |
 
 ## Değişiklik Süreci
 

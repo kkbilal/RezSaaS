@@ -94,6 +94,7 @@ public sealed class IdentityModule : ModuleBase
 
         services.AddScoped<SignInManager<UserAccount>, UserAccountSignInManager>();
         services.AddScoped<CustomerAccountLookupService>();
+        services.AddScoped<UserAccountExistenceService>();
         services.AddScoped<IPlatformAdminBootstrapService, PlatformAdminBootstrapService>();
         services.AddSingleton<IEmailSender<UserAccount>>(
             identityOptions.DeliveryMode switch

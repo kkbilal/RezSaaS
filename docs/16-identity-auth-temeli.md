@@ -21,6 +21,7 @@ Identity/Auth yüzeyi diğer domain API'lerinden önce tamamlanan zorunlu güven
 - Local development için token/link loglamayan e-posta sink
 - Production için SMTP e-posta gönderici konfigürasyonu (`Identity:DeliveryMode=Smtp`)
 - Token-hash kontrollü, auditli ilk `PlatformAdmin` bootstrap servisi
+- Token-hash kontrollü, rate limited ilk `PlatformAdmin` HTTP bootstrap endpoint'i
 - Identity audit log tablosu
 
 ## Rol Ayrımı
@@ -44,6 +45,12 @@ Identity API endpoint'leri `/api/auth` altında map edilir:
 - `POST /resetPassword`
 - `POST /manage/2fa`
 - `GET/POST /manage/info`
+
+Admin bootstrap endpoint'i API composition root altında map edilir:
+
+- `POST /api/admin/bootstrap/platform-admin`
+
+Bu endpoint anonymous olabilir çünkü ilk admin henüz yoktur; güvenlik sınırı configured SHA-256 bootstrap token hash'i, auth rate limit, origin guard ve "zaten PlatformAdmin varsa reddet" davranışıdır.
 
 Browser istemcileri cookie auth tercih eder. Bearer token yalnızca gerekli kontrollü istemciler için kullanılır.
 
@@ -73,6 +80,7 @@ Production e-posta sağlayıcısı bağlanmadan API başlangıçta hata verir. B
 - Konfigürasyon: `Identity:Bootstrap:PlatformAdminBootstrapTokenSha256`
 - Audit action: `PlatformAdminBootstrapped`
 - Bootstrap token, parola ve e-posta repo veya migration içine yazılmaz.
+- HTTP endpoint sonucu token veya parola döndürmez; başarısız token durumunda detaylı secret bilgisi sızdırmaz.
 
 ## Migration
 

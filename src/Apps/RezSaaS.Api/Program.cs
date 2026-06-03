@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using RezSaaS.Api.Admin;
 using RezSaaS.Api.Business;
 using RezSaaS.Api.Configuration;
 using RezSaaS.Api.PublicApi;
@@ -84,6 +85,7 @@ builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
 builder.Services.AddScoped<BusinessAppointmentRequestComposer>();
+builder.Services.AddScoped<AdminTenantProvisioningComposer>();
 builder.Services.AddHostedService<AppointmentRequestExpiryHostedService>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
@@ -141,6 +143,31 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(bookingSecurityOptions.BusinessDecisionWindowMinutes),
             });
     });
+    options.AddPolicy(AdminControlPlaneRateLimitPolicyNames.Bootstrap, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(15),
+            }));
+    options.AddPolicy(AdminControlPlaneRateLimitPolicyNames.Operations, httpContext =>
+    {
+        string remoteIpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        string userId = httpContext.User.FindFirst("sub")?.Value
+            ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            $"{remoteIpAddress}:{userId}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1),
+            });
+    });
 });
 
 WebApplication app = builder.Build();
@@ -168,6 +195,7 @@ app.MapPublicBusinessProfileEndpoints();
 app.MapPublicBusinessSlotEndpoints();
 app.MapPublicAppointmentRequestEndpoints();
 app.MapBusinessAppointmentRequestEndpoints();
+app.MapAdminControlPlaneEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();
