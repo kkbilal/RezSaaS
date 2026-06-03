@@ -11,6 +11,7 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `PlatformRole` | Platform operasyon yetkisi | Yalnızca `PlatformAdmin`, `PlatformSupport` |
 | `TenantMembershipRole` | İşletme kapsamlı yetki | `BusinessOwner`, `BranchManager`, `Staff` |
 | `TenantAuditLogEntry` | Tenant yönetimiyle ilgili denetlenebilir olay kaydı | Üyelik/ayar değişiklikleri gibi kritik işlemler için append-only tutulur |
+| `Control-plane` | Platform operasyonunun tenant ve güvenlik yönetim yüzeyi | Tenant self-service işletme panelinden ayrıdır; `PlatformAdminWithStepUp` ister |
 | `Business` | Müşteriye açık marka/işletme profili | Tek domain altında `/isletme/{businessSlug}` ile paylaşılır; public slug global benzersizdir |
 | `BusinessGalleryImage` | Public business profilinde yayınlanan galeri görseli | Upload/storage kuralları ayrı dosya yükleme fazında netleşir |
 | `PublicStaffDisplayPolicy` | Public profilde staff isimlerinin nasıl gösterileceğini belirleyen işletme ayarı | Slot kapasite hesabını değil yalnızca public gösterimi etkiler |

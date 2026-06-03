@@ -20,6 +20,9 @@
 - `BusinessOwner` tenant kapsamlıdır ve branch scope alamaz.
 - `BranchManager` ve `Staff` üyelikleri branch scope ile sınırlandırılabilir.
 - Tenant/işletme yönetim endpoint'leri privileged MFA/step-up ve ilk `PlatformAdmin` bootstrap prosedürü tamamlanmadan yayınlanmaz.
+- Platform control-plane tenant liste/detay/provisioning ve membership add/suspend/revoke aksiyonları `PlatformAdminWithStepUp`, aktif `UserAccount` doğrulaması ve audit ister.
+- `Revoked` membership terminaldir; yeniden `Suspended` veya aktif duruma çevrilmez.
+- Son aktif `BusinessOwner` membership'i suspend/revoke edilemez.
 - Public rezervasyon isteği oluşturma yalnızca authenticated platform hesabıyla yapılır; global `Customer` rol kaydı aranmaz, aktif hesap müşteri bağlamı kabul edilir.
 - İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
@@ -34,7 +37,7 @@
 | Kendi talebini iptal | Evet | Hayır | Hayır | Hayır | Hayır | Hayır |
 | Talep onay/ret | Hayır | Politika ile | Atandığı şube | Tenant | Hayır | Acil operasyon ile |
 | Staff/resource düzenleme | Hayır | Hayır | Atandığı şube | Tenant | Hayır | Hayır |
-| Rol ve üyelik yönetimi | Hayır | Hayır | Hayır | Tenant | Hayır | Acil operasyon ile |
+| Rol ve üyelik yönetimi | Hayır | Hayır | Hayır | Tenant | Hayır | Step-up operasyon ile |
 | Abuse işaretleme | Hayır | Politika ile | Atandığı şube | Tenant | İnceleme | Evet |
 | Strike/ban uygulama | Hayır | Hayır | Hayır | Hayır | Öneri | Evet |
 | Audit log görüntüleme | Kendi olayları | Sınırlı | Şube | Tenant | Gerekçeli | Evet |

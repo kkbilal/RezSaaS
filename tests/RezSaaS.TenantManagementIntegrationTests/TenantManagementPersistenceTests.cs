@@ -107,6 +107,165 @@ public sealed class TenantManagementPersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TenantMembershipServicesManageStatusAndProtectLastOwner()
+    {
+        await using TenantManagementDbContext dbContext = CreateDbContext();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        Guid firstOwnerUserAccountId = Guid.CreateVersion7();
+        Guid secondOwnerUserAccountId = Guid.CreateVersion7();
+        Guid staffUserAccountId = Guid.CreateVersion7();
+        CreateTenantWithOwnerService createTenantService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        AddTenantMembershipService addMembershipService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        ChangeTenantMembershipStatusService changeMembershipStatusService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        CreateTenantWithOwnerResult tenantResult =
+            await createTenantService.CreateAsync(
+                new CreateTenantWithOwnerCommand(
+                    actorUserAccountId,
+                    $"salon-{Guid.NewGuid():N}"[..16],
+                    "Salon Demo",
+                    firstOwnerUserAccountId));
+        Guid tenantId = tenantResult.TenantId!.Value;
+
+        TenantMembershipCommandResult staffMembershipResult =
+            await addMembershipService.AddAsync(
+                new AddTenantMembershipCommand(
+                    tenantId,
+                    actorUserAccountId,
+                    staffUserAccountId,
+                    TenantMembershipRole.Staff,
+                    Guid.CreateVersion7()));
+
+        Assert.True(staffMembershipResult.Succeeded, staffMembershipResult.ErrorCode);
+
+        TenantMembershipCommandResult suspendedStaffResult =
+            await changeMembershipStatusService.SuspendAsync(
+                new ChangeTenantMembershipStatusCommand(
+                    tenantId,
+                    staffMembershipResult.MembershipId!.Value,
+                    actorUserAccountId));
+
+        Assert.True(suspendedStaffResult.Succeeded);
+
+        Guid firstOwnerMembershipId = await dbContext.Memberships
+            .Where(entity => entity.TenantId == tenantId
+                && entity.UserAccountId == firstOwnerUserAccountId)
+            .Select(entity => entity.Id)
+            .SingleAsync();
+        TenantMembershipCommandResult lastOwnerRevokeResult =
+            await changeMembershipStatusService.RevokeAsync(
+                new ChangeTenantMembershipStatusCommand(
+                    tenantId,
+                    firstOwnerMembershipId,
+                    actorUserAccountId));
+
+        Assert.False(lastOwnerRevokeResult.Succeeded);
+        Assert.Equal("TENANT_LAST_OWNER_REQUIRED", lastOwnerRevokeResult.ErrorCode);
+
+        TenantMembershipCommandResult secondOwnerResult =
+            await addMembershipService.AddAsync(
+                new AddTenantMembershipCommand(
+                    tenantId,
+                    actorUserAccountId,
+                    secondOwnerUserAccountId,
+                    TenantMembershipRole.BusinessOwner,
+                    BranchId: null));
+        TenantMembershipCommandResult firstOwnerRevokeResult =
+            await changeMembershipStatusService.RevokeAsync(
+                new ChangeTenantMembershipStatusCommand(
+                    tenantId,
+                    firstOwnerMembershipId,
+                    actorUserAccountId));
+
+        Assert.True(secondOwnerResult.Succeeded);
+        Assert.True(firstOwnerRevokeResult.Succeeded);
+
+        TenantMembership firstOwnerMembership =
+            await dbContext.Memberships.SingleAsync(entity => entity.Id == firstOwnerMembershipId);
+        TenantMembership staffMembership =
+            await dbContext.Memberships.SingleAsync(entity => entity.Id == staffMembershipResult.MembershipId);
+        Assert.Equal(TenantMembershipStatus.Revoked, firstOwnerMembership.Status);
+        Assert.Equal(TenantMembershipStatus.Suspended, staffMembership.Status);
+        Assert.Equal(5, await dbContext.AuditLogEntries.CountAsync());
+    }
+
+    [Fact]
+    public async Task RevokedMembershipCannotBeSuspendedAgain()
+    {
+        await using TenantManagementDbContext dbContext = CreateDbContext();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        Guid ownerUserAccountId = Guid.CreateVersion7();
+        Guid staffUserAccountId = Guid.CreateVersion7();
+        CreateTenantWithOwnerService createTenantService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        AddTenantMembershipService addMembershipService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        ChangeTenantMembershipStatusService changeMembershipStatusService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        CreateTenantWithOwnerResult tenantResult =
+            await createTenantService.CreateAsync(
+                new CreateTenantWithOwnerCommand(
+                    actorUserAccountId,
+                    $"salon-{Guid.NewGuid():N}"[..16],
+                    "Salon Demo",
+                    ownerUserAccountId));
+        Guid tenantId = tenantResult.TenantId!.Value;
+        TenantMembershipCommandResult staffMembershipResult =
+            await addMembershipService.AddAsync(
+                new AddTenantMembershipCommand(
+                    tenantId,
+                    actorUserAccountId,
+                    staffUserAccountId,
+                    TenantMembershipRole.Staff,
+                    Guid.CreateVersion7()));
+
+        TenantMembershipCommandResult revokeResult =
+            await changeMembershipStatusService.RevokeAsync(
+                new ChangeTenantMembershipStatusCommand(
+                    tenantId,
+                    staffMembershipResult.MembershipId!.Value,
+                    actorUserAccountId));
+        TenantMembershipCommandResult suspendRevokedResult =
+            await changeMembershipStatusService.SuspendAsync(
+                new ChangeTenantMembershipStatusCommand(
+                    tenantId,
+                    staffMembershipResult.MembershipId.Value,
+                    actorUserAccountId));
+
+        Assert.True(revokeResult.Succeeded);
+        Assert.False(suspendRevokedResult.Succeeded);
+        Assert.Equal("TENANT_MEMBERSHIP_REVOKED", suspendRevokedResult.ErrorCode);
+
+        TenantMembership staffMembership =
+            await dbContext.Memberships.SingleAsync(entity => entity.Id == staffMembershipResult.MembershipId);
+        Assert.Equal(TenantMembershipStatus.Revoked, staffMembership.Status);
+        Assert.Equal(3, await dbContext.AuditLogEntries.CountAsync());
+    }
+
+    [Fact]
+    public void RevokedMembershipIsTerminalInDomain()
+    {
+        TenantMembership membership = TenantMembership.Create(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            TenantMembershipRole.Staff,
+            testTime,
+            Guid.CreateVersion7());
+
+        membership.Revoke();
+
+        Assert.Throws<InvalidOperationException>(membership.Suspend);
+    }
+
+    [Fact]
     public async Task TenantSlugMustBeUniqueCaseInsensitively()
     {
         string slug = $"salon-{Guid.NewGuid():N}"[..16];

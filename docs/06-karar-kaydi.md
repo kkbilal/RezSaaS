@@ -49,6 +49,7 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-043 | Kabul | Unsafe HTTP method isteklerinde cross-origin `Origin`/`Referer` uyumsuzluğu API seviyesinde reddedilir | Cookie auth tercihinin CSRF yüzeyini azaltmak için token stratejisi öncesi minimum origin bariyeri sağlar |
 | ADR-044 | Kabul | İlk `PlatformAdmin` HTTP bootstrap yüzeyi token-hash kontrollü, rate limited ve tek kullanımlık davranışla `/api/admin/bootstrap/platform-admin` altında açılır | Migration seed'i kullanmadan yerel/production ilk admin üretimini API üzerinden denetlenebilir ve otomasyona uygun hale getirir |
 | ADR-045 | Kabul | Tenant provisioning API'si yalnızca `PlatformAdminWithStepUp` policy ile çalışır ve owner kullanıcısını Identity üzerinden doğruladıktan sonra `BusinessOwner` membership üretir | Tenant yönetim yüzeyinin MFA/step-up kapısı olmadan açılmasını engeller; global Identity rolü ile tenant rolünü ayrı tutar |
+| ADR-046 | Kabul | Tenant control-plane liste/detay ve membership add/suspend/revoke API'leri yalnızca `PlatformAdminWithStepUp` ile açılır; membership değişiklikleri aktif `UserAccount` doğrulaması, audit, terminal `Revoked` durumu ve son aktif `BusinessOwner` koruması uygular | Platform operasyonunun tenant rollerini global Identity rollerine dönüştürmeden yönetmesini sağlar ve tenant'ın sahipsiz kalmasını engeller |
 
 ## Değişiklik Süreci
 

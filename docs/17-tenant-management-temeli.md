@@ -4,7 +4,7 @@
 
 Tenant Management modülü; RezSaaS içindeki tenant yaşam döngüsü, tenant üyeliği ve tenant yönetim audit omurgasının başlangıç noktasıdır.
 
-Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işletme yönetim endpoint'leri `PlatformAdminWithStepUp` ve tenant membership authz kontrolleri kullanılmadan yayınlanmaz.
+Bu modül tenant yaşam döngüsü için domain/persistence temelini ve Phase 3 control-plane başlangıcını sağlar. Platform operasyon endpoint'leri `PlatformAdminWithStepUp` ile korunur; tenant self-service işletme yönetimi ise tenant membership authz tamamlanmadan yayınlanmaz.
 
 ## Uygulanan Temel
 
@@ -16,7 +16,12 @@ Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işlet
 - EF Core `TenantManagementDbContext`
 - PostgreSQL `tenant_management` schema'sı
 - `CreateTenantWithOwnerService`: `Tenant` + ilk `BusinessOwner` membership + audit kaydını tek komutta üretir
+- `TenantControlPlaneQueryService`: platform admin için tenant liste/detay ve membership read modeli
+- `AddTenantMembershipService`: tenant membership ekleme ve audit kaydı
+- `ChangeTenantMembershipStatusService`: membership suspend/revoke, terminal `Revoked` durumu ve son aktif owner koruması
 - `POST /api/admin/tenants`: API composition root altında `PlatformAdminWithStepUp` korumalı tenant provisioning yüzeyi
+- `GET /api/admin/tenants`, `GET /api/admin/tenants/{tenantId}` ve `GET /api/admin/tenants/{tenantId}/memberships`: platform control-plane okuma yüzeyleri
+- `POST /api/admin/tenants/{tenantId}/memberships`, `/suspend`, `/revoke`: platform control-plane membership yönetim yüzeyleri
 
 ## DB Kuralları
 
@@ -33,6 +38,9 @@ Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işlet
 - `BusinessOwner` tenant kapsamlıdır.
 - `BranchManager` ve `Staff` ileride branch scope ile sınırlandırılabilir.
 - Tenant membership rolleri global Identity rolleri değildir ve `AspNetRoles` içine eklenmez.
+- Tenant membership ekleme/suspend/revoke endpoint'leri `PlatformAdminWithStepUp` ister, hedef kullanıcıyı aktif `UserAccount` olarak doğrular ve audit kaydı üretir.
+- `Revoked` terminal durumdur; revoked membership tekrar `Suspended` duruma çekilmez.
+- Son aktif `BusinessOwner` membership'i suspend/revoke edilemez.
 - Booking approval yüzeyi için `BusinessOwner` tenant-wide, `BranchManager` branch-scoped authz kullanılır; `Staff` onay/ret yetkisi almaz.
 - Endpoint açıldığında her komut authn, authz, tenant isolation, audit, rate limit ve idempotency değerlendirmesinden geçmelidir.
 - Platform admin tenant provisioning endpoint'i owner kullanıcısının aktif `UserAccount` olduğunu Identity üzerinden doğrular; Tenant Management modülü Identity assembly'sine doğrudan referans almaz.
@@ -49,9 +57,13 @@ Doğrulananlar:
 - Bir kullanıcı aynı tenant içinde tek membership alabilir.
 - `BusinessOwner` branch scope ile oluşturulamaz.
 - Tenant provisioning service, ilk owner membership ve audit kaydını üretir.
+- Tenant membership service, status geçişlerini auditler, revoked üyeliği terminal tutar ve son aktif `BusinessOwner` revoke/suspend denemesini reddeder.
+- Admin control-plane API, tenant liste/detay ve membership add/suspend/revoke akışlarını `PlatformAdminWithStepUp` ile doğrular.
 
 ## Açık İşler
 
 - Explicit tenant scope taşıyan background job kontratı Phase 2 booking expiry worker ile ilk kez uygulandı; merkezi job dashboard/retry politikası sonraki fazda detaylandırılacak.
-- Tenant/işletme yönetim application service ve endpoint yüzeyinin genişletilmesi: listeleme, detay, suspend/close, membership revoke/suspend
+- Tenant lifecycle suspend/close komutları ve operasyon runbook'u
+- Tenant self-service işletme yönetimi için `BusinessOwner`/`BranchManager` authz yüzeyi
+- `BranchManager`/`Staff` branch scope doğrulamasının Organization branch lifecycle kaynağına bağlanması
 - Bootstrap sonrası ilk tenant oluşturma UI/runbook akışı

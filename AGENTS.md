@@ -216,6 +216,7 @@ En azından şu aksiyonlar auditlenir:
 - Normal müşteri login akışı her girişte tek kullanımlık kod istemez. Ayrıcalıklı hesaplar için MFA/step-up ve güvenilir cihaz/oturum policy tamamlanmadan platform admin veya işletme yönetim endpoint'i yayınlanmaz.
 - İlk `PlatformAdmin` bootstrap endpoint'i tek istisna olarak anonymous olabilir; bunun için token-hash doğrulama, rate limit, origin guard, audit ve "zaten admin varsa reddet" davranışı zorunludur. Bootstrap token/parola hiçbir response veya log içinde dönmez.
 - Tenant provisioning endpoint'leri `PlatformAdminWithStepUp` policy olmadan yayınlanmaz; owner kullanıcı Identity içinde aktif `UserAccount` olarak doğrulanır, tenant rolü global Identity rolüne dönüştürülmez.
+- Tenant membership yönetim endpoint'leri (add/suspend/revoke) `PlatformAdminWithStepUp` ister; hedef kullanıcı aktif `UserAccount` olmalı, `Revoked` terminal durum olmalı, son aktif `BusinessOwner` suspend/revoke edilemez ve her state değişimi auditlenir.
 
 ---
 

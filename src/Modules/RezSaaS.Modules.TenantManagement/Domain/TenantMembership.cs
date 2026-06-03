@@ -76,6 +76,11 @@ public sealed class TenantMembership
 
     public void Suspend()
     {
+        if (Status == TenantMembershipStatus.Revoked)
+        {
+            throw new InvalidOperationException("Revoked memberships cannot be suspended.");
+        }
+
         Status = TenantMembershipStatus.Suspended;
     }
 }
