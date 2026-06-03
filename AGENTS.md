@@ -284,6 +284,7 @@ tests/
 - Her modül yalnızca `RezSaaS.BuildingBlocks` referansı alabilir.
 - Modülden modüle doğrudan assembly referansı yasaktır; CI mimari testi bunu denetler.
 - Ortak domain entity üretip `BuildingBlocks` içine taşımak yasaktır. `BuildingBlocks` yalnızca teknik kontratlar içindir.
+- `BuildingBlocks` içinde cross-module teknik kontrat bulunabilir (`IAbuseEventRecorder`, `IAuditLogRecorder`, `ITransactionalMessageOutbox` gibi); bu kontratlar domain entity, EF model veya modül içi iş kuralı taşımaz.
 - Modüller arası use-case ihtiyacı oluşursa açık contract/event tasarlanır ve ADR güncellenir.
 
 ### 11.3 Teknik sürüm ve yerel altyapı

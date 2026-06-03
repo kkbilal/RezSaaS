@@ -4,9 +4,11 @@
 
 - `Draft`: istemci tarafında seçim yapılıyor; veritabanında rezervasyon kaydı olmak zorunda değil
 - `PendingApproval`: randevu isteği işletmeye iletildi
+- `Approved`: işletme isteği seçti; bu request kapanır ve ayrı bir `Appointment` `Confirmed` olarak oluşur
 - `Confirmed`: işletme onayladı, randevu kesinleşti
 - `Declined`: işletme reddetti
 - `Expired`: istek zaman aşımı ile kapandı
+- `Superseded`: aynı staff veya resource zaman aralığı artık confirmed appointment ile karşılanamadığı için kapandı
 - `CancelledByCustomer`
 - `CancelledByBusiness`
 - `Completed`
@@ -28,7 +30,7 @@
 
 | Başlangıç | Aksiyon | Sonuç |
 | --- | --- | --- |
-| `PendingApproval` | İşletme onaylar, çakışma yok | `Confirmed` |
+| `PendingApproval` | İşletme onaylar, çakışma yok | Request `Approved`, Appointment `Confirmed` |
 | `PendingApproval` | İşletme reddeder | `Declined` |
 | `PendingApproval` | TTL dolar | `Expired` |
 | `Confirmed` | Müşteri iptal eder | `CancelledByCustomer` |

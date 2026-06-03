@@ -1,4 +1,8 @@
+using RezSaaS.BuildingBlocks.Abuse;
+using RezSaaS.BuildingBlocks.Auditing;
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.Admin.Infrastructure.Abuse;
+using RezSaaS.Modules.Admin.Infrastructure.Auditing;
 using RezSaaS.Modules.Admin.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,5 +22,7 @@ public sealed class AdminModule : ModuleBase
 
         services.AddDbContext<AdminDbContext>(
             options => options.UseNpgsql(connectionString));
+        services.AddScoped<IAbuseEventRecorder, AdminAbuseEventRecorder>();
+        services.AddScoped<IAuditLogRecorder, AdminAuditLogRecorder>();
     }
 }

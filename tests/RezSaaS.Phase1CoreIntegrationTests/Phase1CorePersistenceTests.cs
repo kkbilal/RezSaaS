@@ -1,13 +1,20 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using RezSaaS.BuildingBlocks.Security;
 using RezSaaS.BuildingBlocks.Tenancy;
+using RezSaaS.Modules.Admin.Infrastructure.Abuse;
+using RezSaaS.Modules.Admin.Infrastructure.Auditing;
 using RezSaaS.Modules.Admin.Infrastructure.Persistence;
+using RezSaaS.Modules.Availability.Application;
+using RezSaaS.Modules.Availability.Domain;
 using RezSaaS.Modules.Availability.Infrastructure.Persistence;
+using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Booking.Domain;
 using RezSaaS.Modules.Booking.Infrastructure.Persistence;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
+using RezSaaS.Modules.Messaging.Infrastructure.Queue;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 using RezSaaS.Modules.Organization.Domain;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
@@ -202,6 +209,193 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         Assert.Equal(2, await CountRowsAsync("booking", "Appointments"));
     }
 
+    [Fact]
+    public async Task CreateAppointmentRequestServiceEnforcesUserLimitsAndRecordsAbuse()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid customerUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        await using BookingDbContext bookingDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor);
+        await using AdminDbContext adminDbContext =
+            new(CreateOptions<AdminDbContext>());
+        CreateAppointmentRequestService service = new(
+            bookingDbContext,
+            new AdminAbuseEventRecorder(adminDbContext),
+            Options.Create(new BookingSecurityOptions
+            {
+                DefaultResponseBuffer = TimeSpan.FromHours(2),
+                MaxConcurrentPendingRequestsPerUser = 1,
+                MaxRequestsPerUserPerDay = 20,
+            }),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        CreateAppointmentRequestResult firstResult = await service.CreateAsync(
+            CreateCommand(customerUserAccountId));
+        CreateAppointmentRequestResult secondResult = await service.CreateAsync(
+            CreateCommand(customerUserAccountId));
+
+        Assert.True(firstResult.Succeeded);
+        Assert.False(secondResult.Succeeded);
+        Assert.Equal("BOOKING_PENDING_LIMIT_EXCEEDED", secondResult.ErrorCode);
+        Assert.Equal(1, await CountRowsAsync("booking", "AppointmentRequests"));
+        Assert.Equal(1, await CountRowsAsync("admin", "AbuseEvents"));
+    }
+
+    [Fact]
+    public async Task ApproveAppointmentRequestCreatesAppointmentSupersedesConflictsAndQueuesEmail()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid branchId = Guid.CreateVersion7();
+        Guid staffMemberId = Guid.CreateVersion7();
+        Guid resourceId = Guid.CreateVersion7();
+        Guid approverUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+        AppointmentRequest selectedRequest = CreateRequest(
+            tenantId,
+            Guid.CreateVersion7(),
+            branchId,
+            staffMemberId,
+            resourceId);
+        AppointmentRequest conflictingRequest = CreateRequest(
+            tenantId,
+            Guid.CreateVersion7(),
+            branchId,
+            staffMemberId,
+            resourceId);
+
+        await using BookingDbContext bookingDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor);
+        bookingDbContext.AppointmentRequests.AddRange(selectedRequest, conflictingRequest);
+        await bookingDbContext.SaveChangesAsync();
+        await using AdminDbContext adminDbContext =
+            new(CreateOptions<AdminDbContext>());
+        await using MessagingDbContext messagingDbContext =
+            new(CreateOptions<MessagingDbContext>(), tenantContextAccessor);
+        ApproveAppointmentRequestService service = new(
+            bookingDbContext,
+            new AdminAuditLogRecorder(adminDbContext),
+            new TransactionalMessageOutbox(messagingDbContext),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        AppointmentRequestDecisionResult result = await service.ApproveAsync(
+            selectedRequest.Id,
+            approverUserAccountId);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(1, result.AffectedRequests);
+        Assert.NotNull(result.AppointmentId);
+        Assert.Equal(AppointmentRequestStatus.Approved, selectedRequest.Status);
+        Assert.Equal(AppointmentRequestStatus.Superseded, conflictingRequest.Status);
+        Assert.Equal(1, await CountRowsAsync("booking", "Appointments"));
+        Assert.Equal(1, await CountRowsAsync("messaging", "TransactionalMessages"));
+        Assert.Equal(1, await CountRowsAsync("admin", "AdminAuditLogEntries"));
+    }
+
+    [Fact]
+    public async Task ExpireAppointmentRequestsServiceClosesDuePendingRequests()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+        AppointmentRequest request = AppointmentRequest.Create(
+            tenantId,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            testTime.AddHours(6),
+            testTime.AddHours(7),
+            testTime.AddDays(-2),
+            TimeSpan.FromHours(2));
+        request.AddLine(Guid.CreateVersion7(), "Haircut", 60, 500, "TRY");
+
+        await using BookingDbContext dbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor);
+        dbContext.AppointmentRequests.Add(request);
+        await dbContext.SaveChangesAsync();
+        ExpireAppointmentRequestsService service = new(
+            dbContext,
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        int expiredCount = await service.ExpireDueAsync();
+
+        Assert.Equal(1, expiredCount);
+        Assert.Equal(AppointmentRequestStatus.Expired, request.Status);
+    }
+
+    [Fact]
+    public async Task AvailabilityQueryServiceReturnsTenantScopedSnapshot()
+    {
+        Guid tenantA = Guid.CreateVersion7();
+        Guid tenantB = Guid.CreateVersion7();
+        Guid branchId = Guid.CreateVersion7();
+        Guid staffMemberId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantA,
+        };
+
+        await using AvailabilityDbContext dbContext =
+            new(CreateOptions<AvailabilityDbContext>(), tenantContextAccessor);
+        dbContext.BranchWorkingHours.Add(
+            BranchWorkingHours.Create(
+                tenantA,
+                branchId,
+                DayOfWeek.Monday,
+                new TimeOnly(9, 0),
+                new TimeOnly(18, 0)));
+        dbContext.StaffUnavailableTimes.Add(
+            StaffUnavailableTime.Create(
+                tenantA,
+                staffMemberId,
+                testTime.AddHours(2),
+                testTime.AddHours(3),
+                "Leave"));
+        dbContext.StaffUnavailableTimes.Add(
+            StaffUnavailableTime.Create(
+                tenantB,
+                Guid.CreateVersion7(),
+                testTime.AddHours(2),
+                testTime.AddHours(3),
+                "Other tenant"));
+        await dbContext.SaveChangesAsync();
+        AvailabilityQueryService service = new(dbContext, tenantContextAccessor);
+
+        AvailabilitySnapshot? snapshot = await service.GetBranchSnapshotAsync(
+            branchId,
+            testTime,
+            testTime.AddDays(7),
+            [staffMemberId]);
+
+        Assert.NotNull(snapshot);
+        Assert.Single(snapshot.WorkingHours);
+        Assert.Single(snapshot.StaffUnavailableTimes);
+
+        tenantContextAccessor.TenantId = tenantB;
+        AvailabilitySnapshot? hiddenSnapshot = await service.GetBranchSnapshotAsync(
+            branchId,
+            testTime,
+            testTime.AddDays(7),
+            [staffMemberId]);
+
+        Assert.NotNull(hiddenSnapshot);
+        Assert.Empty(hiddenSnapshot.WorkingHours);
+        Assert.Empty(hiddenSnapshot.StaffUnavailableTimes);
+    }
+
     private AppointmentRequest CreateRequest(
         Guid tenantId,
         Guid customerUserAccountId,
@@ -222,6 +416,25 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         request.AddLine(Guid.CreateVersion7(), "Saç Kesimi", 60, 500, "TRY");
 
         return request;
+    }
+
+    private CreateAppointmentRequestCommand CreateCommand(Guid customerUserAccountId)
+    {
+        return new CreateAppointmentRequestCommand(
+            customerUserAccountId,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            testTime.AddDays(1),
+            testTime.AddDays(1).AddHours(1),
+            [
+                new AppointmentRequestLineInput(
+                    Guid.CreateVersion7(),
+                    "Haircut",
+                    60,
+                    500,
+                    "TRY"),
+            ]);
     }
 
     private BookingDbContext CreateBookingDbContext()
@@ -464,5 +677,20 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         }
 
         return value;
+    }
+
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        private readonly DateTimeOffset utcNow;
+
+        public FixedTimeProvider(DateTimeOffset utcNow)
+        {
+            this.utcNow = utcNow;
+        }
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return utcNow;
+        }
     }
 }

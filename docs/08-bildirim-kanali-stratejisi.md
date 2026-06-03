@@ -5,7 +5,7 @@
 MVP'de:
 
 - E-posta zorunlu transactional kanaldır.
-- SMS yalnızca kritik transactional bildirimler ve gerekirse telefon doğrulaması için sınırlı kullanılır.
+- SMS altyapı olarak desteklenecek şekilde modellenir, ancak sağlayıcı seçimi ve aktif kullanım maliyet nedeniyle sonraki faza bırakılır.
 - WhatsApp production zorunluluğu değildir; Messaging modülü sağlayıcı bağımsız tasarlanır ve WhatsApp sonraki fazda pilotlanır.
 
 ## Neden WhatsApp MVP Varsayılanı Değil?
@@ -17,10 +17,10 @@ WhatsApp Business Platform teknik olarak kullanılabilir; ancak mesaj template y
 | Olay | E-posta | SMS | WhatsApp |
 | --- | --- | --- | --- |
 | E-posta doğrulama | Zorunlu | Hayır | Hayır |
-| Rezervasyon isteği alındı | Zorunlu | Opsiyonel | Sonraki faz |
-| Rezervasyon onaylandı | Zorunlu | Önerilen | Sonraki faz |
-| Rezervasyon reddedildi/expired | Zorunlu | Opsiyonel | Sonraki faz |
-| Hatırlatma | Zorunlu | Pilot sonrası karar | Sonraki faz |
+| Rezervasyon isteği alındı | Zorunlu | Sonraki faz | Sonraki faz |
+| Rezervasyon onaylandı | Zorunlu | Sonraki faz | Sonraki faz |
+| Rezervasyon reddedildi/expired | Zorunlu | Sonraki faz | Sonraki faz |
+| Hatırlatma | Zorunlu | Sonraki faz | Sonraki faz |
 | Kampanya | MVP dışı | MVP dışı | MVP dışı |
 
 ## Mimari Gereksinimler

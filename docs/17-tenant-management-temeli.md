@@ -23,6 +23,8 @@ Bu modül şu an yalnızca domain ve persistence temelini sağlar. Tenant/işlet
 - `BusinessOwner` branch scope alamaz.
 - Audit detayları `jsonb` olarak saklanır.
 - Migration tenant, üyelik, kullanıcı, rol veya operasyon verisi seed etmez.
+- `TenantManagementDbContext` platform tenant registry'sidir; `Tenants` tablosu globaldir ve request-scope query filter kullanmaz.
+- `TenantMembership` ve `TenantAuditLogEntry` erişimleri endpoint/application service açıldığında explicit `TenantId` parametresi, authz ve audit kontrolüyle yapılır; gizli tenant-context varsayımı kullanılmaz.
 
 ## Yetki Sınırı
 

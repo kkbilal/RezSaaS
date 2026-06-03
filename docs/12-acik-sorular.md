@@ -18,7 +18,7 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 
 ## Bildirim
 
-- SMS sağlayıcısı ve gönderici adı operasyonu hangi sağlayıcı ile pilotlanacak?
+- SMS sağlayıcısı ve gönderici adı operasyonu sonraki fazda hangi maliyet eşiği ve kategori pilotuyla açılacak?
 - Production e-posta sağlayıcısı hangisi olacak?
 - Telefon doğrulaması MVP lansman kapısı mı, yoksa kontrollü pilot özelliği mi?
 - İşletme onay bekleyen talepleri e-posta dışında hangi kanaldan alacak?

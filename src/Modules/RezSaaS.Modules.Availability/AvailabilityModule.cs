@@ -1,4 +1,5 @@
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.Availability.Application;
 using RezSaaS.Modules.Availability.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,5 +19,6 @@ public sealed class AvailabilityModule : ModuleBase
 
         services.AddDbContext<AvailabilityDbContext>(
             options => options.UseNpgsql(connectionString));
+        services.AddScoped<AvailabilityQueryService>();
     }
 }

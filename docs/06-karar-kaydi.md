@@ -30,6 +30,9 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-024 | Kabul | Tenant-scoped DbContext sorguları request-scope tenant context yoksa veri döndürmez | Tenant filtresinin unutulması yerine güvenli varsayılanla veri sızıntısı riski azaltılır |
 | ADR-025 | Kabul | Confirmed booking çakışmaları PostgreSQL exclusion constraint ile staff ve resource için ayrı ayrı engellenir | Application kontrolü atlansa bile double-booking DB seviyesinde durdurulur |
 | ADR-026 | Kabul | İlk `PlatformAdmin` hesabı SMTP/secret gibi dış ayarlardan bağımsız, token-hash kontrollü servisle ve audit kaydıyla oluşturulur | Migration seed'i olmadan denetlenebilir ve tekrar çalıştırılamayan bootstrap sağlar |
+| ADR-027 | Kabul | Booking application service'leri request lifecycle'ını `PendingApproval -> Approved/Declined/Expired/Superseded` olarak kapatır ve confirmed appointment'ı ayrı üretir | Slot bloklamayan modelde seçilen talep ile kesin randevunun ayrımını korur; onay yarışında çakışan talepler temizlenir |
+| ADR-028 | Kabul | Abuse, audit ve transactional messaging modüller arası ihtiyaçları `BuildingBlocks` teknik kontratları üzerinden bağlanır | Modüller arasında doğrudan assembly bağımlılığı veya tablo erişimi eklemeden operasyonel yan etkiler üretilebilir |
+| ADR-029 | Kabul | SMS sağlayıcı seçimi maliyet nedeniyle sonraki faza bırakılır; messaging altyapısı SMS/WhatsApp'a genişleyebilir kalır, MVP aktif kanal e-postadır | Erken maliyet ve sağlayıcı onboarding yükünü erteleyip rezervasyon çekirdeğine odaklanır |
 
 ## Değişiklik Süreci
 

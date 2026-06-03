@@ -29,7 +29,7 @@ Durum: backend güvenlik kapısı tamamlandı; gerçek sağlayıcı ve UX/onboar
 - Tamamlandı: ilk `PlatformAdmin` için token-hash kontrollü, auditli bootstrap servisi; rol/user migration seed'i yok
 - Tamamlandı: identity audit log migration'ı
 - Tamamlandı: migration ve gerçek PostgreSQL entegrasyon testleri
-- Açık: production SMTP sağlayıcısı seçimi, secret yükleme ve uçtan uca confirmation/password reset testi
+- Açık: production SMTP sağlayıcısı seçimi, secret yükleme ve uçtan uca confirmation/password reset testi; SMS sağlayıcı seçimi maliyet nedeniyle sonraki faza bırakıldı
 - Açık: ayrıcalıklı hesap MFA enrollment ekranı ve güvenilir cihaz/oturum UX'i
 
 Admin/işletme yönetim endpoint'leri bu step-up policy'yi kullanmadan yayınlanmaz.
@@ -47,40 +47,47 @@ Durum: backend domain/persistence temeli tamamlandı; yönetim endpoint'leri yay
 - Tamamlandı: `Business`, `Branch`, `StaffMember`, `Skill`, `StaffSkill` organization modeli
 - Tamamlandı: branch timezone alanı ve tenant-scoped global query filter kalıbı
 - Tamamlandı: tenant izolasyon entegrasyon testi
+- Tamamlandı: `TenantManagementDbContext` için platform registry istisnası dokümante edildi; erişimler explicit tenant scope ile açılacak
 - Açık: public/admin endpoint tasarımı; endpoint açılırken authz, rate limit, audit ve idempotency eklenecek
 
 ## Dilim 2 - Catalog, Resources ve Availability
 
-Durum: backend domain/persistence temeli tamamlandı.
+Durum: backend domain/persistence ve tenant-scoped read model temeli tamamlandı; endpoint yüzeyi sonraki dikey dilimde açılacak.
 
 - Tamamlandı: `Service`, `ServiceVariant`, `ServiceRequiredSkill`
 - Tamamlandı: `ResourceType`, `Resource`, `ResourceBlock`
 - Tamamlandı: `BranchWorkingHours`, `StaffUnavailableTime`
 - Tamamlandı: tenant-scoped EF query filter ve seed'siz migration
-- Açık: uygunluk sorgusu read model'i ve endpoint yüzeyi
+- Tamamlandı: `AvailabilityQueryService` ile branch çalışma saatleri ve staff unavailable snapshot read model'i
+- Açık: public/admin availability endpoint yüzeyi, authz ve rate limit bağlanması
 
 ## Dilim 3 - Booking Request ve Approval
 
-Durum: booking çekirdeği backend seviyesinde tamamlandı; approval endpoint/job yüzeyi sonraki dikey dilimde açılacak.
+Durum: booking çekirdeği ve application use-case omurgası backend seviyesinde tamamlandı; endpoint/scheduler yüzeyi sonraki dikey dilimde açılacak.
 
 - Tamamlandı: `AppointmentRequest`, `AppointmentRequestLine`, `Appointment`, `AppointmentLine`
-- Tamamlandı: `PendingApproval`, `Declined`, `Expired`, `Superseded`, `CancelledByCustomer`
+- Tamamlandı: `PendingApproval`, `Approved`, `Declined`, `Expired`, `Superseded`, `CancelledByCustomer`
 - Tamamlandı: `responseBuffer` ve 24 saat TTL hesabı domain seviyesinde
 - Tamamlandı: snapshot hizmet adı, süre, fiyat ve para birimi alanları
 - Tamamlandı: staff ve resource için ayrı PostgreSQL exclusion constraint
 - Tamamlandı: pending request'in slot bloklamadığını ve confirmed overlap'in DB'de engellendiğini doğrulayan entegrasyon testleri
-- Açık: transactional onay application service'i, TTL expiry background job ve `Superseded` kapatma akışı
+- Tamamlandı: transactional onay application service'i, seçilen request'i `Approved` kapatma, confirmed appointment üretme ve çakışan pending request'leri `Superseded` yapma
+- Tamamlandı: ret ve TTL expiry application service'leri; approval/decline audit kaydı ve onay transactional e-posta kuyruğu kontratı
+- Açık: endpoint yüzeyi, business-owner/branch-manager authz ve per-tenant background scheduler bağlanması
 
 ## Dilim 4 - MVP Güvenlik Minimumları
 
-Durum: güvenlik/operasyon omurgası tamamlandı; endpoint bazlı limitler endpoint açıldıkça eklenecek.
+Durum: güvenlik/operasyon omurgası tamamlandı; endpoint yayınlanırken mevcut policy ve use-case kontrolleri zorunlu bağlanacak.
 
 - Tamamlandı: auth rate limit ve Identity lockout
 - Tamamlandı: transactional messaging queue modeli (`TransactionalMessage`)
 - Tamamlandı: admin abuse/audit/sanction başlangıç modeli
 - Tamamlandı: PII masking helper ve test
 - Tamamlandı: healthcheck ve correlation id middleware
-- Açık: booking request endpoint'i açıldığında kullanıcı/tenant bazlı request limitleri ve abuse event üretimi
+- Tamamlandı: booking request endpoint'i için hazır rate-limit policy kontratı (`booking-appointment-requests`)
+- Tamamlandı: kullanıcı başına eşzamanlı pending ve günlük request limitleri; limit aşımında Admin abuse event üretimi
+- Tamamlandı: cross-module abuse, audit ve transactional messaging outbox kontratları `BuildingBlocks` altında teknik arayüz olarak tanımlandı
+- Açık: abuse cooldown/risk score ve işletme spam işaretleme endpoint'i
 
 ## Her Dilimde Kapanış
 

@@ -1,8 +1,12 @@
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using RezSaaS.Api.Configuration;
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Admin;
 using RezSaaS.Modules.Availability;
 using RezSaaS.Modules.Booking;
+using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Catalog;
 using RezSaaS.Modules.Identity;
 using RezSaaS.Modules.Messaging;
@@ -10,7 +14,7 @@ using RezSaaS.Modules.Organization;
 using RezSaaS.Modules.Resources;
 using RezSaaS.Modules.Reviews;
 using RezSaaS.Modules.TenantManagement;
-using RezSaaS.BuildingBlocks.Tenancy;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -57,6 +61,31 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddModules(modules, builder.Configuration);
+BookingSecurityOptions bookingSecurityOptions =
+    builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
+    ?? new BookingSecurityOptions();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(BookingRateLimitPolicyNames.AppointmentRequests, httpContext =>
+    {
+        string remoteIpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        string tenantId = httpContext.Request.Headers[TenantContextHeaders.TenantId].FirstOrDefault()
+            ?? "tenant-missing";
+        string userId = httpContext.User.FindFirst("sub")?.Value
+            ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            $"{remoteIpAddress}:{tenantId}:{userId}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = bookingSecurityOptions.AppointmentRequestPermitLimit,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(bookingSecurityOptions.AppointmentRequestWindowMinutes),
+            });
+    });
+});
 
 WebApplication app = builder.Build();
 

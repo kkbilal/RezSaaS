@@ -112,6 +112,11 @@ public sealed class AppointmentRequest
         return line;
     }
 
+    public void Approve()
+    {
+        Status = AppointmentRequestStatus.Approved;
+    }
+
     public void Decline()
     {
         Status = AppointmentRequestStatus.Declined;
