@@ -11,6 +11,8 @@ using Npgsql;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Availability.Domain;
 using RezSaaS.Modules.Availability.Infrastructure.Persistence;
+using RezSaaS.Modules.Booking.Domain;
+using RezSaaS.Modules.Booking.Infrastructure.Persistence;
 using RezSaaS.Modules.Catalog.Domain;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Domain;
@@ -18,6 +20,8 @@ using RezSaaS.Modules.Identity.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Infrastructure.Security;
 using RezSaaS.Modules.Organization.Domain;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
+using RezSaaS.Modules.Resources.Domain;
+using RezSaaS.Modules.Resources.Infrastructure.Persistence;
 
 namespace RezSaaS.IdentityIntegrationTests;
 
@@ -142,9 +146,14 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
         AvailabilityDbContext availabilityDbContext =
             scope.ServiceProvider.GetRequiredService<AvailabilityDbContext>();
+        ResourcesDbContext resourcesDbContext =
+            scope.ServiceProvider.GetRequiredService<ResourcesDbContext>();
+        BookingDbContext bookingDbContext =
+            scope.ServiceProvider.GetRequiredService<BookingDbContext>();
         Guid tenantId = Guid.CreateVersion7();
         DateTimeOffset createdAtUtc = new(2026, 1, 2, 9, 0, 0, TimeSpan.Zero);
         string slug = $"atlas-{Guid.NewGuid():N}"[..22];
+        string branchSlug = "kadikoy";
         tenantContextAccessor.TenantId = tenantId;
 
         Business business = Business.Create(
@@ -157,7 +166,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         Branch branch = Branch.Create(
             tenantId,
             business.Id,
-            "kadikoy",
+            branchSlug,
             "Kadikoy",
             "Europe/Istanbul",
             createdAtUtc,
@@ -175,6 +184,14 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         organizationDbContext.StaffMembers.Add(staffMember);
         await organizationDbContext.SaveChangesAsync();
 
+        ResourceType chairType = ResourceType.Create(tenantId, "chair", "Chair");
+        Resource chair = Resource.Create(tenantId, branch.Id, chairType.Id, "Chair 1");
+        ResourceType roomType = ResourceType.Create(tenantId, "room", "Room");
+        Resource room = Resource.Create(tenantId, branch.Id, roomType.Id, "Room 1");
+        resourcesDbContext.ResourceTypes.AddRange(chairType, roomType);
+        resourcesDbContext.Resources.AddRange(chair, room);
+        await resourcesDbContext.SaveChangesAsync();
+
         Service service = Service.Create(
             tenantId,
             "Sac Kesimi",
@@ -187,7 +204,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             45,
             750,
             "TRY",
-            createdAtUtc);
+            createdAtUtc,
+            chairType.Id);
 
         catalogDbContext.Services.Add(service);
         catalogDbContext.ServiceVariants.Add(variant);
@@ -199,12 +217,51 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                 branch.Id,
                 DayOfWeek.Monday,
                 new TimeOnly(9, 0),
-                new TimeOnly(18, 0)));
+                new TimeOnly(12, 0)));
+        availabilityDbContext.StaffUnavailableTimes.Add(
+            StaffUnavailableTime.Create(
+                tenantId,
+                staffMember.Id,
+                new DateTimeOffset(2026, 1, 5, 6, 45, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 5, 7, 30, 0, TimeSpan.Zero),
+                "Break"));
         await availabilityDbContext.SaveChangesAsync();
+
+        Appointment confirmedAppointment = Appointment.CreateConfirmed(
+            tenantId,
+            null,
+            Guid.CreateVersion7(),
+            branch.Id,
+            staffMember.Id,
+            chair.Id,
+            new DateTimeOffset(2026, 1, 5, 6, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 1, 5, 6, 45, 0, TimeSpan.Zero),
+            createdAtUtc);
+        confirmedAppointment.AddLine(
+            variant.Id,
+            service.Name,
+            variant.DurationMinutes,
+            variant.PriceAmount,
+            variant.CurrencyCode);
+        bookingDbContext.Appointments.Add(confirmedAppointment);
+        await bookingDbContext.SaveChangesAsync();
+
+        resourcesDbContext.ResourceBlocks.Add(
+            ResourceBlock.Create(
+                tenantId,
+                chair.Id,
+                new DateTimeOffset(2026, 1, 5, 7, 30, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 1, 5, 8, 15, 0, TimeSpan.Zero),
+                "Maintenance"));
+        await resourcesDbContext.SaveChangesAsync();
 
         tenantContextAccessor.TenantId = null;
 
-        return new PublicBusinessProfileSeed(slug);
+        return new PublicBusinessProfileSeed(
+            slug,
+            branchSlug,
+            variant.Id,
+            staffMember.Id);
     }
 
     public async Task<PlatformAdminBootstrapResult> BootstrapPlatformAdminAsync(
@@ -258,10 +315,16 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             serviceProvider.GetRequiredService<CatalogDbContext>();
         AvailabilityDbContext availabilityDbContext =
             serviceProvider.GetRequiredService<AvailabilityDbContext>();
+        ResourcesDbContext resourcesDbContext =
+            serviceProvider.GetRequiredService<ResourcesDbContext>();
+        BookingDbContext bookingDbContext =
+            serviceProvider.GetRequiredService<BookingDbContext>();
 
         await organizationDbContext.Database.MigrateAsync();
         await catalogDbContext.Database.MigrateAsync();
         await availabilityDbContext.Database.MigrateAsync();
+        await resourcesDbContext.Database.MigrateAsync();
+        await bookingDbContext.Database.MigrateAsync();
     }
 
     private static string GetAdminConnectionString()

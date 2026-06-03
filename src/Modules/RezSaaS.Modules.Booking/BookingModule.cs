@@ -30,6 +30,7 @@ public sealed class BookingModule : ModuleBase
                 "Booking security options must use positive values.")
             .ValidateOnStart();
         services.AddScoped<CreateAppointmentRequestService>();
+        services.AddScoped<ConfirmedAppointmentQueryService>();
         services.AddScoped<ApproveAppointmentRequestService>();
         services.AddScoped<DeclineAppointmentRequestService>();
         services.AddScoped<ExpireAppointmentRequestsService>();

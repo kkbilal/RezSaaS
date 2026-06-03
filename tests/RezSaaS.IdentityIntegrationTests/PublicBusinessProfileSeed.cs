@@ -1,3 +1,7 @@
 namespace RezSaaS.IdentityIntegrationTests;
 
-public sealed record PublicBusinessProfileSeed(string Slug);
+public sealed record PublicBusinessProfileSeed(
+    string Slug,
+    string BranchSlug,
+    Guid ServiceVariantId,
+    Guid StaffMemberId);

@@ -20,5 +20,6 @@ public sealed class CatalogModule : ModuleBase
         services.AddDbContext<CatalogDbContext>(
             options => options.UseNpgsql(connectionString));
         services.AddScoped<PublicCatalogMenuService>();
+        services.AddScoped<PublicCatalogSchedulingService>();
     }
 }

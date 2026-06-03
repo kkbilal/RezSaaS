@@ -63,7 +63,14 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddModules(modules, builder.Configuration);
+builder.Services.AddOptions<PublicSlotSearchOptions>()
+    .Bind(builder.Configuration.GetSection(PublicSlotSearchOptions.SectionName))
+    .Validate(
+        options => options.SlotIntervalMinutes > 0 && options.MaxSlots > 0,
+        "Public slot search options must use positive values.")
+    .ValidateOnStart();
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
+builder.Services.AddScoped<PublicSlotSearchComposer>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();
@@ -124,6 +131,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapPublicBusinessProfileEndpoints();
+app.MapPublicBusinessSlotEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();

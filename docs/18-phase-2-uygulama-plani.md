@@ -34,11 +34,16 @@ Durum: başladı; temel public profil kompozisyonu tamamlandı.
 
 ## Dilim 2.2 - Slot Bulma
 
-- Seçilen service variant toplam süre hesabı
-- Staff tercihi: MVP'de optional; seçilmezse uygun staff adayları listelenir
-- Resource uygunluğu: required resource type varsa sadece uyumlu resource adayları
-- Confirmed appointment, staff unavailable ve resource block kontrolleri
-- Slot response: UTC zaman + branch timezone gösterim bilgisi
+Durum: başladı; public slot read endpoint temeli tamamlandı.
+
+- Tamamlandı: seçilen service variant toplam süre hesabı
+- Tamamlandı: staff tercihi optional; seçilmezse uygun staff adayları listelenir
+- Tamamlandı: required resource type varsa sadece uyumlu resource adayları
+- Tamamlandı: confirmed appointment, staff unavailable ve resource block kontrolleri
+- Tamamlandı: slot response UTC zaman + branch timezone + local gösterim bilgisi döndürür
+- Tamamlandı: `PendingApproval` talepler slot bulmada bloklayıcı sayılmaz
+- Açık: staff skill/service required skill eşlemesinin slot motoruna eklenmesi
+- Açık: slot interval ve max slot ayarlarının ürün panelinden yönetimi
 
 ## Dilim 2.3 - Rezervasyon İsteği Endpoint'i
 

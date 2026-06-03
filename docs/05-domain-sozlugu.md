@@ -24,6 +24,7 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `ServiceRequiredSkill` | Hizmet varyantının gerektirdiği skill | Modüller arası doğrudan reference değil GUID kontrat kullanır |
 | `BranchWorkingHours` | Şubenin haftalık çalışma saatleri | Branch timezone ile yorumlanır |
 | `StaffUnavailableTime` | Staff'ın belirli UTC aralıkta çalışamama kaydı | İzin/kapalı zaman |
+| `BookableSlot` | Public yüzeyde gösterilen, talep gönderilebilir zaman aralığı | `PendingApproval` ile bloklanmaz; confirmed appointment, staff unavailable ve resource block ile filtrelenir |
 | `AppointmentRequest` | Müşterinin işletmeye gönderdiği rezervasyon talebi | Slotu bloklamaz; `PendingApproval`, `Approved`, `Declined`, `Expired` veya `Superseded` ile kapanır |
 | `AppointmentRequestLine` | Talep içindeki hizmet satırı | Süre ve fiyat snapshot içerir |
 | `Appointment` | İşletme tarafından onaylanmış kesin rezervasyon | Staff ve resource zamanını bloklar |

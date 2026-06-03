@@ -1,4 +1,5 @@
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.Resources.Application;
 using RezSaaS.Modules.Resources.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,5 +19,6 @@ public sealed class ResourcesModule : ModuleBase
 
         services.AddDbContext<ResourcesDbContext>(
             options => options.UseNpgsql(connectionString));
+        services.AddScoped<PublicResourceAvailabilityQueryService>();
     }
 }

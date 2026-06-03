@@ -146,6 +146,12 @@ Slot bloklanmadığı için onay ekranında yarış olur:
 - Clock doğrudan çağrılmaz; test edilebilir bir clock abstraction kullanılır.
 - Rezervasyon satırları hizmet adı, süre ve fiyat snapshot'ı taşır.
 
+### 5.4 Slot bulma kuralları
+
+- Public slot bulma `PendingApproval` talepleri bloklayıcı kabul etmez; bu ürün kararını tersine çeviren kod ADR olmadan yazılmaz.
+- Slot hesaplama branch working hours, selected service variant toplam süresi, optional staff tercihi, required resource type, confirmed appointment, staff unavailable ve resource block sinyallerini birlikte değerlendirir.
+- Slot response UTC başlangıç/bitiş zamanını ve branch timezone/local gösterim bilgisini birlikte taşır.
+
 ---
 
 ## 6) Güvenlik Minimumları (MVP’den itibaren)

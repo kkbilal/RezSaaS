@@ -45,4 +45,37 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         Assert.Equal("Monday", workingHours.GetProperty("dayOfWeek").GetString());
         Assert.False(workingHours.GetProperty("isClosed").GetBoolean());
     }
+
+    [Fact]
+    public async Task PublicBusinessSlotsExcludeConfirmedAppointmentsUnavailableTimesAndResourceBlocks()
+    {
+        PublicBusinessProfileSeed seed = await fixture.SeedPublicBusinessProfileAsync();
+
+        HttpResponseMessage response = await fixture.Client.GetAsync(
+            $"/api/public/businesses/{seed.Slug}/slots"
+            + $"?branchSlug={seed.BranchSlug}"
+            + $"&serviceVariantIds={seed.ServiceVariantId}"
+            + "&date=2026-01-05");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        JsonElement root = body.RootElement;
+        Assert.Equal(seed.Slug, root.GetProperty("businessSlug").GetString());
+        Assert.Equal(seed.BranchSlug, root.GetProperty("branchSlug").GetString());
+        Assert.Equal("Europe/Istanbul", root.GetProperty("branchTimeZoneId").GetString());
+        Assert.Equal(45, root.GetProperty("durationMinutes").GetInt32());
+
+        JsonElement slot = root.GetProperty("slots").EnumerateArray().Single();
+        Assert.Equal("2026-01-05T08:15:00+00:00", slot.GetProperty("startUtc").GetString());
+        Assert.Equal("2026-01-05T09:00:00+00:00", slot.GetProperty("endUtc").GetString());
+        Assert.Equal("2026-01-05T11:15:00", slot.GetProperty("localStart").GetString());
+        Assert.Equal("2026-01-05T12:00:00", slot.GetProperty("localEnd").GetString());
+
+        JsonElement staff = slot.GetProperty("staffCandidates").EnumerateArray().Single();
+        Assert.Equal(seed.StaffMemberId, staff.GetProperty("id").GetGuid());
+
+        JsonElement resource = slot.GetProperty("resourceCandidates").EnumerateArray().Single();
+        Assert.Equal("Chair 1", resource.GetProperty("displayName").GetString());
+    }
 }
