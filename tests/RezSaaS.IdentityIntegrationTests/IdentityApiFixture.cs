@@ -8,9 +8,16 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
+using RezSaaS.BuildingBlocks.Tenancy;
+using RezSaaS.Modules.Availability.Domain;
+using RezSaaS.Modules.Availability.Infrastructure.Persistence;
+using RezSaaS.Modules.Catalog.Domain;
+using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Infrastructure.Security;
+using RezSaaS.Modules.Organization.Domain;
+using RezSaaS.Modules.Organization.Infrastructure.Persistence;
 
 namespace RezSaaS.IdentityIntegrationTests;
 
@@ -88,6 +95,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         using IServiceScope scope = factory.Services.CreateScope();
         IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         await dbContext.Database.MigrateAsync();
+        await MigratePublicProfileContextsAsync(scope.ServiceProvider);
 
         Client = factory.CreateClient();
     }
@@ -121,6 +129,82 @@ public sealed class IdentityApiFixture : IAsyncLifetime
     public HttpClient CreateClient()
     {
         return factory!.CreateClient();
+    }
+
+    public async Task<PublicBusinessProfileSeed> SeedPublicBusinessProfileAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        ITenantContextAccessor tenantContextAccessor =
+            scope.ServiceProvider.GetRequiredService<ITenantContextAccessor>();
+        OrganizationDbContext organizationDbContext =
+            scope.ServiceProvider.GetRequiredService<OrganizationDbContext>();
+        CatalogDbContext catalogDbContext =
+            scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        AvailabilityDbContext availabilityDbContext =
+            scope.ServiceProvider.GetRequiredService<AvailabilityDbContext>();
+        Guid tenantId = Guid.CreateVersion7();
+        DateTimeOffset createdAtUtc = new(2026, 1, 2, 9, 0, 0, TimeSpan.Zero);
+        string slug = $"atlas-{Guid.NewGuid():N}"[..22];
+        tenantContextAccessor.TenantId = tenantId;
+
+        Business business = Business.Create(
+            tenantId,
+            slug,
+            "Atlas Hair",
+            "hair",
+            createdAtUtc,
+            "Kadikoy'de modern sac ve bakim salonu.");
+        Branch branch = Branch.Create(
+            tenantId,
+            business.Id,
+            "kadikoy",
+            "Kadikoy",
+            "Europe/Istanbul",
+            createdAtUtc,
+            "Istanbul",
+            "Kadikoy",
+            "Caferaga Mahallesi");
+        StaffMember staffMember = StaffMember.Create(
+            tenantId,
+            branch.Id,
+            "Ayse Usta",
+            createdAtUtc);
+
+        organizationDbContext.Businesses.Add(business);
+        organizationDbContext.Branches.Add(branch);
+        organizationDbContext.StaffMembers.Add(staffMember);
+        await organizationDbContext.SaveChangesAsync();
+
+        Service service = Service.Create(
+            tenantId,
+            "Sac Kesimi",
+            "hair",
+            createdAtUtc);
+        ServiceVariant variant = ServiceVariant.Create(
+            tenantId,
+            service.Id,
+            "Standart Kesim",
+            45,
+            750,
+            "TRY",
+            createdAtUtc);
+
+        catalogDbContext.Services.Add(service);
+        catalogDbContext.ServiceVariants.Add(variant);
+        await catalogDbContext.SaveChangesAsync();
+
+        availabilityDbContext.BranchWorkingHours.Add(
+            BranchWorkingHours.Create(
+                tenantId,
+                branch.Id,
+                DayOfWeek.Monday,
+                new TimeOnly(9, 0),
+                new TimeOnly(18, 0)));
+        await availabilityDbContext.SaveChangesAsync();
+
+        tenantContextAccessor.TenantId = null;
+
+        return new PublicBusinessProfileSeed(slug);
     }
 
     public async Task<PlatformAdminBootstrapResult> BootstrapPlatformAdminAsync(
@@ -164,6 +248,20 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
 
         return await dbContext.Roles.CountAsync();
+    }
+
+    private static async Task MigratePublicProfileContextsAsync(IServiceProvider serviceProvider)
+    {
+        OrganizationDbContext organizationDbContext =
+            serviceProvider.GetRequiredService<OrganizationDbContext>();
+        CatalogDbContext catalogDbContext =
+            serviceProvider.GetRequiredService<CatalogDbContext>();
+        AvailabilityDbContext availabilityDbContext =
+            serviceProvider.GetRequiredService<AvailabilityDbContext>();
+
+        await organizationDbContext.Database.MigrateAsync();
+        await catalogDbContext.Database.MigrateAsync();
+        await availabilityDbContext.Database.MigrateAsync();
     }
 
     private static string GetAdminConnectionString()

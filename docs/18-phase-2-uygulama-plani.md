@@ -11,7 +11,7 @@ Phase 2 hedefi, gerçek kullanıcı alabilecek ilk uçtan uca müşteri akışı
 
 ## Dilim 2.0 - Public Directory Temeli
 
-Durum: başladı.
+Durum: tamamlandı.
 
 - Tamamlandı: business public slug global benzersiz olacak şekilde Organization migration hazırlığı
 - Tamamlandı: branch `city`, `district`, `addressLine` metadata alanları
@@ -22,10 +22,15 @@ Durum: başladı.
 
 ## Dilim 2.1 - Public Profil Detayı
 
-- Catalog read service: hizmet menüsü ve varyant fiyat/süreleri
-- Staff görünürlüğü: aktif staff listesi ve gösterim politikası
-- Branch çalışma saatleri: availability snapshot endpoint'i ile public profile birleşimi
-- Response contract: public profile ekranının tek seferde çizilmesi için API composition kararı
+Durum: başladı; temel public profil kompozisyonu tamamlandı.
+
+- Tamamlandı: Catalog read service ile aktif hizmet menüsü ve varyant fiyat/süreleri
+- Tamamlandı: Organization read-only context ile aktif staff listesi
+- Tamamlandı: Availability read service ile branch çalışma saatleri
+- Tamamlandı: `/api/public/businesses/{slug}/profile` endpoint'i
+- Tamamlandı: API composition root içinde public profile response contract
+- Açık: staff gösterim politikasının işletme ayarına bağlanması
+- Açık: business profil galeri, işletme kuralları, puan/yorum özeti ve SEO metadata
 
 ## Dilim 2.2 - Slot Bulma
 

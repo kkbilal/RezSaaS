@@ -1,4 +1,5 @@
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.Catalog.Application;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,5 +19,6 @@ public sealed class CatalogModule : ModuleBase
 
         services.AddDbContext<CatalogDbContext>(
             options => options.UseNpgsql(connectionString));
+        services.AddScoped<PublicCatalogMenuService>();
     }
 }

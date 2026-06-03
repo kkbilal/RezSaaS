@@ -35,6 +35,7 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-029 | Kabul | SMS sağlayıcı seçimi maliyet nedeniyle sonraki faza bırakılır; messaging altyapısı SMS/WhatsApp'a genişleyebilir kalır, MVP aktif kanal e-postadır | Erken maliyet ve sağlayıcı onboarding yükünü erteleyip rezervasyon çekirdeğine odaklanır |
 | ADR-030 | Kabul | Public işletme URL yapısı `/isletme/{businessSlug}` olur ve business slug tek domain altında global benzersiz tutulur | İşletmelerin müşterileriyle paylaşacağı sade, tenant header istemeyen ve SEO'ya uygun sayfa yapısı sağlar |
 | ADR-031 | Kabul | Anonymous public discovery, Organization modülünde explicit read-only servisle tenant query filter bypass eder | Tenant-scoped operasyon sorguları güvenli kalırken public işletme profili tek domain altında keşfedilebilir olur |
+| ADR-032 | Kabul | Public profile detay response'u API composition root içinde birleştirilir; tenant context yalnızca doğrulanmış business slug üzerinden read-only servisler için geçici set edilir | Modüller arası doğrudan referans veya tablo erişimi eklemeden Organization, Catalog ve Availability verisi tek public kontratta sunulur |
 
 ## Değişiklik Süreci
 

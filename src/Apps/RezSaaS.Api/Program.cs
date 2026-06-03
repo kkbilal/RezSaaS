@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using RezSaaS.Api.Configuration;
+using RezSaaS.Api.PublicApi;
 using RezSaaS.BuildingBlocks.Modularity;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Admin;
@@ -62,6 +63,7 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddModules(modules, builder.Configuration);
+builder.Services.AddScoped<PublicBusinessProfileComposer>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();
@@ -121,6 +123,7 @@ app.UseMiddleware<TenantContextMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
+app.MapPublicBusinessProfileEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();

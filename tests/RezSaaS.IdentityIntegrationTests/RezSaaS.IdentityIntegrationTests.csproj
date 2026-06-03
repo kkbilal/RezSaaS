@@ -16,7 +16,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Apps\RezSaaS.Api\RezSaaS.Api.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\RezSaaS.BuildingBlocks\RezSaaS.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Availability\RezSaaS.Modules.Availability.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Catalog\RezSaaS.Modules.Catalog.csproj" />
     <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Identity\RezSaaS.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Organization\RezSaaS.Modules.Organization.csproj" />
   </ItemGroup>
 
   <ItemGroup>

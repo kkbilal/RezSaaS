@@ -76,4 +76,26 @@ public sealed class AvailabilityQueryService
             workingHours,
             unavailableTimes);
     }
+
+    public async Task<IReadOnlyCollection<BranchWorkingHoursView>> GetBranchWorkingHoursAsync(
+        Guid branchId,
+        CancellationToken cancellationToken = default)
+    {
+        if (tenantContextAccessor.TenantId is null)
+        {
+            return [];
+        }
+
+        return await dbContext.BranchWorkingHours
+            .AsNoTracking()
+            .Where(entity => entity.BranchId == branchId)
+            .OrderBy(entity => entity.DayOfWeek)
+            .Select(entity => new BranchWorkingHoursView(
+                entity.Id,
+                entity.DayOfWeek,
+                entity.OpensAt,
+                entity.ClosesAt,
+                entity.IsClosed))
+            .ToListAsync(cancellationToken);
+    }
 }

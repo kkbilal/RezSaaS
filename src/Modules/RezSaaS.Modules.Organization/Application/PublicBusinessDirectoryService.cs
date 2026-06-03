@@ -132,6 +132,96 @@ public sealed class PublicBusinessDirectoryService
             branches);
     }
 
+    public async Task<PublicBusinessCompositionContext?> GetCompositionContextBySlugAsync(
+        string slug,
+        CancellationToken cancellationToken = default)
+    {
+        string normalizedSlug = NormalizeRequired(slug, nameof(slug)).ToUpperInvariant();
+
+        Business? business = await dbContext.Businesses
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                entity => entity.NormalizedSlug == normalizedSlug
+                    && entity.Status == BusinessStatus.Active,
+                cancellationToken);
+
+        if (business is null)
+        {
+            return null;
+        }
+
+        List<PublicBusinessBranchContextSeed> branchSeeds = await dbContext.Branches
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(entity => entity.TenantId == business.TenantId && entity.BusinessId == business.Id)
+            .OrderBy(entity => entity.DisplayName)
+            .Select(entity => new PublicBusinessBranchContextSeed(
+                entity.Id,
+                entity.Slug,
+                entity.DisplayName,
+                entity.TimeZoneId,
+                entity.City,
+                entity.District,
+                entity.AddressLine))
+            .ToListAsync(cancellationToken);
+        Guid[] branchIds = branchSeeds
+            .Select(entity => entity.Id)
+            .ToArray();
+        List<PublicStaffMemberContextSeed> staffMembers = await dbContext.StaffMembers
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(entity => entity.TenantId == business.TenantId
+                && branchIds.Contains(entity.BranchId)
+                && entity.Status == StaffMemberStatus.Active)
+            .OrderBy(entity => entity.DisplayName)
+            .Select(entity => new PublicStaffMemberContextSeed(
+                entity.BranchId,
+                entity.Id,
+                entity.DisplayName))
+            .ToListAsync(cancellationToken);
+        ILookup<Guid, PublicStaffMemberView> staffMembersByBranchId = staffMembers
+            .ToLookup(
+                entity => entity.BranchId,
+                entity => new PublicStaffMemberView(
+                    entity.Id,
+                    entity.DisplayName));
+        PublicBusinessBranchContext[] branches = branchSeeds
+            .Select(branch => new PublicBusinessBranchContext(
+                branch.Id,
+                branch.Slug,
+                branch.DisplayName,
+                branch.TimeZoneId,
+                branch.City,
+                branch.District,
+                branch.AddressLine,
+                staffMembersByBranchId[branch.Id].ToArray()))
+            .ToArray();
+
+        return new PublicBusinessCompositionContext(
+            business.TenantId,
+            business.Id,
+            business.Slug,
+            business.DisplayName,
+            business.CategoryKey,
+            business.Description,
+            branches);
+    }
+
+    private sealed record PublicBusinessBranchContextSeed(
+        Guid Id,
+        string Slug,
+        string DisplayName,
+        string TimeZoneId,
+        string City,
+        string District,
+        string AddressLine);
+
+    private sealed record PublicStaffMemberContextSeed(
+        Guid BranchId,
+        Guid Id,
+        string DisplayName);
+
     private static string? NormalizeOptional(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
