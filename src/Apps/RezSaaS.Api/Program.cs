@@ -11,6 +11,7 @@ using RezSaaS.Modules.Catalog;
 using RezSaaS.Modules.Identity;
 using RezSaaS.Modules.Messaging;
 using RezSaaS.Modules.Organization;
+using RezSaaS.Modules.Organization.Application;
 using RezSaaS.Modules.Resources;
 using RezSaaS.Modules.Reviews;
 using RezSaaS.Modules.TenantManagement;
@@ -67,6 +68,19 @@ BookingSecurityOptions bookingSecurityOptions =
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    PublicBusinessDirectoryOptions publicBusinessDirectoryOptions =
+        builder.Configuration.GetSection(PublicBusinessDirectoryOptions.SectionName)
+            .Get<PublicBusinessDirectoryOptions>()
+        ?? new PublicBusinessDirectoryOptions();
+    options.AddPolicy(OrganizationRateLimitPolicyNames.PublicDiscovery, httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = publicBusinessDirectoryOptions.PermitLimit,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(publicBusinessDirectoryOptions.WindowMinutes),
+            }));
     options.AddPolicy(BookingRateLimitPolicyNames.AppointmentRequests, httpContext =>
     {
         string remoteIpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";

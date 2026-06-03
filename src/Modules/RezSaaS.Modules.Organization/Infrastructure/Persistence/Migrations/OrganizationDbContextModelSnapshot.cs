@@ -29,8 +29,18 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AddressLine")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<Guid>("BusinessId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -39,6 +49,21 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("District")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("NormalizedCity")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("NormalizedDistrict")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<string>("NormalizedSlug")
                         .IsRequired()
@@ -65,6 +90,8 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "BusinessId", "NormalizedSlug")
                         .IsUnique();
 
+                    b.HasIndex("TenantId", "NormalizedCity", "NormalizedDistrict");
+
                     b.ToTable("Branches", "organization");
                 });
 
@@ -81,6 +108,11 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
@@ -107,7 +139,7 @@ namespace RezSaaS.Modules.Organization.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "NormalizedSlug")
+                    b.HasIndex("NormalizedSlug")
                         .IsUnique();
 
                     b.ToTable("Businesses", "organization");

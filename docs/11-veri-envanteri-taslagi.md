@@ -7,7 +7,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Hesap kimliği | Ad, e-posta, telefon, doğrulama durumu, hesap durumu, lockout | Kimlik, iletişim ve güvenlik | Kullanıcı, sınırlı destek | Netleştirilecek |
 | Tenant kaydı | Slug, görünen ad, durum, oluşturma/kapatma zamanı | Veri izolasyonu ve işletme yaşam döngüsü | İşletme sahibi, yetkili admin | Netleştirilecek |
 | İşletme üyeliği | User account id, tenant, rol, branch scope, durum | Yetkilendirme | İşletme sahibi, yetkili admin | Netleştirilecek |
-| Organizasyon | Business, branch, timezone, staff, skill | İşletme kurulumu ve operasyon | İşletme sahibi, branch manager | Netleştirilecek |
+| Organizasyon | Business, public slug, açıklama, branch şehir/ilçe/adres, timezone, staff, skill | İşletme kurulumu, public keşif ve operasyon | Public özet alanlar anonim; detay/yönetim işletme rolleri | Netleştirilecek |
 | Katalog ve kaynak | Hizmet, varyant, fiyat, resource type, resource, block | Rezervasyon uygunluğu ve planlama | İşletme rolleri | Netleştirilecek |
 | Uygunluk | Çalışma saatleri, staff unavailable time | Slot hesaplama | İşletme rolleri | Netleştirilecek |
 | Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |

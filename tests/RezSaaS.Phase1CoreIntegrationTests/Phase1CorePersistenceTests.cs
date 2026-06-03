@@ -15,6 +15,7 @@ using RezSaaS.Modules.Booking.Domain;
 using RezSaaS.Modules.Booking.Infrastructure.Persistence;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using RezSaaS.Modules.Messaging.Infrastructure.Queue;
+using RezSaaS.Modules.Organization.Application;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 using RezSaaS.Modules.Organization.Domain;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
@@ -77,6 +78,106 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
 
         tenantContextAccessor.TenantId = null;
         Assert.Equal(0, await dbContext.Businesses.CountAsync());
+    }
+
+    [Fact]
+    public async Task PublicBusinessDirectoryCanResolveActiveBusinessesWithoutTenantContext()
+    {
+        Guid tenantA = Guid.CreateVersion7();
+        Guid tenantB = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantA,
+        };
+
+        Business businessA = Business.Create(
+            tenantA,
+            "atlas-hair",
+            "Atlas Hair",
+            "hair",
+            testTime,
+            "Kadıköy'de modern saç ve bakım salonu.");
+        Business businessB = Business.Create(
+            tenantB,
+            "nail-room",
+            "Nail Room",
+            "nail",
+            testTime,
+            "Çankaya'da nail studio.");
+
+        await using OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>(), tenantContextAccessor);
+        dbContext.Businesses.AddRange(businessA, businessB);
+        dbContext.Branches.AddRange(
+            Branch.Create(
+                tenantA,
+                businessA.Id,
+                "kadikoy",
+                "Kadıköy",
+                "Europe/Istanbul",
+                testTime,
+                "İstanbul",
+                "Kadıköy",
+                "Caferağa Mahallesi"),
+            Branch.Create(
+                tenantB,
+                businessB.Id,
+                "cankaya",
+                "Çankaya",
+                "Europe/Istanbul",
+                testTime,
+                "Ankara",
+                "Çankaya",
+                "Kavaklıdere"));
+        await dbContext.SaveChangesAsync();
+
+        tenantContextAccessor.TenantId = null;
+        PublicBusinessDirectoryService directoryService = new(
+            dbContext,
+            Options.Create(new PublicBusinessDirectoryOptions()));
+
+        IReadOnlyCollection<PublicBusinessSummaryView> searchResult =
+            await directoryService.SearchAsync(
+                new PublicBusinessSearchQuery(
+                    SearchText: null,
+                    CategoryKey: "hair",
+                    City: "İstanbul",
+                    District: null,
+                    Take: null));
+        PublicBusinessProfileView? profile =
+            await directoryService.GetBySlugAsync("atlas-hair");
+
+        PublicBusinessSummaryView summary = Assert.Single(searchResult);
+        Assert.Equal("atlas-hair", summary.Slug);
+        Assert.Equal("İstanbul", summary.City);
+        Assert.NotNull(profile);
+        Assert.Equal("Atlas Hair", profile.DisplayName);
+        Assert.Single(profile.Branches);
+        Assert.Equal(0, await dbContext.Businesses.CountAsync());
+    }
+
+    [Fact]
+    public async Task PublicBusinessSlugIsGloballyUniqueAcrossTenants()
+    {
+        Guid tenantA = Guid.CreateVersion7();
+        Guid tenantB = Guid.CreateVersion7();
+
+        await using OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>());
+        dbContext.Businesses.Add(Business.Create(
+            tenantA,
+            "atlas-hair",
+            "Atlas Hair",
+            "hair",
+            testTime));
+        dbContext.Businesses.Add(Business.Create(
+            tenantB,
+            "atlas-hair",
+            "Atlas Hair Copy",
+            "hair",
+            testTime));
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => dbContext.SaveChangesAsync());
     }
 
     [Fact]

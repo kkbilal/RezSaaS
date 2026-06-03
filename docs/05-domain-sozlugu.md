@@ -11,8 +11,8 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `PlatformRole` | Platform operasyon yetkisi | Yalnızca `PlatformAdmin`, `PlatformSupport` |
 | `TenantMembershipRole` | İşletme kapsamlı yetki | `BusinessOwner`, `BranchManager`, `Staff` |
 | `TenantAuditLogEntry` | Tenant yönetimiyle ilgili denetlenebilir olay kaydı | Üyelik/ayar değişiklikleri gibi kritik işlemler için append-only tutulur |
-| `Business` | Müşteriye açık marka/işletme profili | Tek domain altında paylaşılabilir sayfası vardır |
-| `Branch` | İşletmenin fiziksel hizmet noktası | Timezone ve çalışma saatleri şube bazlıdır |
+| `Business` | Müşteriye açık marka/işletme profili | Tek domain altında `/isletme/{businessSlug}` ile paylaşılır; public slug global benzersizdir |
+| `Branch` | İşletmenin fiziksel hizmet noktası | Timezone, şehir/ilçe/adres ve çalışma saatleri şube bazlıdır |
 | `StaffMember` | Hizmeti gerçekleştirebilen işletme üyesi | Login hesabı olmak zorunda değildir |
 | `StaffSkill` | Staff ile skill arasındaki tenant-scoped ilişki | Bookability hesaplamasında kullanılır |
 | `ResourceType` | Fiziksel kapasitenin tipi | Koltuk, oda, yatak, istasyon, cihaz |

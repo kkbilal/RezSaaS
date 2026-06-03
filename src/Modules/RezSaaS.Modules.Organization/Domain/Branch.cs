@@ -13,7 +13,10 @@ public sealed class Branch
         string slug,
         string displayName,
         string timeZoneId,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        string city,
+        string district,
+        string addressLine)
     {
         RequireNonEmpty(tenantId, nameof(tenantId));
         RequireNonEmpty(businessId, nameof(businessId));
@@ -26,19 +29,30 @@ public sealed class Branch
         DisplayName = NormalizeRequiredText(displayName, nameof(displayName));
         TimeZoneId = NormalizeRequiredText(timeZoneId, nameof(timeZoneId));
         CreatedAtUtc = createdAtUtc;
+        SetLocation(city, district, addressLine);
     }
+
+    public string AddressLine { get; private set; } = string.Empty;
 
     public Business? Business { get; private set; }
 
     public Guid BusinessId { get; private set; }
 
+    public string City { get; private set; } = string.Empty;
+
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     public string DisplayName { get; private set; } = string.Empty;
 
+    public string District { get; private set; } = string.Empty;
+
     public Guid Id { get; private set; }
 
     public string NormalizedSlug { get; private set; } = string.Empty;
+
+    public string NormalizedCity { get; private set; } = string.Empty;
+
+    public string NormalizedDistrict { get; private set; } = string.Empty;
 
     public string Slug { get; private set; } = string.Empty;
 
@@ -52,7 +66,10 @@ public sealed class Branch
         string slug,
         string displayName,
         string timeZoneId,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        string city = "",
+        string district = "",
+        string addressLine = "")
     {
         return new Branch(
             Guid.CreateVersion7(),
@@ -61,7 +78,22 @@ public sealed class Branch
             slug,
             displayName,
             timeZoneId,
-            createdAtUtc);
+            createdAtUtc,
+            city,
+            district,
+            addressLine);
+    }
+
+    public void SetLocation(
+        string city,
+        string district,
+        string addressLine)
+    {
+        City = NormalizeOptionalText(city);
+        District = NormalizeOptionalText(district);
+        AddressLine = NormalizeOptionalText(addressLine);
+        NormalizedCity = City.ToUpperInvariant();
+        NormalizedDistrict = District.ToUpperInvariant();
     }
 
     private static string NormalizeRequiredText(string value, string parameterName)
@@ -72,6 +104,11 @@ public sealed class Branch
         }
 
         return value.Trim();
+    }
+
+    private static string NormalizeOptionalText(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
     }
 
     private static void RequireNonEmpty(Guid value, string parameterName)

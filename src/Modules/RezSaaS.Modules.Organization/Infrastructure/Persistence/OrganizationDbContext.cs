@@ -41,9 +41,10 @@ public sealed class OrganizationDbContext : DbContext
             business.Property(entity => entity.Slug).HasMaxLength(64).IsRequired();
             business.Property(entity => entity.NormalizedSlug).HasMaxLength(64).IsRequired();
             business.Property(entity => entity.DisplayName).HasMaxLength(200).IsRequired();
+            business.Property(entity => entity.Description).HasMaxLength(600).IsRequired();
             business.Property(entity => entity.CategoryKey).HasMaxLength(80).IsRequired();
             business.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
-            business.HasIndex(entity => new { entity.TenantId, entity.NormalizedSlug }).IsUnique();
+            business.HasIndex(entity => entity.NormalizedSlug).IsUnique();
             business.HasQueryFilter(entity => entity.TenantId == CurrentTenantId);
         });
 
@@ -55,7 +56,13 @@ public sealed class OrganizationDbContext : DbContext
             branch.Property(entity => entity.NormalizedSlug).HasMaxLength(64).IsRequired();
             branch.Property(entity => entity.DisplayName).HasMaxLength(200).IsRequired();
             branch.Property(entity => entity.TimeZoneId).HasMaxLength(80).IsRequired();
+            branch.Property(entity => entity.City).HasMaxLength(120).IsRequired();
+            branch.Property(entity => entity.NormalizedCity).HasMaxLength(120).IsRequired();
+            branch.Property(entity => entity.District).HasMaxLength(120).IsRequired();
+            branch.Property(entity => entity.NormalizedDistrict).HasMaxLength(120).IsRequired();
+            branch.Property(entity => entity.AddressLine).HasMaxLength(300).IsRequired();
             branch.HasIndex(entity => new { entity.TenantId, entity.BusinessId, entity.NormalizedSlug }).IsUnique();
+            branch.HasIndex(entity => new { entity.TenantId, entity.NormalizedCity, entity.NormalizedDistrict });
             branch.HasOne(entity => entity.Business)
                 .WithMany()
                 .HasForeignKey(entity => entity.BusinessId)

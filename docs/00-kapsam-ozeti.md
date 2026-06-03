@@ -52,7 +52,7 @@ Veri ve domain omurgası, personel ve koltuk etrafında daraltılmaz:
 - Müşteri auth: rezervasyon için **hesap şart**.
 - Kaynak planlama: her randevu **tam olarak 1 staff + 1 resource** kullanır.
 - Çoklu hizmet: MVP'de tüm hizmetler aynı staff ve resource üzerinde toplam süreli tek bloktur.
-- Bildirim: MVP'de e-posta zorunlu, SMS sınırlı transactional kanal; WhatsApp sonraki faz pilotudur.
+- Bildirim: MVP'de e-posta zorunlu; SMS ve WhatsApp sağlayıcıları maliyet/onboarding nedeniyle sonraki fazlara hazır altyapı olarak bırakılır.
 
 ## MVP kapsamı
 
@@ -60,7 +60,7 @@ Veri ve domain omurgası, personel ve koltuk etrafında daraltılmaz:
 - Müşteri hesabı, işletme hesabı ve işletme üyelikleri
 - Şube, staff, resource, hizmet ve hizmet varyantı yönetimi
 - Uygunluk hesaplama ve işletme onaylı rezervasyon isteği
-- E-posta bildirimleri ve sınırlı SMS bildirimleri
+- E-posta bildirimleri ve sonraki fazlara hazır SMS/WhatsApp kanal altyapısı
 - Temel spam önleme, audit log ve tenant izolasyonu testleri
 
 ## MVP dışı

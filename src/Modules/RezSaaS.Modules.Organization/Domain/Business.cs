@@ -12,7 +12,8 @@ public sealed class Business
         string slug,
         string displayName,
         string categoryKey,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        string description)
     {
         RequireNonEmpty(tenantId, nameof(tenantId));
 
@@ -23,11 +24,14 @@ public sealed class Business
         DisplayName = NormalizeRequiredText(displayName, nameof(displayName));
         CategoryKey = NormalizeRequiredText(categoryKey, nameof(categoryKey));
         CreatedAtUtc = createdAtUtc;
+        Description = NormalizeOptionalText(description);
     }
 
     public string CategoryKey { get; private set; } = string.Empty;
 
     public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public string Description { get; private set; } = string.Empty;
 
     public string DisplayName { get; private set; } = string.Empty;
 
@@ -46,7 +50,8 @@ public sealed class Business
         string slug,
         string displayName,
         string categoryKey,
-        DateTimeOffset createdAtUtc)
+        DateTimeOffset createdAtUtc,
+        string description = "")
     {
         return new Business(
             Guid.CreateVersion7(),
@@ -54,12 +59,18 @@ public sealed class Business
             slug,
             displayName,
             categoryKey,
-            createdAtUtc);
+            createdAtUtc,
+            description);
     }
 
     public void Rename(string displayName)
     {
         DisplayName = NormalizeRequiredText(displayName, nameof(displayName));
+    }
+
+    public void UpdateDescription(string description)
+    {
+        Description = NormalizeOptionalText(description);
     }
 
     public void Suspend()
@@ -75,6 +86,11 @@ public sealed class Business
         }
 
         return value.Trim();
+    }
+
+    private static string NormalizeOptionalText(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
     }
 
     private static void RequireNonEmpty(Guid value, string parameterName)

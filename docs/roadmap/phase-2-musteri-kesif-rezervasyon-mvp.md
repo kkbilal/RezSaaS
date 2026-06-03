@@ -12,13 +12,14 @@ Gerçek kullanıcı alabilecek ilk uçtan uca akışı üretmek: keşif → işl
 - Rezervasyon oluşturma:
   - login/register (rezervasyon için **hesap şart**)
   - **işletme onayı**: randevu isteği gönderilir, işletme onaylayınca kesinleşir
-- Bildirim: zorunlu e-posta, sınırlı transactional SMS
+- Bildirim: zorunlu e-posta; SMS/WhatsApp altyapısı sonraki fazlara hazır kalacak, SMS sağlayıcı seçimi maliyet nedeniyle Phase 2 lansman kapısı olmayacak
 - Yorumlar: yalnızca **tamamlanmış randevu** sonrası (verified review)
 
 ## Notlar (MVP kararları)
 
 - `PendingApproval` durumunda slot **bloklanmaz**; işletme bir isteği seçer.
 - Bu seçim modeli nedeniyle Phase 2’de minimum abuse kontrolleri gerekir (kullanıcı başına limitler, cooldown, işletme “spam” işaretleme).
+- Public işletme URL yapısı `/isletme/{businessSlug}` olarak başlar ve `businessSlug` tek domain altında global benzersizdir.
 
 ## Kabul kriterleri (örnek)
 

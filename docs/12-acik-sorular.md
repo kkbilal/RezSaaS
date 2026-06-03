@@ -4,7 +4,7 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 
 ## Ürün
 
-- İşletme sayfası URL yapısı ne olacak: `/isletme/{slug}` mı, şehir/kategori içeren SEO yapısı mı?
+- İşletme sayfası URL yapısı Phase 2 başlangıcında `/isletme/{businessSlug}` olarak kararlaştırıldı; şehir/kategori içeren SEO landing sayfaları ayrı discovery sayfaları olarak değerlendirilecek.
 - Bir tenant ilk sürümde tam olarak bir `Business` mı içerir?
 - İşletme talebi 24 saat içinde cevaplamazsa görünür bir yanıt süresi metriği veya yaptırım olacak mı?
 - Müşterinin aynı zaman aralığında farklı işletmelere kaç açık talep göndermesine izin verilecek?

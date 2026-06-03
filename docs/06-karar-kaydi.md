@@ -33,6 +33,8 @@ Bu dosya ürün ve mimari kararlarının kısa günlüğüdür. Değişiklikler 
 | ADR-027 | Kabul | Booking application service'leri request lifecycle'ını `PendingApproval -> Approved/Declined/Expired/Superseded` olarak kapatır ve confirmed appointment'ı ayrı üretir | Slot bloklamayan modelde seçilen talep ile kesin randevunun ayrımını korur; onay yarışında çakışan talepler temizlenir |
 | ADR-028 | Kabul | Abuse, audit ve transactional messaging modüller arası ihtiyaçları `BuildingBlocks` teknik kontratları üzerinden bağlanır | Modüller arasında doğrudan assembly bağımlılığı veya tablo erişimi eklemeden operasyonel yan etkiler üretilebilir |
 | ADR-029 | Kabul | SMS sağlayıcı seçimi maliyet nedeniyle sonraki faza bırakılır; messaging altyapısı SMS/WhatsApp'a genişleyebilir kalır, MVP aktif kanal e-postadır | Erken maliyet ve sağlayıcı onboarding yükünü erteleyip rezervasyon çekirdeğine odaklanır |
+| ADR-030 | Kabul | Public işletme URL yapısı `/isletme/{businessSlug}` olur ve business slug tek domain altında global benzersiz tutulur | İşletmelerin müşterileriyle paylaşacağı sade, tenant header istemeyen ve SEO'ya uygun sayfa yapısı sağlar |
+| ADR-031 | Kabul | Anonymous public discovery, Organization modülünde explicit read-only servisle tenant query filter bypass eder | Tenant-scoped operasyon sorguları güvenli kalırken public işletme profili tek domain altında keşfedilebilir olur |
 
 ## Değişiklik Süreci
 

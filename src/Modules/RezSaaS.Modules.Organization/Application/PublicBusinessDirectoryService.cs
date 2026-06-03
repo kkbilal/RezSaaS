@@ -1,0 +1,149 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using RezSaaS.Modules.Organization.Domain;
+using RezSaaS.Modules.Organization.Infrastructure.Persistence;
+
+namespace RezSaaS.Modules.Organization.Application;
+
+public sealed class PublicBusinessDirectoryService
+{
+    private readonly OrganizationDbContext dbContext;
+    private readonly IOptions<PublicBusinessDirectoryOptions> options;
+
+    public PublicBusinessDirectoryService(
+        OrganizationDbContext dbContext,
+        IOptions<PublicBusinessDirectoryOptions> options)
+    {
+        this.dbContext = dbContext;
+        this.options = options;
+    }
+
+    public async Task<IReadOnlyCollection<PublicBusinessSummaryView>> SearchAsync(
+        PublicBusinessSearchQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        PublicBusinessDirectoryOptions directoryOptions = options.Value;
+        int take = Math.Clamp(
+            query.Take ?? directoryOptions.DefaultTake,
+            1,
+            directoryOptions.MaxTake);
+        string? searchText = NormalizeOptional(query.SearchText);
+        string? categoryKey = NormalizeOptional(query.CategoryKey);
+        string? normalizedCity = NormalizeOptional(query.City)?.ToUpperInvariant();
+        string? normalizedDistrict = NormalizeOptional(query.District)?.ToUpperInvariant();
+
+        IQueryable<Business> businesses = dbContext.Businesses
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(entity => entity.Status == BusinessStatus.Active);
+
+        if (categoryKey is not null)
+        {
+            businesses = businesses.Where(entity => entity.CategoryKey == categoryKey);
+        }
+
+        if (searchText is not null)
+        {
+            businesses = businesses.Where(entity =>
+                EF.Functions.ILike(entity.DisplayName, $"%{searchText}%")
+                || EF.Functions.ILike(entity.CategoryKey, $"%{searchText}%"));
+        }
+
+        if (normalizedCity is not null)
+        {
+            businesses = businesses.Where(entity => dbContext.Branches
+                .IgnoreQueryFilters()
+                .Any(branch =>
+                    branch.TenantId == entity.TenantId
+                    && branch.BusinessId == entity.Id
+                    && branch.NormalizedCity == normalizedCity));
+        }
+
+        if (normalizedDistrict is not null)
+        {
+            businesses = businesses.Where(entity => dbContext.Branches
+                .IgnoreQueryFilters()
+                .Any(branch =>
+                    branch.TenantId == entity.TenantId
+                    && branch.BusinessId == entity.Id
+                    && branch.NormalizedDistrict == normalizedDistrict));
+        }
+
+        return await businesses
+            .OrderBy(entity => entity.DisplayName)
+            .Take(take)
+            .Select(entity => new PublicBusinessSummaryView(
+                entity.Slug,
+                entity.DisplayName,
+                entity.CategoryKey,
+                dbContext.Branches
+                    .IgnoreQueryFilters()
+                    .Where(branch => branch.TenantId == entity.TenantId && branch.BusinessId == entity.Id)
+                    .OrderBy(branch => branch.DisplayName)
+                    .Select(branch => branch.City)
+                    .FirstOrDefault() ?? string.Empty,
+                dbContext.Branches
+                    .IgnoreQueryFilters()
+                    .Where(branch => branch.TenantId == entity.TenantId && branch.BusinessId == entity.Id)
+                    .OrderBy(branch => branch.DisplayName)
+                    .Select(branch => branch.District)
+                    .FirstOrDefault() ?? string.Empty))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PublicBusinessProfileView?> GetBySlugAsync(
+        string slug,
+        CancellationToken cancellationToken = default)
+    {
+        string normalizedSlug = NormalizeRequired(slug, nameof(slug)).ToUpperInvariant();
+
+        Business? business = await dbContext.Businesses
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                entity => entity.NormalizedSlug == normalizedSlug
+                    && entity.Status == BusinessStatus.Active,
+                cancellationToken);
+
+        if (business is null)
+        {
+            return null;
+        }
+
+        List<PublicBusinessBranchView> branches = await dbContext.Branches
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(entity => entity.TenantId == business.TenantId && entity.BusinessId == business.Id)
+            .OrderBy(entity => entity.DisplayName)
+            .Select(entity => new PublicBusinessBranchView(
+                entity.Slug,
+                entity.DisplayName,
+                entity.TimeZoneId,
+                entity.City,
+                entity.District,
+                entity.AddressLine))
+            .ToListAsync(cancellationToken);
+
+        return new PublicBusinessProfileView(
+            business.Slug,
+            business.DisplayName,
+            business.CategoryKey,
+            business.Description,
+            branches);
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string NormalizeRequired(string value, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Value is required.", parameterName);
+        }
+
+        return value.Trim();
+    }
+}
