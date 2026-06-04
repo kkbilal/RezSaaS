@@ -23,9 +23,22 @@ public sealed class AdminModule : ModuleBase
 
         services.AddDbContext<AdminDbContext>(
             options => options.UseNpgsql(connectionString));
+        services.AddOptions<AbuseRiskOptions>()
+            .Bind(configuration.GetSection(AbuseRiskOptions.SectionName))
+            .Validate(
+                options => options.StrikeLifetimeDays > 0
+                    && options.MaxBusinessReportsPerActorPerDay > 0
+                    && options.ElevatedStrikeThreshold > 0
+                    && options.HighStrikeThreshold > options.ElevatedStrikeThreshold,
+                "Abuse risk options must use positive and ordered values.")
+            .ValidateOnStart();
         services.AddScoped<AbuseControlPlaneQueryService>();
+        services.AddScoped<AbuseReportQueryService>();
         services.AddScoped<ApplyUserSanctionService>();
+        services.AddScoped<CreateBusinessAbuseReportService>();
+        services.AddScoped<ReviewBusinessAbuseReportService>();
         services.AddScoped<RevokeUserSanctionService>();
+        services.AddScoped<RevokeUserStrikeService>();
         services.AddScoped<IAbuseEventRecorder, AdminAbuseEventRecorder>();
         services.AddScoped<IUserBookingRestrictionEvaluator, AdminUserBookingRestrictionEvaluator>();
         services.AddScoped<IAuditLogRecorder, AdminAuditLogRecorder>();

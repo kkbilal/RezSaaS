@@ -75,6 +75,11 @@ public sealed class AdminControlPlaneApiTests : IClassFixture<IdentityApiFixture
 
         HttpResponseMessage abuseEventsResponse = await fixture.Client.GetAsync(
             "/api/admin/abuse/events");
+        HttpResponseMessage abuseReportsResponse = await fixture.Client.GetAsync(
+            "/api/admin/abuse/reports");
+        HttpResponseMessage reviewAbuseReportResponse = await fixture.Client.PostAsJsonAsync(
+            $"/api/admin/abuse/reports/{Guid.CreateVersion7()}/confirm",
+            new { reason = "Unauthorized review attempt" });
         HttpResponseMessage sanctionResponse = await fixture.Client.PostAsJsonAsync(
             $"/api/admin/abuse/users/{Guid.CreateVersion7()}/sanctions",
             new
@@ -85,6 +90,8 @@ public sealed class AdminControlPlaneApiTests : IClassFixture<IdentityApiFixture
             });
 
         Assert.Equal(HttpStatusCode.Unauthorized, abuseEventsResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, abuseReportsResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, reviewAbuseReportResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, sanctionResponse.StatusCode);
     }
 

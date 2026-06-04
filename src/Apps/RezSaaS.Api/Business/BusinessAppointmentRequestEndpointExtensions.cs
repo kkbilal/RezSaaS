@@ -119,6 +119,36 @@ public static class BusinessAppointmentRequestEndpointExtensions
                 return ToHttpResult(result);
             });
 
+        appointmentRequests.MapPost(
+            "/{appointmentRequestId:guid}/abuse-reports",
+            async (
+                Guid appointmentRequestId,
+                [FromBody] BusinessAbuseReportRequest request,
+                ClaimsPrincipal user,
+                BusinessAbuseReportComposer composer,
+                CancellationToken cancellationToken) =>
+            {
+                BusinessAbuseReportAccessResult result =
+                    await composer.CreateAsync(
+                        appointmentRequestId,
+                        request,
+                        user,
+                        cancellationToken);
+
+                if (result.Outcome == BusinessAbuseReportOutcome.Created)
+                {
+                    BusinessAbuseReportResponse response = result.Report!;
+
+                    return Results.Created(
+                        $"/api/business/appointment-requests/{appointmentRequestId}/abuse-reports/{response.ReportId}",
+                        response);
+                }
+
+                return result.Outcome == BusinessAbuseReportOutcome.Success
+                    ? Results.Ok(result.Report)
+                    : ToErrorResult(result.Outcome, result.ErrorCode);
+            });
+
         return endpoints;
     }
 
@@ -156,6 +186,26 @@ public static class BusinessAppointmentRequestEndpointExtensions
             BusinessAppointmentRequestOutcome.Forbidden => Results.Forbid(),
             BusinessAppointmentRequestOutcome.NotFound => Results.NotFound(error),
             BusinessAppointmentRequestOutcome.Conflict => Results.Conflict(error),
+            _ => Results.UnprocessableEntity(error),
+        };
+    }
+
+    private static IResult ToErrorResult(
+        BusinessAbuseReportOutcome outcome,
+        string? errorCode)
+    {
+        BusinessAppointmentRequestErrorResponse error =
+            new(errorCode ?? "BUSINESS_ABUSE_REPORT_FAILED");
+
+        return outcome switch
+        {
+            BusinessAbuseReportOutcome.BadRequest => Results.BadRequest(error),
+            BusinessAbuseReportOutcome.Unauthorized => Results.Unauthorized(),
+            BusinessAbuseReportOutcome.Forbidden => Results.Forbid(),
+            BusinessAbuseReportOutcome.NotFound => Results.NotFound(error),
+            BusinessAbuseReportOutcome.TooManyRequests => Results.Json(
+                error,
+                statusCode: StatusCodes.Status429TooManyRequests),
             _ => Results.UnprocessableEntity(error),
         };
     }

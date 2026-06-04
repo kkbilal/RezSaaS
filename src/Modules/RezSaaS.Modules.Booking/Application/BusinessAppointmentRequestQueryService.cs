@@ -113,6 +113,7 @@ public sealed class BusinessAppointmentRequestQueryService
             .Select(entity => new BusinessAppointmentRequestAuthorizationContext(
                 entity.Id,
                 entity.BranchId,
+                entity.CustomerUserAccountId,
                 entity.Status.ToString()))
             .SingleOrDefaultAsync(cancellationToken);
     }

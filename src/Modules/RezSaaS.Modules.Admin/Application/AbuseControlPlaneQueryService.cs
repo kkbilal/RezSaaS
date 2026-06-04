@@ -6,14 +6,17 @@ namespace RezSaaS.Modules.Admin.Application;
 
 public sealed class AbuseControlPlaneQueryService
 {
+    private readonly AbuseReportQueryService abuseReportQueryService;
     private readonly AdminDbContext dbContext;
     private readonly TimeProvider timeProvider;
 
     public AbuseControlPlaneQueryService(
         AdminDbContext dbContext,
+        AbuseReportQueryService abuseReportQueryService,
         TimeProvider timeProvider)
     {
         this.dbContext = dbContext;
+        this.abuseReportQueryService = abuseReportQueryService;
         this.timeProvider = timeProvider;
     }
 
@@ -98,11 +101,31 @@ public sealed class AbuseControlPlaneQueryService
                     && entity.StartsAtUtc <= now
                     && (entity.EndsAtUtc == null || entity.EndsAtUtc > now)))
             .ToListAsync(cancellationToken);
+        IReadOnlyCollection<BusinessAbuseReportView> reports =
+            await abuseReportQueryService.GetReportsAsync(
+                new AbuseReportControlPlaneQuery(
+                    userAccountId,
+                    TenantId: null,
+                    Status: null,
+                    clampedTake),
+                cancellationToken);
+        IReadOnlyCollection<UserStrikeView> strikes =
+            await abuseReportQueryService.GetUserStrikesAsync(
+                userAccountId,
+                clampedTake,
+                cancellationToken);
+        UserRiskSummaryView risk =
+            await abuseReportQueryService.GetUserRiskSummaryAsync(
+                userAccountId,
+                cancellationToken);
 
         return new UserAbuseOverviewView(
             userAccountId,
             events,
-            sanctions);
+            sanctions,
+            reports,
+            strikes,
+            risk);
     }
 
     private static bool TryParseSeverity(

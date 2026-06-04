@@ -208,7 +208,12 @@ public sealed class AdminAbuseControlPlaneComposer
         return new AdminUserAbuseOverviewResponse(
             overview.UserAccountId,
             overview.Events.Select(ToEventResponse).ToArray(),
-            overview.Sanctions.Select(ToSanctionResponse).ToArray());
+            overview.Sanctions.Select(ToSanctionResponse).ToArray(),
+            overview.Reports.Select(AdminAbuseReportComposer.ToReportResponse).ToArray(),
+            overview.Strikes.Select(AdminAbuseReportComposer.ToStrikeResponse).ToArray(),
+            new AdminUserRiskResponse(
+                overview.Risk.ActiveStrikeCount,
+                overview.Risk.Level.ToString()));
     }
 
     private static AdminUserSanctionResponse ToSanctionResponse(UserSanctionView sanction)

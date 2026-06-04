@@ -42,9 +42,10 @@ Bu yüzey tenant işletme paneli değildir. Tüm endpoint'ler `PlatformAdminWith
 
 ## Açık İşler
 
-- İşletme panelinden spam/abuse işaretleme akışı
-- Strike/risk skoru ve otomatik escalation önerisi
 - Appeal/itiraz ve manuel inceleme workflow'u
 - Kalıcı hesap kapatma için Identity orchestration
+- İşletme raporlama davranışının kötüye kullanım riski
 - IP/device sinyal toplama, saklama ve privacy kuralları
 - Abuse dashboard pagination, reason-code taksonomisi ve operasyon runbook'u
+
+İşletme abuse raporu, admin review, strike ve risk seviyesi akışı `21-isletme-abuse-raporu-strike-risk.md` içinde tanımlıdır.

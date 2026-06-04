@@ -31,11 +31,12 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: tenant liste/detay ve membership add/suspend/revoke control-plane.
   - Tamamlandı: auditli ve row-lock korumalı tenant suspend/reactivate/close lifecycle ile erişim kapıları.
   - Tamamlandı: abuse event inceleme, süreli sanction apply/revoke ve yeni booking enforce başlangıcı.
-  - Sıradaki abuse dilimi: işletme spam işaretleme, strike/risk skoru ve appeal workflow.
+  - Tamamlandı: işletme abuse işaretleme, step-up admin review, süreli/revoke edilebilir strike ve yalnızca öneri niteliğinde risk seviyesi.
+  - Sıradaki abuse dilimi: appeal/itiraz ve manuel kalıcı hesap kapatma workflow'u.
   - Sonraki dilimler: backup/incident runbook ve CI güvenlik kapıları.
 
 ## Çalışma Disiplini
 
 - Kullanıcı commit izni verdi; push işlemlerini kullanıcı yapar.
-- Bu çalışma öncesi son tamamlanan commit: `02be1a5 feat: expand phase 3 tenant control plane`.
+- Bu çalışma öncesi son tamamlanan commit: `adf6803 feat: add abuse control plane`.
 - Her dilim sonunda solution build, tüm testler, doküman/ADR etkisi ve temiz git durumu doğrulanır.

@@ -85,8 +85,10 @@ builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
 builder.Services.AddScoped<BusinessAppointmentRequestComposer>();
+builder.Services.AddScoped<BusinessAbuseReportComposer>();
 builder.Services.AddScoped<AdminTenantProvisioningComposer>();
 builder.Services.AddScoped<AdminAbuseControlPlaneComposer>();
+builder.Services.AddScoped<AdminAbuseReportComposer>();
 builder.Services.AddHostedService<AppointmentRequestExpiryHostedService>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()

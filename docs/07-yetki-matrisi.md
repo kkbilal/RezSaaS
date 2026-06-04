@@ -26,6 +26,8 @@
 - Tenant lifecycle suspend/reactivate/close yalnızca `PlatformAdminWithStepUp` ile yürütülür; `Closed` terminaldir.
 - `Suspended` ve `Closed` tenant public discovery, yeni rezervasyon isteği ve işletme operasyonlarına kapalıdır; müşteri kendi mevcut taleplerini görmeye ve uygun durumda iptal etmeye devam eder.
 - Abuse event inceleme ve sanction apply/revoke yalnızca `PlatformAdminWithStepUp` ile yürütülür; kalıcı hesap kapatma sanction endpoint'inden yapılamaz.
+- İşletme abuse raporu `BusinessOwner` için tenant-wide, `BranchManager` için branch-scoped çalışır; bildirim yalnızca inceleme sinyalidir ve strike/sanction üretme yetkisi vermez.
+- Abuse raporu confirm/dismiss ve strike revoke yalnızca `PlatformAdminWithStepUp` ile yürütülür.
 - Public rezervasyon isteği oluşturma yalnızca authenticated platform hesabıyla yapılır; global `Customer` rol kaydı aranmaz, aktif hesap müşteri bağlamı kabul edilir.
 - İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
@@ -42,7 +44,7 @@
 | Staff/resource düzenleme | Hayır | Hayır | Atandığı şube | Tenant | Hayır | Hayır |
 | Rol ve üyelik yönetimi | Hayır | Hayır | Hayır | Tenant | Hayır | Step-up operasyon ile |
 | Tenant suspend/reactivate/close | Hayır | Hayır | Hayır | Hayır | Hayır | Step-up operasyon ile |
-| Abuse işaretleme | Hayır | Politika ile | Atandığı şube | Tenant | İnceleme | Evet |
+| Abuse işaretleme | Hayır | Hayır | Atandığı şube | Tenant | İnceleme | Evet |
 | Strike/ban uygulama | Hayır | Hayır | Hayır | Hayır | Öneri | Step-up operasyon ile |
 | Audit log görüntüleme | Kendi olayları | Sınırlı | Şube | Tenant | Gerekçeli | Evet |
 

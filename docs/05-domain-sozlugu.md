@@ -36,6 +36,9 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `TransactionalMessage` | Rezervasyon gibi mevcut işlemle ilgili operasyonel bildirim | Pazarlama mesajından ayrıdır |
 | `CommercialMessage` | Kampanya, yeniden aktivasyon veya satış amaçlı ileti | İzin ve İYS değerlendirmesi gerektirir |
 | `AbuseEvent` | Abuse şüphesi veya doğrulanmış ihlal olayı | Otomatik veya manuel kaynaktan gelebilir |
+| `BusinessAbuseReport` | Yetkili işletme kullanıcısının belirli appointment request için oluşturduğu inceleme sinyali | Tek başına strike veya sanction üretmez; platform admin review ister |
+| `UserStrike` | Platform admin tarafından doğrulanmış abuse raporundan üretilen süreli risk kaydı | Tenant kaynağını taşır, kullanıcı risk hesabında platform-global değerlendirilir ve revoke edilebilir |
+| `UserRiskLevel` | Aktif strike sayısından türetilen operasyon seviyesi | `Normal`, `Monitor`, `Elevated`, `High`; otomatik sanction değildir |
 | `UserSanction` | Kullanıcıya uygulanan uyarı, cooldown veya ban | Süreli, gerekçeli, auditlenebilir ve geçmiş kaydı silinmeden revoke edilebilir |
 | `AdminAuditLogEntry` | Platform operasyon aksiyon kaydı | Append-only tutulur |
 | `IdentityAuditLogEntry` | Identity ve privileged bootstrap aksiyon kaydı | Append-only tutulur |

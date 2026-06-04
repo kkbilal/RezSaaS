@@ -26,6 +26,7 @@
 - `18-phase-2-uygulama-plani.md`: Phase 2 müşteri keşif ve rezervasyon uygulama planı
 - `19-calisma-baglam-ozeti.md`: Uzun çalışma geçmişinin kompakt devralma özeti ve güncel faz durumu
 - `20-admin-abuse-control-plane.md`: Abuse event inceleme, süreli sanction, revoke ve booking enforce sınırları
+- `21-isletme-abuse-raporu-strike-risk.md`: İşletme abuse raporu, admin review, strike ve risk seviyesi sınırları
 
 ## Bakım Kuralı
 

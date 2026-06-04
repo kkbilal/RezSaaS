@@ -49,6 +49,8 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     {
         Assert.Equal(0, await CountRowsAsync("organization", "Businesses"));
         Assert.Equal(0, await CountRowsAsync("admin", "AbuseEvents"));
+        Assert.Equal(0, await CountRowsAsync("admin", "BusinessAbuseReports"));
+        Assert.Equal(0, await CountRowsAsync("admin", "UserStrikes"));
         Assert.Equal(0, await CountRowsAsync("catalog", "Services"));
         Assert.Equal(0, await CountRowsAsync("messaging", "TransactionalMessages"));
         Assert.Equal(0, await CountRowsAsync("resources", "Resources"));
@@ -369,8 +371,13 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         RevokeUserSanctionService revokeSanctionService = new(
             adminDbContext,
             new FixedTimeProvider(testTime.AddMinutes(5)));
+        AbuseReportQueryService abuseReportQueryService = new(
+            adminDbContext,
+            Options.Create(new AbuseRiskOptions()),
+            new FixedTimeProvider(testTime));
         AbuseControlPlaneQueryService queryService = new(
             adminDbContext,
+            abuseReportQueryService,
             new FixedTimeProvider(testTime));
         AdminUserBookingRestrictionEvaluator restrictionEvaluator = new(adminDbContext);
 
@@ -525,6 +532,234 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         Assert.Null(sanction.RevokedAtUtc);
         Assert.Null(sanction.RevokedByUserAccountId);
         Assert.Null(sanction.RevocationReason);
+    }
+
+    [Fact]
+    public async Task BusinessAbuseReportRequiresAdminReviewBeforeCreatingRevocableStrike()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid branchId = Guid.CreateVersion7();
+        Guid appointmentRequestId = Guid.CreateVersion7();
+        Guid secondAppointmentRequestId = Guid.CreateVersion7();
+        Guid customerUserAccountId = Guid.CreateVersion7();
+        Guid businessActorUserAccountId = Guid.CreateVersion7();
+        Guid adminUserAccountId = Guid.CreateVersion7();
+        AbuseRiskOptions riskOptions = new()
+        {
+            ElevatedStrikeThreshold = 2,
+            HighStrikeThreshold = 3,
+            MaxBusinessReportsPerActorPerDay = 1,
+            StrikeLifetimeDays = 90,
+        };
+        await using AdminDbContext dbContext = new(CreateOptions<AdminDbContext>());
+        CreateBusinessAbuseReportService createService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime));
+        ReviewBusinessAbuseReportService reviewService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddHours(1)));
+        RevokeUserStrikeService revokeStrikeService = new(
+            dbContext,
+            new FixedTimeProvider(testTime.AddHours(2)));
+        AbuseReportQueryService activeQueryService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddHours(1)));
+
+        CreateBusinessAbuseReportCommand reportCommand = new(
+            tenantId,
+            branchId,
+            appointmentRequestId,
+            customerUserAccountId,
+            businessActorUserAccountId,
+            AbuseReportReasonCode.SlotSpam,
+            "Repeated overlapping requests");
+        BusinessAbuseReportCommandResult createResult =
+            await createService.CreateAsync(reportCommand);
+        BusinessAbuseReportCommandResult replayResult =
+            await createService.CreateAsync(reportCommand);
+        BusinessAbuseReportCommandResult dailyLimitResult =
+            await createService.CreateAsync(
+                reportCommand with { AppointmentRequestId = secondAppointmentRequestId });
+
+        Assert.True(createResult.Succeeded);
+        Assert.True(createResult.Created);
+        Assert.True(replayResult.Succeeded);
+        Assert.False(replayResult.Created);
+        Assert.Equal(createResult.ReportId, replayResult.ReportId);
+        Assert.False(dailyLimitResult.Succeeded);
+        Assert.Equal("BUSINESS_ABUSE_REPORT_DAILY_LIMIT_EXCEEDED", dailyLimitResult.ErrorCode);
+        Assert.Equal(1, await CountRowsAsync("admin", "BusinessAbuseReports"));
+        Assert.Equal(0, await CountRowsAsync("admin", "UserStrikes"));
+
+        ReviewBusinessAbuseReportResult confirmResult =
+            await reviewService.ReviewAsync(
+                new ReviewBusinessAbuseReportCommand(
+                    adminUserAccountId,
+                    createResult.ReportId!.Value,
+                    AbuseReportStatus.Confirmed,
+                    "Evidence verified"));
+        ReviewBusinessAbuseReportResult confirmReplayResult =
+            await reviewService.ReviewAsync(
+                new ReviewBusinessAbuseReportCommand(
+                    adminUserAccountId,
+                    createResult.ReportId.Value,
+                    AbuseReportStatus.Confirmed,
+                    "Evidence verified"));
+        ReviewBusinessAbuseReportResult conflictingDismissResult =
+            await reviewService.ReviewAsync(
+                new ReviewBusinessAbuseReportCommand(
+                    adminUserAccountId,
+                    createResult.ReportId.Value,
+                    AbuseReportStatus.Dismissed,
+                    "Conflicting decision"));
+        UserRiskSummaryView activeRisk =
+            await activeQueryService.GetUserRiskSummaryAsync(customerUserAccountId);
+
+        Assert.True(confirmResult.Succeeded);
+        Assert.NotNull(confirmResult.StrikeId);
+        Assert.Equal(confirmResult.StrikeId, confirmReplayResult.StrikeId);
+        Assert.False(conflictingDismissResult.Succeeded);
+        Assert.Equal("BUSINESS_ABUSE_REPORT_ALREADY_REVIEWED", conflictingDismissResult.ErrorCode);
+        Assert.Equal(1, activeRisk.ActiveStrikeCount);
+        Assert.Equal(UserRiskLevel.Monitor, activeRisk.Level);
+
+        UserStrikeCommandResult revokeResult =
+            await revokeStrikeService.RevokeAsync(
+                new RevokeUserStrikeCommand(
+                    adminUserAccountId,
+                    customerUserAccountId,
+                    confirmResult.StrikeId!.Value,
+                    "Review correction"));
+        UserStrikeCommandResult revokeReplayResult =
+            await revokeStrikeService.RevokeAsync(
+                new RevokeUserStrikeCommand(
+                    adminUserAccountId,
+                    customerUserAccountId,
+                    confirmResult.StrikeId.Value,
+                    "Review correction retry"));
+        AbuseReportQueryService revokedQueryService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddHours(2)));
+        UserRiskSummaryView revokedRisk =
+            await revokedQueryService.GetUserRiskSummaryAsync(customerUserAccountId);
+        UserStrikeView strike =
+            (await revokedQueryService.GetUserStrikesAsync(customerUserAccountId)).Single();
+
+        Assert.True(revokeResult.Succeeded);
+        Assert.True(revokeReplayResult.Succeeded);
+        Assert.Equal(0, revokedRisk.ActiveStrikeCount);
+        Assert.Equal(UserRiskLevel.Normal, revokedRisk.Level);
+        Assert.False(strike.IsActive);
+        Assert.Equal(adminUserAccountId, strike.RevokedByUserAccountId);
+        Assert.Equal(3, await CountRowsAsync("admin", "AbuseEvents"));
+        Assert.Equal(1, await CountRowsAsync("admin", "UserStrikes"));
+        Assert.Equal(3, await CountRowsAsync("admin", "AdminAuditLogEntries"));
+    }
+
+    [Fact]
+    public void BusinessAbuseReportDomainRejectsUnsafeSelfReportAndPartialReview()
+    {
+        Guid userAccountId = Guid.CreateVersion7();
+
+        Assert.Throws<ArgumentException>(() =>
+            BusinessAbuseReport.Create(
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                userAccountId,
+                userAccountId,
+                AbuseReportReasonCode.Other,
+                note: null,
+                createdAtUtc: testTime));
+
+        BusinessAbuseReport report = BusinessAbuseReport.Create(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            userAccountId,
+            Guid.CreateVersion7(),
+            AbuseReportReasonCode.SlotSpam,
+            note: null,
+            createdAtUtc: testTime);
+
+        Assert.Throws<ArgumentException>(() =>
+            report.Review(
+                AbuseReportStatus.Confirmed,
+                Guid.CreateVersion7(),
+                string.Empty,
+                testTime.AddMinutes(1)));
+        Assert.Equal(AbuseReportStatus.PendingReview, report.Status);
+        Assert.Null(report.ReviewedAtUtc);
+        Assert.Null(report.ReviewedByUserAccountId);
+    }
+
+    [Fact]
+    public async Task BusinessAbuseReportAndConfirmationRetriesAreConcurrencySafe()
+    {
+        AbuseRiskOptions riskOptions = new();
+        CreateBusinessAbuseReportCommand command = new(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            AbuseReportReasonCode.SuspectedAutomation,
+            Note: null);
+        await using AdminDbContext firstCreateDbContext =
+            new(CreateOptions<AdminDbContext>());
+        await using AdminDbContext secondCreateDbContext =
+            new(CreateOptions<AdminDbContext>());
+        CreateBusinessAbuseReportService firstCreateService = new(
+            firstCreateDbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime));
+        CreateBusinessAbuseReportService secondCreateService = new(
+            secondCreateDbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime));
+
+        BusinessAbuseReportCommandResult[] createResults =
+            await Task.WhenAll(
+                firstCreateService.CreateAsync(command),
+                secondCreateService.CreateAsync(command));
+
+        Assert.All(createResults, result => Assert.True(result.Succeeded));
+        Assert.Single(createResults.Select(result => result.ReportId).Distinct());
+        Assert.Equal(1, createResults.Count(result => result.Created));
+        Assert.Equal(1, await CountRowsAsync("admin", "BusinessAbuseReports"));
+
+        Guid reportId = createResults[0].ReportId!.Value;
+        Guid adminUserAccountId = Guid.CreateVersion7();
+        ReviewBusinessAbuseReportCommand reviewCommand = new(
+            adminUserAccountId,
+            reportId,
+            AbuseReportStatus.Confirmed,
+            "Concurrent evidence verification");
+        await using AdminDbContext firstReviewDbContext =
+            new(CreateOptions<AdminDbContext>());
+        await using AdminDbContext secondReviewDbContext =
+            new(CreateOptions<AdminDbContext>());
+        ReviewBusinessAbuseReportService firstReviewService = new(
+            firstReviewDbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddHours(1)));
+        ReviewBusinessAbuseReportService secondReviewService = new(
+            secondReviewDbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddHours(1)));
+
+        ReviewBusinessAbuseReportResult[] reviewResults =
+            await Task.WhenAll(
+                firstReviewService.ReviewAsync(reviewCommand),
+                secondReviewService.ReviewAsync(reviewCommand));
+
+        Assert.All(reviewResults, result => Assert.True(result.Succeeded));
+        Assert.Single(reviewResults.Select(result => result.StrikeId).Distinct());
+        Assert.Equal(1, await CountRowsAsync("admin", "UserStrikes"));
     }
 
     [Fact]

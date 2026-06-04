@@ -429,6 +429,125 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task BusinessAbuseReportNeedsBranchAuthorizationAndAdminConfirmationForStrike()
+    {
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(28)));
+        string customerEmail = $"abuse-report-customer-{Guid.NewGuid():N}@example.test";
+        string ownerEmail = $"abuse-report-owner-{Guid.NewGuid():N}@example.test";
+        string wrongBranchManagerEmail = $"abuse-report-manager-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        string customerToken = await RegisterAndLoginWithBearerTokenAsync(customerEmail, password);
+        string ownerToken = await RegisterAndLoginWithBearerTokenAsync(ownerEmail, password);
+        string wrongBranchManagerToken =
+            await RegisterAndLoginWithBearerTokenAsync(wrongBranchManagerEmail, password);
+        Guid customerUserAccountId = await fixture.GetUserAccountIdAsync(customerEmail);
+        Guid ownerUserAccountId = await fixture.GetUserAccountIdAsync(ownerEmail);
+        Guid wrongBranchManagerUserAccountId =
+            await fixture.GetUserAccountIdAsync(wrongBranchManagerEmail);
+        await fixture.GrantTenantMembershipAsync(
+            seed.TenantId,
+            ownerUserAccountId,
+            TenantMembershipRole.BusinessOwner);
+        await fixture.GrantTenantMembershipAsync(
+            seed.TenantId,
+            wrongBranchManagerUserAccountId,
+            TenantMembershipRole.BranchManager,
+            Guid.CreateVersion7());
+        Guid appointmentRequestId = await CreatePublicAppointmentRequestAsync(seed, customerToken);
+
+        using HttpRequestMessage forbiddenReportRequest = CreateBusinessAbuseReportMessage(
+            seed.TenantId,
+            appointmentRequestId,
+            wrongBranchManagerToken);
+        HttpResponseMessage forbiddenReportResponse =
+            await fixture.Client.SendAsync(forbiddenReportRequest);
+        Assert.Equal(HttpStatusCode.Forbidden, forbiddenReportResponse.StatusCode);
+
+        using HttpRequestMessage reportRequest = CreateBusinessAbuseReportMessage(
+            seed.TenantId,
+            appointmentRequestId,
+            ownerToken);
+        HttpResponseMessage reportResponse = await fixture.Client.SendAsync(reportRequest);
+        Assert.Equal(HttpStatusCode.Created, reportResponse.StatusCode);
+
+        using JsonDocument reportBody =
+            JsonDocument.Parse(await reportResponse.Content.ReadAsStringAsync());
+        Guid reportId = reportBody.RootElement.GetProperty("reportId").GetGuid();
+        Assert.Equal("PendingReview", reportBody.RootElement.GetProperty("status").GetString());
+        Assert.False(reportBody.RootElement.TryGetProperty("note", out _));
+
+        using HttpRequestMessage reportReplayRequest = CreateBusinessAbuseReportMessage(
+            seed.TenantId,
+            appointmentRequestId,
+            ownerToken);
+        HttpResponseMessage reportReplayResponse =
+            await fixture.Client.SendAsync(reportReplayRequest);
+        Assert.Equal(HttpStatusCode.OK, reportReplayResponse.StatusCode);
+
+        using JsonDocument reportReplayBody =
+            JsonDocument.Parse(await reportReplayResponse.Content.ReadAsStringAsync());
+        Assert.Equal(reportId, reportReplayBody.RootElement.GetProperty("reportId").GetGuid());
+
+        using HttpClient adminClient =
+            fixture.CreatePlatformAdminStepUpClient(Guid.CreateVersion7());
+        HttpResponseMessage listResponse = await adminClient.GetAsync(
+            $"/api/admin/abuse/reports?userAccountId={customerUserAccountId}&status=PendingReview");
+        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
+
+        using JsonDocument listBody =
+            JsonDocument.Parse(await listResponse.Content.ReadAsStringAsync());
+        JsonElement listedReport = listBody.RootElement.GetProperty("reports").EnumerateArray().Single();
+        Assert.Equal(reportId, listedReport.GetProperty("reportId").GetGuid());
+        Assert.Equal("SlotSpam", listedReport.GetProperty("reasonCode").GetString());
+
+        HttpResponseMessage confirmResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/abuse/reports/{reportId}/confirm",
+            new { reason = "Evidence verified" });
+        Assert.Equal(HttpStatusCode.OK, confirmResponse.StatusCode);
+
+        using JsonDocument confirmBody =
+            JsonDocument.Parse(await confirmResponse.Content.ReadAsStringAsync());
+        Guid strikeId = confirmBody.RootElement
+            .GetProperty("strike")
+            .GetProperty("strikeId")
+            .GetGuid();
+        Assert.Equal(
+            "Confirmed",
+            confirmBody.RootElement.GetProperty("report").GetProperty("status").GetString());
+
+        HttpResponseMessage conflictingDismissResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/abuse/reports/{reportId}/dismiss",
+            new { reason = "Conflicting review" });
+        Assert.Equal(HttpStatusCode.Conflict, conflictingDismissResponse.StatusCode);
+
+        HttpResponseMessage overviewResponse = await adminClient.GetAsync(
+            $"/api/admin/abuse/users/{customerUserAccountId}");
+        Assert.Equal(HttpStatusCode.OK, overviewResponse.StatusCode);
+
+        using JsonDocument overviewBody =
+            JsonDocument.Parse(await overviewResponse.Content.ReadAsStringAsync());
+        Assert.Single(overviewBody.RootElement.GetProperty("reports").EnumerateArray());
+        Assert.Single(overviewBody.RootElement.GetProperty("strikes").EnumerateArray());
+        Assert.Equal(
+            1,
+            overviewBody.RootElement.GetProperty("risk").GetProperty("activeStrikeCount").GetInt32());
+        Assert.Equal(
+            "Monitor",
+            overviewBody.RootElement.GetProperty("risk").GetProperty("level").GetString());
+
+        HttpResponseMessage revokeStrikeResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/abuse/users/{customerUserAccountId}/strikes/{strikeId}/revoke",
+            new { reason = "Review correction" });
+        Assert.Equal(HttpStatusCode.OK, revokeStrikeResponse.StatusCode);
+
+        using JsonDocument revokeStrikeBody =
+            JsonDocument.Parse(await revokeStrikeResponse.Content.ReadAsStringAsync());
+        Assert.False(revokeStrikeBody.RootElement.GetProperty("isActive").GetBoolean());
+    }
+
+    [Fact]
     public async Task BusinessAppointmentRequestListRejectsInvalidStatusFilter()
     {
         PublicBusinessProfileSeed seed =
@@ -586,6 +705,26 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
                 staffMemberId = seed.StaffMemberId,
                 resourceId = seed.ResourceId,
                 startUtc = seed.AvailableSlotStartUtc,
+            });
+
+        return request;
+    }
+
+    private static HttpRequestMessage CreateBusinessAbuseReportMessage(
+        Guid tenantId,
+        Guid appointmentRequestId,
+        string accessToken)
+    {
+        HttpRequestMessage request = new(
+            HttpMethod.Post,
+            $"/api/business/appointment-requests/{appointmentRequestId}/abuse-reports");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Add(TenantContextHeaders.TenantId, tenantId.ToString());
+        request.Content = JsonContent.Create(
+            new
+            {
+                reasonCode = "SlotSpam",
+                note = "Repeated overlapping requests",
             });
 
         return request;
