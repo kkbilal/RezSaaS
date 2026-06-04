@@ -16,6 +16,7 @@ public sealed class CreateAppointmentRequestService
     private const string MissingTenantContext = "MISSING_TENANT_CONTEXT";
     private const string PendingLimitExceeded = "BOOKING_PENDING_LIMIT_EXCEEDED";
     private const string RequestTooSoon = "APPOINTMENT_REQUEST_TOO_SOON";
+    private const string UserSanctioned = "BOOKING_USER_SANCTIONED";
     private const string CreateOperation = "public.appointment-request.create";
 
     private readonly IAbuseEventRecorder abuseEventRecorder;
@@ -23,16 +24,19 @@ public sealed class CreateAppointmentRequestService
     private readonly IOptions<BookingSecurityOptions> options;
     private readonly ITenantContextAccessor tenantContextAccessor;
     private readonly TimeProvider timeProvider;
+    private readonly IUserBookingRestrictionEvaluator userBookingRestrictionEvaluator;
 
     public CreateAppointmentRequestService(
         BookingDbContext dbContext,
         IAbuseEventRecorder abuseEventRecorder,
+        IUserBookingRestrictionEvaluator userBookingRestrictionEvaluator,
         IOptions<BookingSecurityOptions> options,
         ITenantContextAccessor tenantContextAccessor,
         TimeProvider timeProvider)
     {
         this.dbContext = dbContext;
         this.abuseEventRecorder = abuseEventRecorder;
+        this.userBookingRestrictionEvaluator = userBookingRestrictionEvaluator;
         this.options = options;
         this.tenantContextAccessor = tenantContextAccessor;
         this.timeProvider = timeProvider;
@@ -60,6 +64,17 @@ public sealed class CreateAppointmentRequestService
         if (idempotentResult is not null)
         {
             return idempotentResult;
+        }
+
+        UserBookingRestriction restriction =
+            await userBookingRestrictionEvaluator.EvaluateAsync(
+                command.CustomerUserAccountId,
+                now,
+                cancellationToken);
+
+        if (restriction.IsRestricted)
+        {
+            return CreateAppointmentRequestResult.Failure(UserSanctioned);
         }
 
         if (command.RequestedEndUtc <= command.RequestedStartUtc)

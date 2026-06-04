@@ -25,6 +25,7 @@
 - `16-identity-auth-temeli.md`: Identity/Auth güvenlik kapısı ve mevcut uygulama
 - `18-phase-2-uygulama-plani.md`: Phase 2 müşteri keşif ve rezervasyon uygulama planı
 - `19-calisma-baglam-ozeti.md`: Uzun çalışma geçmişinin kompakt devralma özeti ve güncel faz durumu
+- `20-admin-abuse-control-plane.md`: Abuse event inceleme, süreli sanction, revoke ve booking enforce sınırları
 
 ## Bakım Kuralı
 

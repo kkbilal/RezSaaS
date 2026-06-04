@@ -219,6 +219,9 @@ En azından şu aksiyonlar auditlenir:
 - Tenant membership yönetim endpoint'leri (add/suspend/revoke) `PlatformAdminWithStepUp` ister; hedef kullanıcı aktif `UserAccount` olmalı, `Revoked` terminal durum olmalı, son aktif `BusinessOwner` suspend/revoke edilemez ve her state değişimi auditlenir.
 - Tenant lifecycle suspend/reactivate/close endpoint'leri `PlatformAdminWithStepUp`, uzunluk sınırlı ve PII/secret içermeyen operasyon nedeni, audit ve DB row lock ister. `Closed` terminaldir.
 - `Suspended`/`Closed` tenant public discovery, slot arama, yeni booking request ve işletme operasyonlarına kapalıdır; müşteri kendi mevcut taleplerini görme ve izin verilen talebini iptal etme hakkını korur.
+- Abuse event inceleme ve user sanction apply/revoke endpoint'leri `PlatformAdminWithStepUp` ister. Warning booking'i bloklamaz; cooldown en fazla 24 saat, temporary ban 24–72 saat olmalı ve aynı kullanıcıda yalnızca bir aktif bloklayıcı sanction bulunmalıdır.
+- Sanction geçmişi silinmez; revoke actor+neden ile auditlenir. Aktif bloklayıcı sanction yeni booking request'i engeller fakat müşterinin mevcut taleplerini görme/iptal hakkını kaldırmaz.
+- `PermanentClosure` sanction endpoint'inden uygulanmaz; manuel inceleme, appeal ve Identity hesap kapatma orchestration'ı tamamlanmadan kalıcı hesap kapatılamaz.
 
 ---
 

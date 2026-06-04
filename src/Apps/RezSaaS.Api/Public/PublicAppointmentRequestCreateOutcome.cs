@@ -6,6 +6,7 @@ public enum PublicAppointmentRequestCreateOutcome
     Replayed,
     BadRequest,
     Unauthorized,
+    Forbidden,
     NotFound,
     Conflict,
     TooManyRequests,

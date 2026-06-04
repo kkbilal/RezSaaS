@@ -4,6 +4,8 @@ using Microsoft.Extensions.Options;
 using Npgsql;
 using RezSaaS.BuildingBlocks.Security;
 using RezSaaS.BuildingBlocks.Tenancy;
+using RezSaaS.Modules.Admin.Application;
+using RezSaaS.Modules.Admin.Domain;
 using RezSaaS.Modules.Admin.Infrastructure.Abuse;
 using RezSaaS.Modules.Admin.Infrastructure.Auditing;
 using RezSaaS.Modules.Admin.Infrastructure.Persistence;
@@ -327,6 +329,7 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         CreateAppointmentRequestService service = new(
             bookingDbContext,
             new AdminAbuseEventRecorder(adminDbContext),
+            new AdminUserBookingRestrictionEvaluator(adminDbContext),
             Options.Create(new BookingSecurityOptions
             {
                 DefaultResponseBuffer = TimeSpan.FromHours(2),
@@ -346,6 +349,182 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         Assert.Equal("BOOKING_PENDING_LIMIT_EXCEEDED", secondResult.ErrorCode);
         Assert.Equal(1, await CountRowsAsync("booking", "AppointmentRequests"));
         Assert.Equal(1, await CountRowsAsync("admin", "AbuseEvents"));
+    }
+
+    [Fact]
+    public async Task UserSanctionServiceAuditsAndBlocksNewBookingRequests()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        Guid customerUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+        await using AdminDbContext adminDbContext =
+            new(CreateOptions<AdminDbContext>());
+        ApplyUserSanctionService sanctionService = new(
+            adminDbContext,
+            new FixedTimeProvider(testTime));
+        RevokeUserSanctionService revokeSanctionService = new(
+            adminDbContext,
+            new FixedTimeProvider(testTime.AddMinutes(5)));
+        AbuseControlPlaneQueryService queryService = new(
+            adminDbContext,
+            new FixedTimeProvider(testTime));
+        AdminUserBookingRestrictionEvaluator restrictionEvaluator = new(adminDbContext);
+
+        ApplyUserSanctionResult warningResult =
+            await sanctionService.ApplyAsync(
+                new ApplyUserSanctionCommand(
+                    actorUserAccountId,
+                    customerUserAccountId,
+                    UserSanctionType.Warning,
+                    "First abuse warning",
+                    EndsAtUtc: null));
+        ApplyUserSanctionResult cooldownResult =
+            await sanctionService.ApplyAsync(
+                new ApplyUserSanctionCommand(
+                    actorUserAccountId,
+                    customerUserAccountId,
+                    UserSanctionType.Cooldown,
+                    "Repeated slot spam",
+                    testTime.AddHours(2)));
+        ApplyUserSanctionResult duplicateBlockingResult =
+            await sanctionService.ApplyAsync(
+                new ApplyUserSanctionCommand(
+                    actorUserAccountId,
+                    customerUserAccountId,
+                    UserSanctionType.TemporaryBan,
+                    "Escalated slot spam",
+                    testTime.AddHours(48)));
+        ApplyUserSanctionResult permanentClosureResult =
+            await sanctionService.ApplyAsync(
+                new ApplyUserSanctionCommand(
+                    actorUserAccountId,
+                    customerUserAccountId,
+                    UserSanctionType.PermanentClosure,
+                    "Manual closure request",
+                    EndsAtUtc: null));
+
+        Assert.True(warningResult.Succeeded);
+        Assert.True(cooldownResult.Succeeded);
+        Assert.False(duplicateBlockingResult.Succeeded);
+        Assert.Equal("USER_ACTIVE_SANCTION_EXISTS", duplicateBlockingResult.ErrorCode);
+        Assert.False(permanentClosureResult.Succeeded);
+        Assert.Equal(
+            "USER_PERMANENT_CLOSURE_REQUIRES_ACCOUNT_WORKFLOW",
+            permanentClosureResult.ErrorCode);
+
+        UserAbuseOverviewView overview =
+            (await queryService.GetUserOverviewAsync(customerUserAccountId))!;
+        Assert.Equal(2, overview.Sanctions.Count);
+        Assert.Single(overview.Sanctions, entity => entity.IsActive);
+        Assert.Equal(
+            "Cooldown",
+            (await restrictionEvaluator.EvaluateAsync(customerUserAccountId, testTime))
+            .RestrictionCode);
+
+        await using BookingDbContext bookingDbContext =
+            new(CreateOptions<BookingDbContext>(), tenantContextAccessor);
+        CreateAppointmentRequestService bookingService = new(
+            bookingDbContext,
+            new AdminAbuseEventRecorder(adminDbContext),
+            restrictionEvaluator,
+            Options.Create(new BookingSecurityOptions
+            {
+                DefaultResponseBuffer = TimeSpan.FromHours(2),
+                MaxConcurrentPendingRequestsPerUser = 5,
+                MaxRequestsPerUserPerDay = 20,
+            }),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        CreateAppointmentRequestResult bookingResult =
+            await bookingService.CreateAsync(CreateCommand(customerUserAccountId));
+
+        Assert.False(bookingResult.Succeeded);
+        Assert.Equal("BOOKING_USER_SANCTIONED", bookingResult.ErrorCode);
+        ApplyUserSanctionResult warningRevokeResult =
+            await revokeSanctionService.RevokeAsync(
+                new RevokeUserSanctionCommand(
+                    actorUserAccountId,
+                    customerUserAccountId,
+                    warningResult.SanctionId!.Value,
+                    "Warnings remain historical"));
+        ApplyUserSanctionResult revokeResult =
+            await revokeSanctionService.RevokeAsync(
+                new RevokeUserSanctionCommand(
+                    actorUserAccountId,
+                    customerUserAccountId,
+                    cooldownResult.SanctionId!.Value,
+                    "Manual review cleared the restriction"));
+        ApplyUserSanctionResult duplicateRevokeResult =
+            await revokeSanctionService.RevokeAsync(
+                new RevokeUserSanctionCommand(
+                    actorUserAccountId,
+                    customerUserAccountId,
+                    cooldownResult.SanctionId.Value,
+                    "Retry"));
+        CreateAppointmentRequestResult bookingAfterRevokeResult =
+            await bookingService.CreateAsync(CreateCommand(customerUserAccountId));
+
+        Assert.False(warningRevokeResult.Succeeded);
+        Assert.Equal("USER_SANCTION_NOT_REVOCABLE", warningRevokeResult.ErrorCode);
+        Assert.True(revokeResult.Succeeded);
+        Assert.True(duplicateRevokeResult.Succeeded);
+        Assert.True(bookingAfterRevokeResult.Succeeded);
+        Assert.False(
+            (await restrictionEvaluator.EvaluateAsync(customerUserAccountId, testTime.AddMinutes(5)))
+            .IsRestricted);
+        UserAbuseOverviewView overviewAfterRevoke =
+            (await queryService.GetUserOverviewAsync(customerUserAccountId))!;
+        UserSanctionView revokedSanction = overviewAfterRevoke.Sanctions
+            .Single(entity => entity.Id == cooldownResult.SanctionId);
+        Assert.False(revokedSanction.IsActive);
+        Assert.Equal(testTime.AddMinutes(5), revokedSanction.RevokedAtUtc);
+        Assert.Equal(actorUserAccountId, revokedSanction.RevokedByUserAccountId);
+        Assert.Equal(1, await CountRowsAsync("booking", "AppointmentRequests"));
+        Assert.Equal(2, await CountRowsAsync("admin", "UserSanctions"));
+        Assert.Equal(3, await CountRowsAsync("admin", "AdminAuditLogEntries"));
+    }
+
+    [Fact]
+    public void UserSanctionDomainEnforcesTemporalShapeAndSafeRevocation()
+    {
+        Guid userAccountId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+
+        Assert.Throws<ArgumentException>(() =>
+            UserSanction.Create(
+                userAccountId,
+                UserSanctionType.Cooldown,
+                "Cooldown requires end",
+                testTime,
+                endsAtUtc: null));
+        Assert.Throws<ArgumentException>(() =>
+            UserSanction.Create(
+                userAccountId,
+                UserSanctionType.Warning,
+                "Warning cannot have end",
+                testTime,
+                testTime.AddHours(1)));
+
+        UserSanction sanction = UserSanction.Create(
+            userAccountId,
+            UserSanctionType.Cooldown,
+            "Cooldown",
+            testTime,
+            testTime.AddHours(1));
+
+        Assert.Throws<ArgumentException>(() =>
+            sanction.Revoke(
+                actorUserAccountId,
+                string.Empty,
+                testTime.AddMinutes(1)));
+        Assert.Null(sanction.RevokedAtUtc);
+        Assert.Null(sanction.RevokedByUserAccountId);
+        Assert.Null(sanction.RevocationReason);
     }
 
     [Fact]

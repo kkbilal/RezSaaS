@@ -1,6 +1,8 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using RezSaaS.Modules.Admin.Domain;
 
 namespace RezSaaS.IdentityIntegrationTests;
 
@@ -70,6 +72,20 @@ public sealed class AdminControlPlaneApiTests : IClassFixture<IdentityApiFixture
         Assert.Equal(HttpStatusCode.Unauthorized, suspendResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, closeResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, reactivateResponse.StatusCode);
+
+        HttpResponseMessage abuseEventsResponse = await fixture.Client.GetAsync(
+            "/api/admin/abuse/events");
+        HttpResponseMessage sanctionResponse = await fixture.Client.PostAsJsonAsync(
+            $"/api/admin/abuse/users/{Guid.CreateVersion7()}/sanctions",
+            new
+            {
+                type = "Cooldown",
+                reason = "Unauthorized sanction attempt",
+                endsAtUtc = DateTimeOffset.UtcNow.AddHours(1),
+            });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, abuseEventsResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, sanctionResponse.StatusCode);
     }
 
     [Fact]
@@ -293,6 +309,143 @@ public sealed class AdminControlPlaneApiTests : IClassFixture<IdentityApiFixture
             new { reason = "Invalid reopening attempt" });
         Assert.Equal(HttpStatusCode.Conflict, suspendClosedResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, reactivateClosedResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task StepUpPlatformAdminCanInspectAbuseAndApplyBookingCooldown()
+    {
+        string email = $"abuse-customer-{Guid.NewGuid():N}@example.test";
+        const string password = "RezSaaS!Auth1234";
+        HttpResponseMessage registration = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new { email, password });
+        Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
+        Guid userAccountId = await fixture.GetUserAccountIdAsync(email);
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(26)));
+        await fixture.SeedAbuseEventAsync(
+            seed.TenantId,
+            userAccountId,
+            "booking.pending_limit_exceeded",
+            AbuseEventSeverity.High);
+        using HttpClient adminClient =
+            fixture.CreatePlatformAdminStepUpClient(Guid.CreateVersion7());
+
+        HttpResponseMessage eventsResponse = await adminClient.GetAsync(
+            $"/api/admin/abuse/events?userAccountId={userAccountId}&severity=High");
+        Assert.Equal(HttpStatusCode.OK, eventsResponse.StatusCode);
+
+        using JsonDocument eventsBody =
+            JsonDocument.Parse(await eventsResponse.Content.ReadAsStringAsync());
+        JsonElement abuseEvent = eventsBody.RootElement
+            .GetProperty("events")
+            .EnumerateArray()
+            .Single();
+        Assert.Equal("High", abuseEvent.GetProperty("severity").GetString());
+        Assert.Equal(userAccountId, abuseEvent.GetProperty("userAccountId").GetGuid());
+
+        HttpResponseMessage sanctionResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/abuse/users/{userAccountId}/sanctions",
+            new
+            {
+                type = "Cooldown",
+                reason = "Repeated slot spam",
+                endsAtUtc = DateTimeOffset.UtcNow.AddHours(2),
+            });
+        Assert.Equal(HttpStatusCode.Created, sanctionResponse.StatusCode);
+
+        using JsonDocument sanctionBody =
+            JsonDocument.Parse(await sanctionResponse.Content.ReadAsStringAsync());
+        Guid sanctionId = sanctionBody.RootElement.GetProperty("sanctionId").GetGuid();
+        Assert.Equal("Cooldown", sanctionBody.RootElement.GetProperty("type").GetString());
+        Assert.True(sanctionBody.RootElement.GetProperty("isActive").GetBoolean());
+
+        HttpResponseMessage duplicateSanctionResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/abuse/users/{userAccountId}/sanctions",
+            new
+            {
+                type = "TemporaryBan",
+                reason = "Duplicate blocking sanction",
+                endsAtUtc = DateTimeOffset.UtcNow.AddHours(48),
+            });
+        Assert.Equal(HttpStatusCode.Conflict, duplicateSanctionResponse.StatusCode);
+
+        HttpResponseMessage permanentClosureResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/abuse/users/{userAccountId}/sanctions",
+            new
+            {
+                type = "PermanentClosure",
+                reason = "Requires manual account closure workflow",
+                endsAtUtc = (DateTimeOffset?)null,
+            });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, permanentClosureResponse.StatusCode);
+
+        HttpResponseMessage overviewResponse = await adminClient.GetAsync(
+            $"/api/admin/abuse/users/{userAccountId}");
+        Assert.Equal(HttpStatusCode.OK, overviewResponse.StatusCode);
+
+        using JsonDocument overviewBody =
+            JsonDocument.Parse(await overviewResponse.Content.ReadAsStringAsync());
+        Assert.Single(overviewBody.RootElement.GetProperty("events").EnumerateArray());
+        Assert.Single(overviewBody.RootElement.GetProperty("sanctions").EnumerateArray());
+
+        HttpResponseMessage login = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/login?useCookies=false",
+            new { email, password });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        using JsonDocument loginBody =
+            JsonDocument.Parse(await login.Content.ReadAsStringAsync());
+        string accessToken = loginBody.RootElement.GetProperty("accessToken").GetString()!;
+        using HttpRequestMessage bookingRequest = new(
+            HttpMethod.Post,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests");
+        bookingRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        bookingRequest.Content = JsonContent.Create(
+            new
+            {
+                branchSlug = seed.BranchSlug,
+                serviceVariantIds = new[] { seed.ServiceVariantId },
+                staffMemberId = seed.StaffMemberId,
+                resourceId = seed.ResourceId,
+                startUtc = seed.AvailableSlotStartUtc,
+            });
+
+        HttpResponseMessage bookingResponse = await fixture.Client.SendAsync(bookingRequest);
+
+        Assert.Equal(HttpStatusCode.Forbidden, bookingResponse.StatusCode);
+
+        HttpResponseMessage revokeResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/abuse/users/{userAccountId}/sanctions/{sanctionId}/revoke",
+            new { reason = "Manual review cleared the restriction" });
+        Assert.Equal(HttpStatusCode.OK, revokeResponse.StatusCode);
+
+        using JsonDocument revokeBody =
+            JsonDocument.Parse(await revokeResponse.Content.ReadAsStringAsync());
+        Assert.False(revokeBody.RootElement.GetProperty("isActive").GetBoolean());
+        Assert.Equal(
+            JsonValueKind.String,
+            revokeBody.RootElement.GetProperty("revokedAtUtc").ValueKind);
+
+        using HttpRequestMessage bookingAfterRevokeRequest = new(
+            HttpMethod.Post,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests");
+        bookingAfterRevokeRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", accessToken);
+        bookingAfterRevokeRequest.Content = JsonContent.Create(
+            new
+            {
+                branchSlug = seed.BranchSlug,
+                serviceVariantIds = new[] { seed.ServiceVariantId },
+                staffMemberId = seed.StaffMemberId,
+                resourceId = seed.ResourceId,
+                startUtc = seed.AvailableSlotStartUtc,
+            });
+        HttpResponseMessage bookingAfterRevokeResponse =
+            await fixture.Client.SendAsync(bookingAfterRevokeRequest);
+
+        Assert.Equal(HttpStatusCode.Created, bookingAfterRevokeResponse.StatusCode);
     }
 
     private static async Task<Guid> ProvisionTenantAsync(

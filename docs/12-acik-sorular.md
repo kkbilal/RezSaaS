@@ -29,6 +29,7 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - İlk pilot şehir ve işletme kategorileri hangileri?
 - KVKK aydınlatma, saklama ve silme politikası için hukuk danışmanlığı takvimi nedir?
 - Platform support erişiminde kim, hangi gerekçeyle ve ne kadar süreyle tenant verisi görebilir?
+- Abuse appeal/itiraz SLA'sı, kalıcı hesap kapatma onay mercii ve reason-code taksonomisi nasıl olacak?
 
 ## Identity/Auth Kapısı
 

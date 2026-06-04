@@ -30,7 +30,8 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: tenant provisioning.
   - Tamamlandı: tenant liste/detay ve membership add/suspend/revoke control-plane.
   - Tamamlandı: auditli ve row-lock korumalı tenant suspend/reactivate/close lifecycle ile erişim kapıları.
-  - Sıradaki dilim: abuse control-plane.
+  - Tamamlandı: abuse event inceleme, süreli sanction apply/revoke ve yeni booking enforce başlangıcı.
+  - Sıradaki abuse dilimi: işletme spam işaretleme, strike/risk skoru ve appeal workflow.
   - Sonraki dilimler: backup/incident runbook ve CI güvenlik kapıları.
 
 ## Çalışma Disiplini

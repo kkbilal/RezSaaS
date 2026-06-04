@@ -581,6 +581,7 @@ public sealed class PublicAppointmentRequestComposer
         PublicAppointmentRequestCreateOutcome outcome = errorCode switch
         {
             "INVALID_TIME_RANGE" or "APPOINTMENT_REQUEST_LINES_REQUIRED" => PublicAppointmentRequestCreateOutcome.BadRequest,
+            "BOOKING_USER_SANCTIONED" => PublicAppointmentRequestCreateOutcome.Forbidden,
             "IDEMPOTENCY_KEY_REUSED" => PublicAppointmentRequestCreateOutcome.Conflict,
             "APPOINTMENT_REQUEST_TOO_SOON" => PublicAppointmentRequestCreateOutcome.Unprocessable,
             _ => PublicAppointmentRequestCreateOutcome.Unprocessable,

@@ -24,10 +24,27 @@ public sealed class UserSanction
             throw new ArgumentException("End must be later than start.", nameof(endsAtUtc));
         }
 
+        if (!Enum.IsDefined(type))
+        {
+            throw new ArgumentException("Sanction type is invalid.", nameof(type));
+        }
+
+        if ((type == UserSanctionType.Warning || type == UserSanctionType.PermanentClosure)
+            && endsAtUtc is not null)
+        {
+            throw new ArgumentException("This sanction type cannot have an end time.", nameof(endsAtUtc));
+        }
+
+        if ((type == UserSanctionType.Cooldown || type == UserSanctionType.TemporaryBan)
+            && endsAtUtc is null)
+        {
+            throw new ArgumentException("This sanction type requires an end time.", nameof(endsAtUtc));
+        }
+
         Id = id;
         UserAccountId = userAccountId;
         Type = type;
-        Reason = NormalizeRequiredText(reason, nameof(reason));
+        Reason = NormalizeRequiredText(reason, nameof(reason), maxLength: 300);
         StartsAtUtc = startsAtUtc;
         EndsAtUtc = endsAtUtc;
     }
@@ -37,6 +54,12 @@ public sealed class UserSanction
     public Guid Id { get; private set; }
 
     public string Reason { get; private set; } = string.Empty;
+
+    public DateTimeOffset? RevokedAtUtc { get; private set; }
+
+    public Guid? RevokedByUserAccountId { get; private set; }
+
+    public string? RevocationReason { get; private set; }
 
     public DateTimeOffset StartsAtUtc { get; private set; }
 
@@ -54,13 +77,54 @@ public sealed class UserSanction
         return new UserSanction(Guid.CreateVersion7(), userAccountId, type, reason, startsAtUtc, endsAtUtc);
     }
 
-    private static string NormalizeRequiredText(string value, string parameterName)
+    public void Revoke(
+        Guid actorUserAccountId,
+        string reason,
+        DateTimeOffset revokedAtUtc)
+    {
+        if (actorUserAccountId == Guid.Empty)
+        {
+            throw new ArgumentException("Value is required.", nameof(actorUserAccountId));
+        }
+
+        if (Type == UserSanctionType.Warning)
+        {
+            throw new InvalidOperationException("Warnings cannot be revoked.");
+        }
+
+        if (RevokedAtUtc is not null)
+        {
+            return;
+        }
+
+        if (revokedAtUtc < StartsAtUtc)
+        {
+            throw new ArgumentException("Revocation cannot predate the sanction.", nameof(revokedAtUtc));
+        }
+
+        string normalizedReason = NormalizeRequiredText(reason, nameof(reason), maxLength: 300);
+        RevokedAtUtc = revokedAtUtc;
+        RevokedByUserAccountId = actorUserAccountId;
+        RevocationReason = normalizedReason;
+    }
+
+    private static string NormalizeRequiredText(
+        string value,
+        string parameterName,
+        int maxLength)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new ArgumentException("Value is required.", parameterName);
         }
 
-        return value.Trim();
+        string normalized = value.Trim();
+
+        if (normalized.Length > maxLength)
+        {
+            throw new ArgumentException("Value is too long.", parameterName);
+        }
+
+        return normalized;
     }
 }

@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using RezSaaS.BuildingBlocks.Tenancy;
+using RezSaaS.Modules.Admin.Domain;
 using RezSaaS.Modules.Admin.Infrastructure.Persistence;
 using RezSaaS.Modules.Availability.Domain;
 using RezSaaS.Modules.Availability.Infrastructure.Persistence;
@@ -440,6 +441,26 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             scope.ServiceProvider.GetRequiredService<TenantManagementDbContext>();
 
         return await dbContext.Tenants.CountAsync();
+    }
+
+    public async Task SeedAbuseEventAsync(
+        Guid? tenantId,
+        Guid userAccountId,
+        string eventType,
+        AbuseEventSeverity severity)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        AdminDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<AdminDbContext>();
+        dbContext.AbuseEvents.Add(
+            AbuseEvent.Create(
+                tenantId,
+                userAccountId,
+                eventType,
+                severity,
+                """{"source":"integration-test"}""",
+                DateTimeOffset.UtcNow));
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task<int> GetTenantAuditLogCountAsync()

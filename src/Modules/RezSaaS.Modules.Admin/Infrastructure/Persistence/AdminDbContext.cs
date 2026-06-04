@@ -39,6 +39,7 @@ public sealed class AdminDbContext : DbContext
             sanction.HasKey(entity => entity.Id);
             sanction.Property(entity => entity.Type).HasConversion<string>().HasMaxLength(32).IsRequired();
             sanction.Property(entity => entity.Reason).HasMaxLength(300).IsRequired();
+            sanction.Property(entity => entity.RevocationReason).HasMaxLength(300);
             sanction.HasIndex(entity => new { entity.UserAccountId, entity.StartsAtUtc });
         });
 

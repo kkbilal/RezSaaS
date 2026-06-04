@@ -124,6 +124,7 @@ public static class PublicAppointmentRequestEndpointExtensions
         {
             PublicAppointmentRequestCreateOutcome.BadRequest => Results.BadRequest(error),
             PublicAppointmentRequestCreateOutcome.Unauthorized => Results.Unauthorized(),
+            PublicAppointmentRequestCreateOutcome.Forbidden => Results.Forbid(),
             PublicAppointmentRequestCreateOutcome.NotFound => Results.NotFound(error),
             PublicAppointmentRequestCreateOutcome.Conflict => Results.Conflict(error),
             PublicAppointmentRequestCreateOutcome.TooManyRequests => Results.StatusCode(StatusCodes.Status429TooManyRequests),

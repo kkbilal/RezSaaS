@@ -86,6 +86,7 @@ builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
 builder.Services.AddScoped<BusinessAppointmentRequestComposer>();
 builder.Services.AddScoped<AdminTenantProvisioningComposer>();
+builder.Services.AddScoped<AdminAbuseControlPlaneComposer>();
 builder.Services.AddHostedService<AppointmentRequestExpiryHostedService>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
@@ -196,6 +197,7 @@ app.MapPublicBusinessSlotEndpoints();
 app.MapPublicAppointmentRequestEndpoints();
 app.MapBusinessAppointmentRequestEndpoints();
 app.MapAdminControlPlaneEndpoints();
+app.MapAdminAbuseControlPlaneEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();
