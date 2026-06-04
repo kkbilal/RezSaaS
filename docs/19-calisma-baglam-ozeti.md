@@ -34,10 +34,11 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: işletme abuse işaretleme, step-up admin review, süreli/revoke edilebilir strike ve yalnızca öneri niteliğinde risk seviyesi.
   - Tamamlandı: müşteri self-service abuse itirazı, iki farklı step-up admin onaylı kalıcı hesap kapatma, Identity `Closed` orchestration'ı ve aktif hesap istek kapısı.
   - Tamamlandı: raw e-posta taşımayan platform-global closure/appeal e-posta outbox'ı, retry worker'ı ve sağlayıcı kabul zamanına bağlı itiraz penceresi.
-  - Sıradaki dilimler: notification/closure reconciliation ve alarm runbook'u; ardından backup/restore, incident runbook ve CI güvenlik kapıları.
+  - Tamamlandı: salt-okunur notification/closure reconciliation, ayrı operasyon health yüzeyi, step-up admin snapshot'ı, PII-minimum alarmlar ve manuel kurtarma runbook'u.
+  - Sıradaki dilimler: backup/restore tatbikatı, genel incident runbook ve CI güvenlik kapıları.
 
 ## Çalışma Disiplini
 
 - Kullanıcı commit izni verdi; push işlemlerini kullanıcı yapar.
-- Bu çalışma öncesi son tamamlanan commit: `880f951 feat: add abuse appeals and account closure`.
+- Bu çalışma öncesi son tamamlanan commit: `ccf6304 feat: add platform notification outbox`.
 - Her dilim sonunda solution build, tüm testler, doküman/ADR etkisi ve temiz git durumu doğrulanır.

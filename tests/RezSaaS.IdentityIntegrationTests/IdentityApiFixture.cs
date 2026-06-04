@@ -22,6 +22,7 @@ using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Infrastructure.Security;
+using RezSaaS.Modules.Messaging.Domain;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 using RezSaaS.Modules.Organization.Domain;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
@@ -95,6 +96,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                             ["Identity:Bootstrap:PlatformAdminBootstrapTokenSha256"] =
                                 "99ECD312D2F24FFD7011532BA5579DAE00103767862BD5B7A79E6EFCEF99E05E",
                             ["Messaging:PlatformNotificationWorker:Enabled"] = "false",
+                            ["Operations:Reconciliation:Enabled"] = "false",
                         });
                 });
                 builder.ConfigureTestServices(services =>
@@ -195,6 +197,63 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             scope.ServiceProvider.GetRequiredService<PlatformNotificationDispatchService>();
 
         return await dispatchService.DispatchDueAsync();
+    }
+
+    public async Task<Guid> SeedFailedPlatformNotificationAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        MessagingDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<MessagingDbContext>();
+        DateTimeOffset createdAtUtc = DateTimeOffset.UtcNow.AddHours(-2);
+        PlatformTransactionalMessage message = PlatformTransactionalMessage.Create(
+            Guid.CreateVersion7(),
+            PlatformMessagePurpose.AbuseAppealRejected,
+            Guid.CreateVersion7(),
+            $"integration-failed:{Guid.CreateVersion7():D}",
+            "Account appeal review",
+            "Your account appeal review is complete.",
+            createdAtUtc);
+        message.BeginAttempt(
+            createdAtUtc.AddMinutes(1),
+            createdAtUtc.AddMinutes(6));
+        message.ScheduleRetry(
+            "PROVIDER_FAILURE",
+            createdAtUtc.AddMinutes(2),
+            createdAtUtc.AddMinutes(3),
+            maxAttempts: 1);
+        dbContext.PlatformTransactionalMessages.Add(message);
+        await dbContext.SaveChangesAsync();
+
+        return message.Id;
+    }
+
+    public async Task<Guid> SeedCallbackPendingPlatformNotificationAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        MessagingDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<MessagingDbContext>();
+        DateTimeOffset createdAtUtc = DateTimeOffset.UtcNow.AddHours(-2);
+        PlatformTransactionalMessage message = PlatformTransactionalMessage.Create(
+            Guid.CreateVersion7(),
+            PlatformMessagePurpose.AccountClosureProposed,
+            Guid.CreateVersion7(),
+            $"integration-callback-pending:{Guid.CreateVersion7():D}",
+            "Account closure review",
+            "Your account closure case is ready for review.",
+            createdAtUtc);
+        message.BeginAttempt(
+            createdAtUtc.AddMinutes(1),
+            createdAtUtc.AddMinutes(6));
+        message.MarkDeliveryAccepted(createdAtUtc.AddMinutes(2));
+        message.ScheduleRetry(
+            "CALLBACK_FAILED",
+            createdAtUtc.AddMinutes(3),
+            createdAtUtc.AddMinutes(4),
+            maxAttempts: 5);
+        dbContext.PlatformTransactionalMessages.Add(message);
+        await dbContext.SaveChangesAsync();
+
+        return message.Id;
     }
 
     public async Task SeedHighRiskStrikesAsync(

@@ -29,6 +29,7 @@
 - `21-isletme-abuse-raporu-strike-risk.md`: İşletme abuse raporu, admin review, strike ve risk seviyesi sınırları
 - `22-abuse-itiraz-hesap-kapatma.md`: Müşteri itirazı, iki-admin onaylı kalıcı kapatma ve Identity orchestration sınırları
 - `25-platform-bildirim-outbox.md`: Platform-global transactional e-posta outbox'ı ve closure bildirim güvenliği
+- `26-platform-operasyon-reconciliation-runbook.md`: Notification/closure alarm eşikleri ve güvenli manuel kurtarma adımları
 
 ## Bakım Kuralı
 

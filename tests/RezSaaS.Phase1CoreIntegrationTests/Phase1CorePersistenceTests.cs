@@ -145,6 +145,138 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ReconciliationQueriesDetectPlatformNotificationAndClosureIncidents()
+    {
+        DateTimeOffset createdAtUtc = testTime.AddHours(-2);
+        PlatformTransactionalMessage failedMessage = PlatformTransactionalMessage.Create(
+            Guid.CreateVersion7(),
+            PlatformMessagePurpose.AbuseAppealRejected,
+            Guid.CreateVersion7(),
+            $"failed:{Guid.CreateVersion7():D}",
+            "Appeal review",
+            "Your appeal review is complete.",
+            createdAtUtc);
+        failedMessage.BeginAttempt(
+            createdAtUtc.AddMinutes(1),
+            createdAtUtc.AddMinutes(6));
+        failedMessage.ScheduleRetry(
+            "PROVIDER_FAILURE",
+            createdAtUtc.AddMinutes(2),
+            createdAtUtc.AddMinutes(3),
+            maxAttempts: 1);
+        PlatformTransactionalMessage staleProcessingMessage =
+            PlatformTransactionalMessage.Create(
+                Guid.CreateVersion7(),
+                PlatformMessagePurpose.AbuseAppealAccepted,
+                Guid.CreateVersion7(),
+                $"stale-processing:{Guid.CreateVersion7():D}",
+                "Appeal review",
+                "Your appeal review is complete.",
+                createdAtUtc);
+        staleProcessingMessage.BeginAttempt(
+            createdAtUtc.AddMinutes(1),
+            testTime.AddHours(-1));
+        PlatformTransactionalMessage callbackPendingMessage =
+            PlatformTransactionalMessage.Create(
+                Guid.CreateVersion7(),
+                PlatformMessagePurpose.AccountClosureProposed,
+                Guid.CreateVersion7(),
+                $"callback-pending:{Guid.CreateVersion7():D}",
+                "Account closure review",
+                "Your account closure case is ready for review.",
+                createdAtUtc);
+        callbackPendingMessage.BeginAttempt(
+            createdAtUtc.AddMinutes(1),
+            createdAtUtc.AddMinutes(6));
+        callbackPendingMessage.MarkDeliveryAccepted(createdAtUtc.AddMinutes(2));
+        callbackPendingMessage.ScheduleRetry(
+            "CALLBACK_FAILED",
+            createdAtUtc.AddMinutes(3),
+            createdAtUtc.AddMinutes(4),
+            maxAttempts: 5);
+
+        await using (MessagingDbContext dbContext =
+            new(CreateOptions<MessagingDbContext>()))
+        {
+            dbContext.PlatformTransactionalMessages.AddRange(
+                failedMessage,
+                staleProcessingMessage,
+                callbackPendingMessage);
+            await dbContext.SaveChangesAsync();
+        }
+
+        AccountClosureCase notificationOverdueClosure = AccountClosureCase.Create(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "Verified high-risk evidence.",
+            "Your account is scheduled for closure after review.",
+            createdAtUtc);
+        AccountClosureCase stalledExecutionClosure = AccountClosureCase.Create(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            "Verified high-risk evidence.",
+            "Your account is scheduled for closure after review.",
+            testTime.AddDays(-10));
+        stalledExecutionClosure.MarkCustomerNoticeDelivered(
+            testTime.AddDays(-10),
+            TimeSpan.FromDays(7));
+        stalledExecutionClosure.Approve(
+            Guid.CreateVersion7(),
+            "Independent evidence review.",
+            testTime.AddDays(-10).AddHours(1));
+        stalledExecutionClosure.BeginExecution(
+            Guid.CreateVersion7(),
+            createdAtUtc);
+
+        await using (AdminDbContext dbContext =
+            new(CreateOptions<AdminDbContext>()))
+        {
+            dbContext.AccountClosureCases.AddRange(
+                notificationOverdueClosure,
+                stalledExecutionClosure);
+            await dbContext.SaveChangesAsync();
+        }
+
+        await using MessagingDbContext messagingDbContext =
+            new(CreateOptions<MessagingDbContext>());
+        await using AdminDbContext adminDbContext =
+            new(CreateOptions<AdminDbContext>());
+        PlatformNotificationReconciliationSnapshot notificationSnapshot =
+            await new PlatformNotificationReconciliationQueryService(messagingDbContext)
+                .InspectAsync(
+                    new PlatformNotificationReconciliationQuery(
+                        testTime.AddMinutes(-30),
+                        testTime.AddMinutes(-15),
+                        SampleSize: 10));
+        AccountClosureReconciliationSnapshot closureSnapshot =
+            await new AccountClosureReconciliationQueryService(adminDbContext)
+                .InspectAsync(
+                    new AccountClosureReconciliationQuery(
+                        testTime.AddMinutes(-30),
+                        testTime.AddMinutes(-15),
+                        SampleSize: 10));
+
+        Assert.Equal(1, notificationSnapshot.FailedCount);
+        Assert.Equal(1, notificationSnapshot.StaleProcessingCount);
+        Assert.Equal(1, notificationSnapshot.CallbackPendingCount);
+        Assert.Contains(failedMessage.Id, notificationSnapshot.FailedMessageIds);
+        Assert.Contains(
+            staleProcessingMessage.Id,
+            notificationSnapshot.StaleProcessingMessageIds);
+        Assert.Contains(
+            callbackPendingMessage.Id,
+            notificationSnapshot.CallbackPendingMessageIds);
+        Assert.Equal(1, closureSnapshot.NotificationOverdueCount);
+        Assert.Equal(1, closureSnapshot.ExecutionStalledCount);
+        Assert.Contains(
+            notificationOverdueClosure.Id,
+            closureSnapshot.NotificationOverdueClosureCaseIds);
+        Assert.Contains(
+            stalledExecutionClosure.Id,
+            closureSnapshot.ExecutionStalledClosureCaseIds);
+    }
+
+    [Fact]
     public async Task TenantQueryFilterShowsOnlyCurrentTenantData()
     {
         Guid tenantA = Guid.CreateVersion7();

@@ -233,6 +233,9 @@ En azından şu aksiyonlar auditlenir:
 - Hesap kapatma itiraz penceresi, zorunlu proposal e-postasının sağlayıcı tarafından kabul edildiği `CustomerNoticeDeliveredAtUtc` anında başlar. Bu kanıt ve `EligibleForExecutionAtUtc` oluşmadan closure execution ilerleyemez.
 - Sağlayıcı kabulü kaydedildikten sonra Admin callback'i başarısız olursa retry aynı e-postayı yeniden göndermez; yalnızca eksik callback/finalization adımını tamamlar.
 - Platform notification worker tenant context kullanmayan explicit global bir worker'dır; unique delivery key, row lock, lease, sınırlı retry ve terminal durum koruması olmadan yeni platform bildirimi eklenmez.
+- Platform operasyon reconciliation varsayılan olarak salt-okunurdur; alarm veya health check geri döndürülemez state'i otomatik onaramaz ve doğrudan tablo mutasyonu yapamaz.
+- Reconciliation log, health ve admin snapshot'ları PII, mesaj konu/gövdesi, internal reason veya `UserAccountId` sızdıramaz; yalnızca sayılar ve operasyonel kayıt GUID'leri taşıyabilir.
+- Reconciliation recovery mevcut idempotent application/API akışları üzerinden yapılır. Terminal notification requeue gibi yeni bir mutasyon yüzeyi eklenirse ayrı authz, audit, idempotency, rate limit ve ADR olmadan yayınlanamaz; doğrudan DB düzeltmesi yasaktır.
 - Production closure execution, gerçek SMTP teslimatı ve operasyon/reconciliation kapıları doğrulanana kadar güvenli varsayılanla kapalı tutulur; explicit configuration olmadan açılamaz.
 - `UserAccount.Status != Active` olan authenticated istekler merkezi aktif hesap kapısında `401` ile reddedilir; yeni endpoint bu kapıyı bypass edemez.
 

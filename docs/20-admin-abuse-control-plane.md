@@ -19,6 +19,7 @@ Bu yüzey tenant işletme paneli değildir. Tüm endpoint'ler `PlatformAdminWith
 - `GET /api/admin/abuse/closure-cases/{closureCaseId}`: hesap kapatma vaka detayı
 - `POST /api/admin/abuse/users/{userAccountId}/closure-cases`: yüksek riskli hesap için kapatma teklifi
 - `POST /api/admin/abuse/closure-cases/{closureCaseId}/approve|reject|execute`: bağımsız karar ve retry edilebilir execution
+- `GET /api/admin/operations/reconciliation`: platform bildirim ve closure saga incident sayılarını PII sızdırmadan gösteren salt-okunur operasyon snapshot'ı
 
 ## Yaptırım Kuralları
 
@@ -51,8 +52,6 @@ Bu yüzey tenant işletme paneli değildir. Tüm endpoint'ler `PlatformAdminWith
 
 ## Açık İşler
 
-- Platform notification/closure reconciliation, alarm ve manuel kurtarma runbook'u
-- `Executing` closure case reconciliation/alert ve manuel kurtarma runbook'u
 - İşletme raporlama davranışının kötüye kullanım riski
 - IP/device sinyal toplama, saklama ve privacy kuralları
 - Abuse dashboard pagination, reason-code taksonomisi ve operasyon runbook'u

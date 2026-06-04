@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using RezSaaS.Api.Admin;
 using RezSaaS.Api.Business;
 using RezSaaS.Api.Configuration;
@@ -40,7 +41,10 @@ IModule[] modules =
 ];
 
 builder.Services.AddProblemDetails();
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<PlatformOperationsHealthCheck>(
+        "platform-operations",
+        tags: ["operations"]);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -99,6 +103,19 @@ builder.Services.AddOptions<PlatformNotificationWorkerOptions>()
             && options.RetryDelay > TimeSpan.Zero,
         "Platform notification worker options must use positive values.")
     .ValidateOnStart();
+builder.Services.AddOptions<PlatformOperationsReconciliationOptions>()
+    .Bind(builder.Configuration.GetSection(PlatformOperationsReconciliationOptions.SectionName))
+    .Validate(
+        options => options.CallbackPendingThreshold > TimeSpan.Zero
+            && options.ClosureExecutionStallThreshold > TimeSpan.Zero
+            && options.InitialDelay >= TimeSpan.Zero
+            && options.Interval > TimeSpan.Zero
+            && options.NotificationOverdueThreshold > TimeSpan.Zero
+            && options.SampleSize > 0
+            && options.SampleSize <= 100
+            && options.StaleProcessingThreshold > TimeSpan.Zero,
+        "Platform operations reconciliation options must use positive values.")
+    .ValidateOnStart();
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
@@ -110,8 +127,10 @@ builder.Services.AddScoped<AdminAbuseReportComposer>();
 builder.Services.AddScoped<AdminAbuseWorkflowComposer>();
 builder.Services.AddScoped<CustomerAbuseComposer>();
 builder.Services.AddScoped<PlatformNotificationDispatchService>();
+builder.Services.AddScoped<PlatformOperationsReconciliationService>();
 builder.Services.AddHostedService<AppointmentRequestExpiryHostedService>();
 builder.Services.AddHostedService<PlatformNotificationHostedService>();
+builder.Services.AddHostedService<PlatformOperationsReconciliationHostedService>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();
@@ -236,7 +255,19 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseMiddleware<ActiveUserAccountMiddleware>();
 app.UseAuthorization();
-app.MapHealthChecks("/health");
+app.MapHealthChecks(
+    "/health",
+    new HealthCheckOptions
+    {
+        Predicate = registration => !registration.Tags.Contains("operations"),
+    });
+app.MapHealthChecks(
+    "/health/operations",
+    new HealthCheckOptions
+    {
+        Predicate = registration => registration.Tags.Contains("operations"),
+    })
+    .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
 app.MapPublicBusinessProfileEndpoints();
 app.MapPublicBusinessSlotEndpoints();
 app.MapPublicAppointmentRequestEndpoints();
@@ -245,6 +276,7 @@ app.MapCustomerAbuseEndpoints();
 app.MapAdminControlPlaneEndpoints();
 app.MapAdminAbuseControlPlaneEndpoints();
 app.MapAdminAbuseWorkflowEndpoints();
+app.MapAdminOperationsEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();

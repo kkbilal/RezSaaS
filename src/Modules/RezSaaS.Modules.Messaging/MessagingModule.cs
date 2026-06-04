@@ -22,6 +22,7 @@ public sealed class MessagingModule : ModuleBase
         services.AddDbContext<MessagingDbContext>(
             options => options.UseNpgsql(connectionString));
         services.AddScoped<ITransactionalMessageOutbox, TransactionalMessageOutbox>();
+        services.AddScoped<PlatformNotificationReconciliationQueryService>();
         services.AddScoped<PlatformTransactionalMessageQueueService>();
     }
 }

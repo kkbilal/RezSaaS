@@ -106,17 +106,18 @@ API composition root aşağıdaki sırayı uygular:
 7. Identity transaction içinde hesabı `Closed` yapar, security/concurrency stamp değerlerini döndürür ve Identity audit kaydı üretir.
 8. Admin transaction içinde aktif bloklayıcı yaptırımları revoke eder, tek `PermanentClosure` geçmiş kaydı üretir ve vakayı `Executed` yapar.
 
-`Executing` durumu bilinçli bir saga ara durumudur. Identity kapanıp Admin tamamlama başarısız olursa aynı execute isteği güvenli biçimde tekrar çalıştırılabilir. Operasyonel reconciliation/alert mekanizması sonraki sertleşme işidir.
+`Executing` durumu bilinçli bir saga ara durumudur. Identity kapanıp Admin tamamlama başarısız olursa aynı execute isteği güvenli biçimde tekrar çalıştırılabilir. Salt-okunur operasyon reconciliation uzun süre `Executing` kalan vakayı kritik alarm olarak gösterir; recovery mevcut idempotent execute endpoint'inin step-up admin tarafından tekrar çalıştırılmasıyla yapılır.
 
 ## Production Açılış Kapıları
 
 - Platform-global outbox, Identity alıcı çözümü ve sağlayıcı kabul zamanına bağlı itiraz
   penceresi uygulanmıştır.
 - `Admin:AbuseRisk:AccountClosureExecutionEnabled` güvenli varsayılan olarak `false`
-  değerindedir; gerçek SMTP sağlayıcısı, alarm/reconciliation ve operasyon runbook'u
-  doğrulanmadan bilinçli olarak açılmaz.
+  değerindedir; gerçek SMTP sağlayıcısı, alarm routing'i, backup/restore ve genel
+  incident hazırlığı doğrulanmadan bilinçli olarak açılmaz.
 - Bildirim teslimat hatası, uzun süre `Executing` kalan vaka ve cross-module saga yarım
-  kalması için reconciliation/alert runbook'u tamamlanmalıdır.
+  kalması salt-okunur reconciliation, operasyon health'i ve
+  `26-platform-operasyon-reconciliation-runbook.md` ile izlenir.
 
 ## Güvenlik, Audit ve Veri
 
