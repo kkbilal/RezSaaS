@@ -24,6 +24,7 @@
 - `15-phase-1-uygulama-plani.md`: Phase 1 uygulama sırası ve mevcut durum
 - `16-identity-auth-temeli.md`: Identity/Auth güvenlik kapısı ve mevcut uygulama
 - `18-phase-2-uygulama-plani.md`: Phase 2 müşteri keşif ve rezervasyon uygulama planı
+- `19-calisma-baglam-ozeti.md`: Uzun çalışma geçmişinin kompakt devralma özeti ve güncel faz durumu
 
 ## Bakım Kuralı
 

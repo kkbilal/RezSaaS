@@ -217,6 +217,8 @@ En azından şu aksiyonlar auditlenir:
 - İlk `PlatformAdmin` bootstrap endpoint'i tek istisna olarak anonymous olabilir; bunun için token-hash doğrulama, rate limit, origin guard, audit ve "zaten admin varsa reddet" davranışı zorunludur. Bootstrap token/parola hiçbir response veya log içinde dönmez.
 - Tenant provisioning endpoint'leri `PlatformAdminWithStepUp` policy olmadan yayınlanmaz; owner kullanıcı Identity içinde aktif `UserAccount` olarak doğrulanır, tenant rolü global Identity rolüne dönüştürülmez.
 - Tenant membership yönetim endpoint'leri (add/suspend/revoke) `PlatformAdminWithStepUp` ister; hedef kullanıcı aktif `UserAccount` olmalı, `Revoked` terminal durum olmalı, son aktif `BusinessOwner` suspend/revoke edilemez ve her state değişimi auditlenir.
+- Tenant lifecycle suspend/reactivate/close endpoint'leri `PlatformAdminWithStepUp`, uzunluk sınırlı ve PII/secret içermeyen operasyon nedeni, audit ve DB row lock ister. `Closed` terminaldir.
+- `Suspended`/`Closed` tenant public discovery, slot arama, yeni booking request ve işletme operasyonlarına kapalıdır; müşteri kendi mevcut taleplerini görme ve izin verilen talebini iptal etme hakkını korur.
 
 ---
 

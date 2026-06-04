@@ -20,6 +20,7 @@ public sealed class TenantManagementModule : ModuleBase
         services.AddDbContext<TenantManagementDbContext>(
             options => options.UseNpgsql(connectionString));
         services.AddScoped<AddTenantMembershipService>();
+        services.AddScoped<ChangeTenantLifecycleService>();
         services.AddScoped<ChangeTenantMembershipStatusService>();
         services.AddScoped<TenantBookingAuthorizationService>();
         services.AddScoped<TenantControlPlaneQueryService>();

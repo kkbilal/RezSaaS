@@ -14,6 +14,7 @@ public sealed class AdminTenantProvisioningComposer
     private const string Unauthorized = "ADMIN_TENANT_PROVISIONING_UNAUTHORIZED";
 
     private readonly AddTenantMembershipService addTenantMembershipService;
+    private readonly ChangeTenantLifecycleService changeTenantLifecycleService;
     private readonly ChangeTenantMembershipStatusService changeTenantMembershipStatusService;
     private readonly CreateTenantWithOwnerService createTenantWithOwnerService;
     private readonly TenantControlPlaneQueryService queryService;
@@ -23,12 +24,14 @@ public sealed class AdminTenantProvisioningComposer
         CreateTenantWithOwnerService createTenantWithOwnerService,
         TenantControlPlaneQueryService queryService,
         AddTenantMembershipService addTenantMembershipService,
+        ChangeTenantLifecycleService changeTenantLifecycleService,
         ChangeTenantMembershipStatusService changeTenantMembershipStatusService,
         UserAccountExistenceService userAccountExistenceService)
     {
         this.createTenantWithOwnerService = createTenantWithOwnerService;
         this.queryService = queryService;
         this.addTenantMembershipService = addTenantMembershipService;
+        this.changeTenantLifecycleService = changeTenantLifecycleService;
         this.changeTenantMembershipStatusService = changeTenantMembershipStatusService;
         this.userAccountExistenceService = userAccountExistenceService;
     }
@@ -202,6 +205,20 @@ public sealed class AdminTenantProvisioningComposer
             : AdminTenantAccessResult.SuccessMembership(ToMembershipResponse(membership));
     }
 
+    public async Task<AdminTenantAccessResult> CloseTenantAsync(
+        Guid tenantId,
+        AdminTenantLifecycleChangeRequest request,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
+    {
+        return await ChangeTenantLifecycleAsync(
+            tenantId,
+            request,
+            user,
+            (command, token) => changeTenantLifecycleService.CloseAsync(command, token),
+            cancellationToken);
+    }
+
     public async Task<AdminTenantAccessResult> RevokeMembershipAsync(
         Guid tenantId,
         Guid membershipId,
@@ -213,6 +230,20 @@ public sealed class AdminTenantProvisioningComposer
             membershipId,
             user,
             (command, token) => changeTenantMembershipStatusService.RevokeAsync(command, token),
+            cancellationToken);
+    }
+
+    public async Task<AdminTenantAccessResult> ReactivateTenantAsync(
+        Guid tenantId,
+        AdminTenantLifecycleChangeRequest request,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
+    {
+        return await ChangeTenantLifecycleAsync(
+            tenantId,
+            request,
+            user,
+            (command, token) => changeTenantLifecycleService.ReactivateAsync(command, token),
             cancellationToken);
     }
 
@@ -228,6 +259,59 @@ public sealed class AdminTenantProvisioningComposer
             user,
             (command, token) => changeTenantMembershipStatusService.SuspendAsync(command, token),
             cancellationToken);
+    }
+
+    public async Task<AdminTenantAccessResult> SuspendTenantAsync(
+        Guid tenantId,
+        AdminTenantLifecycleChangeRequest request,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
+    {
+        return await ChangeTenantLifecycleAsync(
+            tenantId,
+            request,
+            user,
+            (command, token) => changeTenantLifecycleService.SuspendAsync(command, token),
+            cancellationToken);
+    }
+
+    private async Task<AdminTenantAccessResult> ChangeTenantLifecycleAsync(
+        Guid tenantId,
+        AdminTenantLifecycleChangeRequest request,
+        ClaimsPrincipal user,
+        Func<ChangeTenantLifecycleCommand, CancellationToken, Task<TenantLifecycleCommandResult>> change,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserAccountId(user, out Guid actorUserAccountId))
+        {
+            return AdminTenantAccessResult.Failure(
+                AdminTenantProvisioningOutcome.Unauthorized,
+                Unauthorized);
+        }
+
+        TenantLifecycleCommandResult result =
+            await change(
+                new ChangeTenantLifecycleCommand(
+                    tenantId,
+                    actorUserAccountId,
+                    request.Reason),
+                cancellationToken);
+
+        if (!result.Succeeded)
+        {
+            return MapLifecycleFailure(result.ErrorCode ?? InvalidRequest);
+        }
+
+        TenantDetailView? tenant =
+            await queryService.GetByIdAsync(
+                tenantId,
+                cancellationToken);
+
+        return tenant is null
+            ? AdminTenantAccessResult.Failure(
+                AdminTenantProvisioningOutcome.Unprocessable,
+                "ADMIN_TENANT_NOT_FOUND")
+            : AdminTenantAccessResult.Success(ToDetailResponse(tenant));
     }
 
     private async Task<AdminTenantAccessResult> ChangeMembershipStatusAsync(
@@ -290,6 +374,19 @@ public sealed class AdminTenantProvisioningComposer
                 or "TENANT_MEMBERSHIP_REVOKED" =>
                 AdminTenantProvisioningOutcome.Conflict,
             "TENANT_MEMBERSHIP_INVALID" => AdminTenantProvisioningOutcome.BadRequest,
+            _ => AdminTenantProvisioningOutcome.Unprocessable,
+        };
+
+        return AdminTenantAccessResult.Failure(outcome, errorCode);
+    }
+
+    private static AdminTenantAccessResult MapLifecycleFailure(string errorCode)
+    {
+        AdminTenantProvisioningOutcome outcome = errorCode switch
+        {
+            "TENANT_NOT_FOUND" => AdminTenantProvisioningOutcome.NotFound,
+            "TENANT_CLOSED" => AdminTenantProvisioningOutcome.Conflict,
+            "TENANT_LIFECYCLE_INVALID" => AdminTenantProvisioningOutcome.BadRequest,
             _ => AdminTenantProvisioningOutcome.Unprocessable,
         };
 

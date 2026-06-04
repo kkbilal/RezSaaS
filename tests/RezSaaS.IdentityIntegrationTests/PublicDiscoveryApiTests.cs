@@ -475,6 +475,82 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task SuspendedTenantBlocksPublicDiscoveryNewBookingAndBusinessManagement()
+    {
+        PublicBusinessProfileSeed seed =
+            await fixture.SeedPublicBusinessProfileAsync(
+                DateOnly.FromDateTime(DateTime.UtcNow.AddDays(24)));
+        const string password = "RezSaaS!Auth1234";
+        string customerEmail = $"suspended-customer-{Guid.NewGuid():N}@example.test";
+        string ownerEmail = $"suspended-owner-{Guid.NewGuid():N}@example.test";
+        string customerToken = await RegisterAndLoginWithBearerTokenAsync(customerEmail, password);
+        string ownerToken = await RegisterAndLoginWithBearerTokenAsync(ownerEmail, password);
+        Guid ownerUserAccountId = await fixture.GetUserAccountIdAsync(ownerEmail);
+        await fixture.GrantTenantMembershipAsync(
+            seed.TenantId,
+            ownerUserAccountId,
+            TenantMembershipRole.BusinessOwner);
+        await CreatePublicAppointmentRequestAsync(seed, customerToken);
+        using HttpClient adminClient =
+            fixture.CreatePlatformAdminStepUpClient(Guid.CreateVersion7());
+        HttpResponseMessage suspendResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{seed.TenantId}/suspend",
+            new { reason = "Operational investigation" });
+        Assert.Equal(HttpStatusCode.OK, suspendResponse.StatusCode);
+
+        HttpResponseMessage profileResponse = await fixture.Client.GetAsync(
+            $"/api/public/businesses/{seed.Slug}/profile");
+        HttpResponseMessage slotsResponse = await fixture.Client.GetAsync(
+            $"/api/public/businesses/{seed.Slug}/slots"
+            + $"?branchSlug={seed.BranchSlug}"
+            + $"&serviceVariantIds={seed.ServiceVariantId}"
+            + $"&date={DateOnly.FromDateTime(seed.AvailableSlotStartUtc.UtcDateTime):yyyy-MM-dd}");
+        using HttpRequestMessage createRequest =
+            CreatePublicAppointmentRequestMessage(seed, customerToken);
+        HttpResponseMessage createResponse = await fixture.Client.SendAsync(createRequest);
+        using HttpRequestMessage businessRequest = new(
+            HttpMethod.Get,
+            "/api/business/appointment-requests/pending");
+        businessRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+        businessRequest.Headers.Add(TenantContextHeaders.TenantId, seed.TenantId.ToString());
+        HttpResponseMessage businessResponse = await fixture.Client.SendAsync(businessRequest);
+        using HttpRequestMessage customerHistoryRequest = new(
+            HttpMethod.Get,
+            $"/api/public/businesses/{seed.Slug}/appointment-requests");
+        customerHistoryRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", customerToken);
+        HttpResponseMessage customerHistoryResponse =
+            await fixture.Client.SendAsync(customerHistoryRequest);
+
+        Assert.Equal(HttpStatusCode.NotFound, profileResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, slotsResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, createResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, businessResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, customerHistoryResponse.StatusCode);
+
+        HttpResponseMessage reactivateResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{seed.TenantId}/reactivate",
+            new { reason = "Investigation completed" });
+        Assert.Equal(HttpStatusCode.OK, reactivateResponse.StatusCode);
+
+        HttpResponseMessage reactivatedProfileResponse = await fixture.Client.GetAsync(
+            $"/api/public/businesses/{seed.Slug}/profile");
+        using HttpRequestMessage reactivatedBusinessRequest = new(
+            HttpMethod.Get,
+            "/api/business/appointment-requests/pending");
+        reactivatedBusinessRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", ownerToken);
+        reactivatedBusinessRequest.Headers.Add(
+            TenantContextHeaders.TenantId,
+            seed.TenantId.ToString());
+        HttpResponseMessage reactivatedBusinessResponse =
+            await fixture.Client.SendAsync(reactivatedBusinessRequest);
+
+        Assert.Equal(HttpStatusCode.OK, reactivatedProfileResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, reactivatedBusinessResponse.StatusCode);
+    }
+
     private async Task<Guid> CreatePublicAppointmentRequestAsync(
         PublicBusinessProfileSeed seed,
         string accessToken)

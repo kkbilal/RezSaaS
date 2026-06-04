@@ -7,6 +7,7 @@ using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Catalog.Application;
 using RezSaaS.Modules.Organization.Application;
 using RezSaaS.Modules.Resources.Application;
+using RezSaaS.Modules.TenantManagement.Application;
 
 namespace RezSaaS.Api.PublicApi;
 
@@ -34,6 +35,7 @@ public sealed class PublicAppointmentRequestComposer
     private readonly PublicCatalogSchedulingService catalogSchedulingService;
     private readonly PublicResourceAvailabilityQueryService resourceAvailabilityQueryService;
     private readonly IOptions<PublicSlotSearchOptions> slotSearchOptions;
+    private readonly TenantLifecycleQueryService tenantLifecycleQueryService;
     private readonly ITenantContextAccessor tenantContextAccessor;
 
     public PublicAppointmentRequestComposer(
@@ -45,6 +47,7 @@ public sealed class PublicAppointmentRequestComposer
         CreateAppointmentRequestService createAppointmentRequestService,
         CustomerAppointmentRequestQueryService customerAppointmentRequestQueryService,
         CancelAppointmentRequestService cancelAppointmentRequestService,
+        TenantLifecycleQueryService tenantLifecycleQueryService,
         IOptions<PublicSlotSearchOptions> slotSearchOptions,
         ITenantContextAccessor tenantContextAccessor)
     {
@@ -56,6 +59,7 @@ public sealed class PublicAppointmentRequestComposer
         this.createAppointmentRequestService = createAppointmentRequestService;
         this.customerAppointmentRequestQueryService = customerAppointmentRequestQueryService;
         this.cancelAppointmentRequestService = cancelAppointmentRequestService;
+        this.tenantLifecycleQueryService = tenantLifecycleQueryService;
         this.slotSearchOptions = slotSearchOptions;
         this.tenantContextAccessor = tenantContextAccessor;
     }
@@ -86,7 +90,10 @@ public sealed class PublicAppointmentRequestComposer
                 businessSlug,
                 cancellationToken);
 
-        if (business is null)
+        if (business is null
+            || !await tenantLifecycleQueryService.IsActiveAsync(
+                business.TenantId,
+                cancellationToken))
         {
             return PublicAppointmentRequestCreateResult.Failure(
                 PublicAppointmentRequestCreateOutcome.NotFound,

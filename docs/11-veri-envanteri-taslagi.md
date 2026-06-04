@@ -13,7 +13,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |
 | Booking idempotency | Tenant, actor id, operation, key hash, request hash, response özeti | Komut retry güvenliği ve çift işlem engelleme | Sistem ve sınırlı operasyon | Saklama/temizleme süresi netleştirilecek |
 | Identity audit | Actor, subject, aksiyon, zaman, JSON detay | Güvenlik ve privileged bootstrap kanıtı | Platform admin | Append-only; saklama süresi netleştirilecek |
-| Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |
+| Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay, lifecycle operasyon nedeni | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |
 | Admin audit | Actor, aksiyon, zaman, JSON detay | Platform operasyon incelemesi | Platform admin | Append-only; saklama süresi netleştirilecek |
 | Abuse | Event, severity, user, tenant, sanction | Platform güvenliği | Platform admin | Netleştirilecek |
 | Bildirim | Kanal, maskelenmiş alıcı, template, payload, provider sonucu | Teslimat ve hata çözümü | Sınırlı destek | Netleştirilecek |
@@ -23,6 +23,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 
 - Minimum veri: iş akışı için gerekmeyen alan toplanmaz.
 - Serbest metin müşteri notları sınırlanır; hassas veri girişi için uyarı ve erişim kısıtı planlanır.
+- Tenant lifecycle operasyon nedeni uzunluk sınırlıdır; PII, secret veya erişim bilgisi içermemelidir.
 - Silme, anonimleştirme, export ve itiraz süreçleri veri grubu bazında tasarlanır.
 - Backup kopyaları ve log sistemleri saklama politikasına dahildir.
 - Destek erişimi süreli, gerekçeli ve auditli olmalıdır.

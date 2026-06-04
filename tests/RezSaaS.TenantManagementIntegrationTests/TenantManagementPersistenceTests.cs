@@ -266,6 +266,186 @@ public sealed class TenantManagementPersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TenantLifecycleServiceSuspendsAndClosesIdempotently()
+    {
+        await using TenantManagementDbContext dbContext = CreateDbContext();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        Guid ownerUserAccountId = Guid.CreateVersion7();
+        CreateTenantWithOwnerService createTenantService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        ChangeTenantLifecycleService lifecycleService = new(
+            dbContext,
+            new FixedTimeProvider(testTime));
+        TenantLifecycleQueryService lifecycleQueryService = new(dbContext);
+        TenantBookingAuthorizationService authorizationService = new(dbContext);
+        CreateTenantWithOwnerResult tenantResult =
+            await createTenantService.CreateAsync(
+                new CreateTenantWithOwnerCommand(
+                    actorUserAccountId,
+                    $"salon-{Guid.NewGuid():N}"[..16],
+                    "Salon Demo",
+                    ownerUserAccountId));
+        Guid tenantId = tenantResult.TenantId!.Value;
+        ChangeTenantLifecycleCommand suspendCommand = new(
+            tenantId,
+            actorUserAccountId,
+            "Operational investigation");
+        ChangeTenantLifecycleCommand closeCommand = new(
+            tenantId,
+            actorUserAccountId,
+            "Tenant closure approved");
+
+        Assert.True(await lifecycleQueryService.IsActiveAsync(tenantId));
+        Assert.True(await authorizationService.HasAppointmentRequestManagementMembershipAsync(
+            tenantId,
+            ownerUserAccountId));
+
+        TenantLifecycleCommandResult suspendResult =
+            await lifecycleService.SuspendAsync(suspendCommand);
+        TenantLifecycleCommandResult duplicateSuspendResult =
+            await lifecycleService.SuspendAsync(suspendCommand);
+        Assert.False(await lifecycleQueryService.IsActiveAsync(tenantId));
+        Assert.False(await authorizationService.HasAppointmentRequestManagementMembershipAsync(
+            tenantId,
+            ownerUserAccountId));
+
+        ChangeTenantLifecycleCommand reactivateCommand = new(
+            tenantId,
+            actorUserAccountId,
+            "Investigation completed");
+        TenantLifecycleCommandResult reactivateResult =
+            await lifecycleService.ReactivateAsync(reactivateCommand);
+        TenantLifecycleCommandResult duplicateReactivateResult =
+            await lifecycleService.ReactivateAsync(reactivateCommand);
+        Assert.True(await lifecycleQueryService.IsActiveAsync(tenantId));
+        Assert.True(await authorizationService.HasAppointmentRequestManagementMembershipAsync(
+            tenantId,
+            ownerUserAccountId));
+
+        TenantLifecycleCommandResult closeResult =
+            await lifecycleService.CloseAsync(closeCommand);
+        TenantLifecycleCommandResult duplicateCloseResult =
+            await lifecycleService.CloseAsync(closeCommand);
+        TenantLifecycleCommandResult suspendClosedResult =
+            await lifecycleService.SuspendAsync(suspendCommand);
+        TenantLifecycleCommandResult reactivateClosedResult =
+            await lifecycleService.ReactivateAsync(reactivateCommand);
+
+        Assert.True(suspendResult.Succeeded);
+        Assert.True(duplicateSuspendResult.Succeeded);
+        Assert.True(reactivateResult.Succeeded);
+        Assert.True(duplicateReactivateResult.Succeeded);
+        Assert.True(closeResult.Succeeded);
+        Assert.True(duplicateCloseResult.Succeeded);
+        Assert.False(suspendClosedResult.Succeeded);
+        Assert.Equal("TENANT_CLOSED", suspendClosedResult.ErrorCode);
+        Assert.False(reactivateClosedResult.Succeeded);
+        Assert.Equal("TENANT_CLOSED", reactivateClosedResult.ErrorCode);
+
+        Tenant tenant = await dbContext.Tenants.SingleAsync(entity => entity.Id == tenantId);
+        Assert.Equal(TenantStatus.Closed, tenant.Status);
+        Assert.Null(tenant.SuspendedAtUtc);
+        Assert.Equal(testTime, tenant.ClosedAtUtc);
+        Assert.Equal(4, await dbContext.AuditLogEntries.CountAsync());
+        Assert.Equal(
+            1,
+            await dbContext.AuditLogEntries.CountAsync(entity => entity.Action == "TenantSuspended"));
+        Assert.Equal(
+            1,
+            await dbContext.AuditLogEntries.CountAsync(entity => entity.Action == "TenantReactivated"));
+        Assert.Equal(
+            1,
+            await dbContext.AuditLogEntries.CountAsync(entity => entity.Action == "TenantClosed"));
+        Assert.DoesNotContain(tenantId, await lifecycleQueryService.GetActiveTenantIdsAsync());
+        Assert.False(await lifecycleQueryService.IsActiveAsync(tenantId));
+        Assert.False(await authorizationService.HasAppointmentRequestManagementMembershipAsync(
+            tenantId,
+            ownerUserAccountId));
+    }
+
+    [Fact]
+    public async Task TenantLifecycleRowLockPreventsClosedTenantFromReturningToSuspended()
+    {
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        Guid tenantId;
+
+        await using (TenantManagementDbContext createContext = CreateDbContext())
+        {
+            CreateTenantWithOwnerService createTenantService = new(
+                createContext,
+                new FixedTimeProvider(testTime));
+            CreateTenantWithOwnerResult tenantResult =
+                await createTenantService.CreateAsync(
+                    new CreateTenantWithOwnerCommand(
+                        actorUserAccountId,
+                        $"salon-{Guid.NewGuid():N}"[..16],
+                        "Salon Demo",
+                        Guid.CreateVersion7()));
+            tenantId = tenantResult.TenantId!.Value;
+        }
+
+        await using TenantManagementDbContext suspendContext = CreateDbContext();
+        await using TenantManagementDbContext closeContext = CreateDbContext();
+        ChangeTenantLifecycleService suspendService = new(
+            suspendContext,
+            new FixedTimeProvider(testTime));
+        ChangeTenantLifecycleService closeService = new(
+            closeContext,
+            new FixedTimeProvider(testTime.AddMinutes(1)));
+        ChangeTenantLifecycleCommand suspendCommand = new(
+            tenantId,
+            actorUserAccountId,
+            "Concurrent suspension");
+        ChangeTenantLifecycleCommand closeCommand = new(
+            tenantId,
+            actorUserAccountId,
+            "Concurrent closure");
+
+        Task<TenantLifecycleCommandResult> suspendTask =
+            suspendService.SuspendAsync(suspendCommand);
+        Task<TenantLifecycleCommandResult> closeTask =
+            closeService.CloseAsync(closeCommand);
+        await Task.WhenAll(suspendTask, closeTask);
+        TenantLifecycleCommandResult suspendResult = await suspendTask;
+        TenantLifecycleCommandResult closeResult = await closeTask;
+
+        Assert.True(closeResult.Succeeded);
+        Assert.True(
+            suspendResult.Succeeded
+            || suspendResult.ErrorCode == "TENANT_CLOSED");
+
+        await using TenantManagementDbContext assertContext = CreateDbContext();
+        Tenant tenant = await assertContext.Tenants
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == tenantId);
+        Assert.Equal(TenantStatus.Closed, tenant.Status);
+        Assert.Equal(
+            1,
+            await assertContext.AuditLogEntries.CountAsync(entity =>
+                entity.TenantId == tenantId
+                && entity.Action == "TenantClosed"));
+    }
+
+    [Fact]
+    public void ClosedTenantIsTerminalInDomain()
+    {
+        Tenant tenant = Tenant.Create(
+            $"salon-{Guid.NewGuid():N}"[..16],
+            "Salon Demo",
+            testTime);
+
+        tenant.Suspend(testTime);
+        tenant.Close(testTime.AddMinutes(1));
+        tenant.Close(testTime.AddMinutes(2));
+
+        Assert.Equal(TenantStatus.Closed, tenant.Status);
+        Assert.Equal(testTime.AddMinutes(1), tenant.ClosedAtUtc);
+        Assert.Throws<InvalidOperationException>(() => tenant.Suspend(testTime.AddMinutes(3)));
+        Assert.Throws<InvalidOperationException>(tenant.Reactivate);
+    }
+
+    [Fact]
     public async Task TenantSlugMustBeUniqueCaseInsensitively()
     {
         string slug = $"salon-{Guid.NewGuid():N}"[..16];

@@ -2,6 +2,7 @@ using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Availability.Application;
 using RezSaaS.Modules.Catalog.Application;
 using RezSaaS.Modules.Organization.Application;
+using RezSaaS.Modules.TenantManagement.Application;
 
 namespace RezSaaS.Api.PublicApi;
 
@@ -10,17 +11,20 @@ public sealed class PublicBusinessProfileComposer
     private readonly AvailabilityQueryService availabilityQueryService;
     private readonly PublicBusinessDirectoryService businessDirectoryService;
     private readonly PublicCatalogMenuService catalogMenuService;
+    private readonly TenantLifecycleQueryService tenantLifecycleQueryService;
     private readonly ITenantContextAccessor tenantContextAccessor;
 
     public PublicBusinessProfileComposer(
         PublicBusinessDirectoryService businessDirectoryService,
         PublicCatalogMenuService catalogMenuService,
         AvailabilityQueryService availabilityQueryService,
+        TenantLifecycleQueryService tenantLifecycleQueryService,
         ITenantContextAccessor tenantContextAccessor)
     {
         this.businessDirectoryService = businessDirectoryService;
         this.catalogMenuService = catalogMenuService;
         this.availabilityQueryService = availabilityQueryService;
+        this.tenantLifecycleQueryService = tenantLifecycleQueryService;
         this.tenantContextAccessor = tenantContextAccessor;
     }
 
@@ -33,7 +37,10 @@ public sealed class PublicBusinessProfileComposer
                 slug,
                 cancellationToken);
 
-        if (business is null)
+        if (business is null
+            || !await tenantLifecycleQueryService.IsActiveAsync(
+                business.TenantId,
+                cancellationToken))
         {
             return null;
         }

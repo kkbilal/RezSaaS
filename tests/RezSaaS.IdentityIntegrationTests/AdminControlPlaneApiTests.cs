@@ -56,6 +56,20 @@ public sealed class AdminControlPlaneApiTests : IClassFixture<IdentityApiFixture
             });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+        HttpResponseMessage suspendResponse = await fixture.Client.PostAsJsonAsync(
+            $"/api/admin/tenants/{Guid.CreateVersion7()}/suspend",
+            new { reason = "Unauthorized lifecycle attempt" });
+        HttpResponseMessage closeResponse = await fixture.Client.PostAsJsonAsync(
+            $"/api/admin/tenants/{Guid.CreateVersion7()}/close",
+            new { reason = "Unauthorized lifecycle attempt" });
+        HttpResponseMessage reactivateResponse = await fixture.Client.PostAsJsonAsync(
+            $"/api/admin/tenants/{Guid.CreateVersion7()}/reactivate",
+            new { reason = "Unauthorized lifecycle attempt" });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, suspendResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, closeResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, reactivateResponse.StatusCode);
     }
 
     [Fact]
@@ -211,6 +225,74 @@ public sealed class AdminControlPlaneApiTests : IClassFixture<IdentityApiFixture
             content: null);
 
         Assert.Equal(HttpStatusCode.Conflict, revokeLastOwnerResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task StepUpPlatformAdminCanSuspendAndCloseTenant()
+    {
+        const string password = "RezSaaS!Auth1234";
+        string ownerEmail = $"tenant-owner-lifecycle-{Guid.NewGuid():N}@example.test";
+        HttpResponseMessage registration = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new { email = ownerEmail, password });
+        Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
+        Guid ownerUserAccountId = await fixture.GetUserAccountIdAsync(ownerEmail);
+        using HttpClient adminClient =
+            fixture.CreatePlatformAdminStepUpClient(Guid.CreateVersion7());
+        Guid tenantId = await ProvisionTenantAsync(
+            adminClient,
+            $"tenant-{Guid.NewGuid():N}"[..18],
+            "Tenant Lifecycle Demo",
+            ownerUserAccountId);
+
+        HttpResponseMessage invalidResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{tenantId}/suspend",
+            new { reason = string.Empty });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidResponse.StatusCode);
+
+        HttpResponseMessage suspendResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{tenantId}/suspend",
+            new { reason = "Operational investigation" });
+        Assert.Equal(HttpStatusCode.OK, suspendResponse.StatusCode);
+
+        using JsonDocument suspendBody =
+            JsonDocument.Parse(await suspendResponse.Content.ReadAsStringAsync());
+        Assert.Equal("Suspended", suspendBody.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.String, suspendBody.RootElement.GetProperty("suspendedAtUtc").ValueKind);
+
+        HttpResponseMessage duplicateSuspendResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{tenantId}/suspend",
+            new { reason = "Retry" });
+        Assert.Equal(HttpStatusCode.OK, duplicateSuspendResponse.StatusCode);
+
+        HttpResponseMessage reactivateResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{tenantId}/reactivate",
+            new { reason = "Investigation completed" });
+        Assert.Equal(HttpStatusCode.OK, reactivateResponse.StatusCode);
+
+        using JsonDocument reactivateBody =
+            JsonDocument.Parse(await reactivateResponse.Content.ReadAsStringAsync());
+        Assert.Equal("Active", reactivateBody.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.Null, reactivateBody.RootElement.GetProperty("suspendedAtUtc").ValueKind);
+
+        HttpResponseMessage closeResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{tenantId}/close",
+            new { reason = "Closure approved" });
+        Assert.Equal(HttpStatusCode.OK, closeResponse.StatusCode);
+
+        using JsonDocument closeBody =
+            JsonDocument.Parse(await closeResponse.Content.ReadAsStringAsync());
+        Assert.Equal("Closed", closeBody.RootElement.GetProperty("status").GetString());
+        Assert.Equal(JsonValueKind.String, closeBody.RootElement.GetProperty("closedAtUtc").ValueKind);
+
+        HttpResponseMessage suspendClosedResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{tenantId}/suspend",
+            new { reason = "Invalid reopening attempt" });
+        HttpResponseMessage reactivateClosedResponse = await adminClient.PostAsJsonAsync(
+            $"/api/admin/tenants/{tenantId}/reactivate",
+            new { reason = "Invalid reopening attempt" });
+        Assert.Equal(HttpStatusCode.Conflict, suspendClosedResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, reactivateClosedResponse.StatusCode);
     }
 
     private static async Task<Guid> ProvisionTenantAsync(

@@ -5,6 +5,7 @@ using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Catalog.Application;
 using RezSaaS.Modules.Organization.Application;
 using RezSaaS.Modules.Resources.Application;
+using RezSaaS.Modules.TenantManagement.Application;
 
 namespace RezSaaS.Api.PublicApi;
 
@@ -16,6 +17,7 @@ public sealed class PublicSlotSearchComposer
     private readonly PublicCatalogSchedulingService catalogSchedulingService;
     private readonly IOptions<PublicSlotSearchOptions> options;
     private readonly PublicResourceAvailabilityQueryService resourceAvailabilityQueryService;
+    private readonly TenantLifecycleQueryService tenantLifecycleQueryService;
     private readonly ITenantContextAccessor tenantContextAccessor;
 
     public PublicSlotSearchComposer(
@@ -24,6 +26,7 @@ public sealed class PublicSlotSearchComposer
         AvailabilityQueryService availabilityQueryService,
         PublicResourceAvailabilityQueryService resourceAvailabilityQueryService,
         ConfirmedAppointmentQueryService confirmedAppointmentQueryService,
+        TenantLifecycleQueryService tenantLifecycleQueryService,
         ITenantContextAccessor tenantContextAccessor,
         IOptions<PublicSlotSearchOptions> options)
     {
@@ -32,6 +35,7 @@ public sealed class PublicSlotSearchComposer
         this.availabilityQueryService = availabilityQueryService;
         this.resourceAvailabilityQueryService = resourceAvailabilityQueryService;
         this.confirmedAppointmentQueryService = confirmedAppointmentQueryService;
+        this.tenantLifecycleQueryService = tenantLifecycleQueryService;
         this.tenantContextAccessor = tenantContextAccessor;
         this.options = options;
     }
@@ -46,7 +50,10 @@ public sealed class PublicSlotSearchComposer
                 businessSlug,
                 cancellationToken);
 
-        if (business is null)
+        if (business is null
+            || !await tenantLifecycleQueryService.IsActiveAsync(
+                business.TenantId,
+                cancellationToken))
         {
             return null;
         }

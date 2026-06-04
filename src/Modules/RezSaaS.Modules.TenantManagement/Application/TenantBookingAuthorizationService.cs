@@ -24,6 +24,11 @@ public sealed class TenantBookingAuthorizationService
             return false;
         }
 
+        if (!await IsActiveTenantAsync(tenantId, cancellationToken))
+        {
+            return false;
+        }
+
         List<TenantMembershipScopeView> memberships = await dbContext.Memberships
             .AsNoTracking()
             .Where(entity => entity.TenantId == tenantId
@@ -51,6 +56,11 @@ public sealed class TenantBookingAuthorizationService
             return false;
         }
 
+        if (!await IsActiveTenantAsync(tenantId, cancellationToken))
+        {
+            return false;
+        }
+
         return await dbContext.Memberships
             .AsNoTracking()
             .AnyAsync(entity => entity.TenantId == tenantId
@@ -58,6 +68,18 @@ public sealed class TenantBookingAuthorizationService
                 && entity.Status == TenantMembershipStatus.Active
                 && (entity.Role == TenantMembershipRole.BusinessOwner
                     || entity.Role == TenantMembershipRole.BranchManager),
+                cancellationToken);
+    }
+
+    private async Task<bool> IsActiveTenantAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.Tenants
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == tenantId
+                    && entity.Status == TenantStatus.Active,
                 cancellationToken);
     }
 }

@@ -81,6 +81,11 @@ public sealed class Tenant
 
     public void Close(DateTimeOffset closedAtUtc)
     {
+        if (Status == TenantStatus.Closed)
+        {
+            return;
+        }
+
         Status = TenantStatus.Closed;
         ClosedAtUtc = closedAtUtc;
     }
@@ -90,8 +95,29 @@ public sealed class Tenant
         DisplayName = NormalizeRequiredText(displayName, nameof(displayName));
     }
 
+    public void Reactivate()
+    {
+        if (Status == TenantStatus.Closed)
+        {
+            throw new InvalidOperationException("Closed tenants cannot be reactivated.");
+        }
+
+        Status = TenantStatus.Active;
+        SuspendedAtUtc = null;
+    }
+
     public void Suspend(DateTimeOffset suspendedAtUtc)
     {
+        if (Status == TenantStatus.Closed)
+        {
+            throw new InvalidOperationException("Closed tenants cannot be suspended.");
+        }
+
+        if (Status == TenantStatus.Suspended)
+        {
+            return;
+        }
+
         Status = TenantStatus.Suspended;
         SuspendedAtUtc = suspendedAtUtc;
     }

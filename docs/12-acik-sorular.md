@@ -42,3 +42,4 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - Tenant slug değiştirilebilir mi; değiştirilirse eski URL için redirect/alias tutulacak mı?
 - Bir tenant içinde birden fazla `Business` desteklenecekse MVP sınırı hangi noktada açılacak?
 - `BranchManager`/`Staff` tenant membership branch scope doğrulaması Organization branch lifecycle kaynağına hangi contract ile bağlanacak?
+- Tenant suspend/close sonrasında açık `PendingApproval` taleplerinin otomatik kapanma/expiry politikası hangi integration event veya maintenance job ile yürütülecek?

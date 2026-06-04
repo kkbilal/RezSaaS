@@ -38,6 +38,24 @@ public static class AdminControlPlaneEndpointExtensions
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
             .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
 
+        admin.MapPost(
+                "/tenants/{tenantId:guid}/suspend",
+                SuspendTenantAsync)
+            .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+
+        admin.MapPost(
+                "/tenants/{tenantId:guid}/reactivate",
+                ReactivateTenantAsync)
+            .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+
+        admin.MapPost(
+                "/tenants/{tenantId:guid}/close",
+                CloseTenantAsync)
+            .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+
         admin.MapGet(
                 "/tenants/{tenantId:guid}/memberships",
                 GetTenantMembershipsAsync)
@@ -156,6 +174,25 @@ public static class AdminControlPlaneEndpointExtensions
             : ToErrorResult(result.Outcome, result.ErrorCode);
     }
 
+    private static async Task<IResult> CloseTenantAsync(
+        Guid tenantId,
+        [FromBody] AdminTenantLifecycleChangeRequest request,
+        ClaimsPrincipal user,
+        AdminTenantProvisioningComposer composer,
+        CancellationToken cancellationToken)
+    {
+        AdminTenantAccessResult result =
+            await composer.CloseTenantAsync(
+                tenantId,
+                request,
+                user,
+                cancellationToken);
+
+        return result.Outcome == AdminTenantProvisioningOutcome.Success
+            ? Results.Ok(result.Tenant)
+            : ToErrorResult(result.Outcome, result.ErrorCode);
+    }
+
     private static async Task<IResult> AddTenantMembershipAsync(
         Guid tenantId,
         [FromBody] AdminTenantMembershipCreateRequest request,
@@ -201,6 +238,25 @@ public static class AdminControlPlaneEndpointExtensions
             : ToErrorResult(result.Outcome, result.ErrorCode);
     }
 
+    private static async Task<IResult> ReactivateTenantAsync(
+        Guid tenantId,
+        [FromBody] AdminTenantLifecycleChangeRequest request,
+        ClaimsPrincipal user,
+        AdminTenantProvisioningComposer composer,
+        CancellationToken cancellationToken)
+    {
+        AdminTenantAccessResult result =
+            await composer.ReactivateTenantAsync(
+                tenantId,
+                request,
+                user,
+                cancellationToken);
+
+        return result.Outcome == AdminTenantProvisioningOutcome.Success
+            ? Results.Ok(result.Tenant)
+            : ToErrorResult(result.Outcome, result.ErrorCode);
+    }
+
     private static async Task<IResult> SuspendTenantMembershipAsync(
         Guid tenantId,
         Guid membershipId,
@@ -217,6 +273,25 @@ public static class AdminControlPlaneEndpointExtensions
 
         return result.Outcome == AdminTenantProvisioningOutcome.Success
             ? Results.Ok(result.Membership)
+            : ToErrorResult(result.Outcome, result.ErrorCode);
+    }
+
+    private static async Task<IResult> SuspendTenantAsync(
+        Guid tenantId,
+        [FromBody] AdminTenantLifecycleChangeRequest request,
+        ClaimsPrincipal user,
+        AdminTenantProvisioningComposer composer,
+        CancellationToken cancellationToken)
+    {
+        AdminTenantAccessResult result =
+            await composer.SuspendTenantAsync(
+                tenantId,
+                request,
+                user,
+                cancellationToken);
+
+        return result.Outcome == AdminTenantProvisioningOutcome.Success
+            ? Results.Ok(result.Tenant)
             : ToErrorResult(result.Outcome, result.ErrorCode);
     }
 

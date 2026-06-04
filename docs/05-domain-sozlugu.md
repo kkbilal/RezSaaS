@@ -5,7 +5,7 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | Terim | Anlam | Not |
 | --- | --- | --- |
 | `Tenant` | RezSaaS üzerinde veri izolasyonu sınırı olan müşteri organizasyonu | İlk sürümde bir tenant genellikle bir işletme hesabıdır |
-| `TenantStatus` | Tenant yaşam durumunu belirleyen durum | `Active`, `Suspended`, `Closed` |
+| `TenantStatus` | Tenant yaşam durumunu belirleyen durum | `Suspended` auditli reactivation ile `Active` olabilir; `Closed` terminaldir |
 | `TenantMembership` | Platform-global kullanıcı hesabının bir tenant içindeki üyelik kaydı | Rol ve isteğe bağlı branch scope taşır |
 | `UserAccount` | Platform-global kimlik hesabı | Tenant üyeliğinden ayrıdır |
 | `PlatformRole` | Platform operasyon yetkisi | Yalnızca `PlatformAdmin`, `PlatformSupport` |

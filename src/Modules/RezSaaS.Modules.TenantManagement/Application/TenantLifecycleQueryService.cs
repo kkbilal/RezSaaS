@@ -25,4 +25,21 @@ public sealed class TenantLifecycleQueryService
             .Select(entity => entity.Id)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> IsActiveAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        if (tenantId == Guid.Empty)
+        {
+            return false;
+        }
+
+        return await dbContext.Tenants
+            .AsNoTracking()
+            .AnyAsync(
+                entity => entity.Id == tenantId
+                    && entity.Status == TenantStatus.Active,
+                cancellationToken);
+    }
 }

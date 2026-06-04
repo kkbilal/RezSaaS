@@ -23,6 +23,8 @@
 - Platform control-plane tenant liste/detay/provisioning ve membership add/suspend/revoke aksiyonları `PlatformAdminWithStepUp`, aktif `UserAccount` doğrulaması ve audit ister.
 - `Revoked` membership terminaldir; yeniden `Suspended` veya aktif duruma çevrilmez.
 - Son aktif `BusinessOwner` membership'i suspend/revoke edilemez.
+- Tenant lifecycle suspend/reactivate/close yalnızca `PlatformAdminWithStepUp` ile yürütülür; `Closed` terminaldir.
+- `Suspended` ve `Closed` tenant public discovery, yeni rezervasyon isteği ve işletme operasyonlarına kapalıdır; müşteri kendi mevcut taleplerini görmeye ve uygun durumda iptal etmeye devam eder.
 - Public rezervasyon isteği oluşturma yalnızca authenticated platform hesabıyla yapılır; global `Customer` rol kaydı aranmaz, aktif hesap müşteri bağlamı kabul edilir.
 - İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
@@ -38,6 +40,7 @@
 | Talep onay/ret | Hayır | Politika ile | Atandığı şube | Tenant | Hayır | Acil operasyon ile |
 | Staff/resource düzenleme | Hayır | Hayır | Atandığı şube | Tenant | Hayır | Hayır |
 | Rol ve üyelik yönetimi | Hayır | Hayır | Hayır | Tenant | Hayır | Step-up operasyon ile |
+| Tenant suspend/reactivate/close | Hayır | Hayır | Hayır | Hayır | Hayır | Step-up operasyon ile |
 | Abuse işaretleme | Hayır | Politika ile | Atandığı şube | Tenant | İnceleme | Evet |
 | Strike/ban uygulama | Hayır | Hayır | Hayır | Hayır | Öneri | Evet |
 | Audit log görüntüleme | Kendi olayları | Sınırlı | Şube | Tenant | Gerekçeli | Evet |
