@@ -43,8 +43,9 @@ public sealed class ApplyUserSanctionService
 
         await using IDbContextTransaction transaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        await dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $"SELECT pg_advisory_xact_lock(hashtextextended({command.UserAccountId.ToString()}, 0))",
+        await AbuseUserWorkflowLock.AcquireAsync(
+            dbContext,
+            command.UserAccountId,
             cancellationToken);
 
         if (command.Type != UserSanctionType.Warning

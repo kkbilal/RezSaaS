@@ -8,11 +8,21 @@ public sealed class UserAccount : IdentityUser<Guid>
 
     public void Suspend()
     {
+        if (Status == AccountStatus.Closed)
+        {
+            throw new InvalidOperationException("Closed accounts cannot be suspended.");
+        }
+
         Status = AccountStatus.Suspended;
     }
 
     public void Close()
     {
+        if (Status == AccountStatus.Closed)
+        {
+            return;
+        }
+
         Status = AccountStatus.Closed;
     }
 }

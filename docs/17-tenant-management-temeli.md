@@ -65,6 +65,7 @@ Doğrulananlar:
 - Tenant provisioning service, ilk owner membership ve audit kaydını üretir.
 - Tenant membership service, status geçişlerini auditler, revoked üyeliği terminal tutar ve son aktif `BusinessOwner` revoke/suspend denemesini reddeder.
 - Admin control-plane API, tenant liste/detay ve membership add/suspend/revoke akışlarını `PlatformAdminWithStepUp` ile doğrular.
+- Aktif `AccountClosureCase` taşıyan kullanıcı control-plane üzerinden yeni tenant owner veya aktif membership olarak atanamaz; bu cross-module kontrol API composition root içinde uygulanır.
 - Tenant lifecycle servis/API testleri suspend/reactivate/close idempotency, zorunlu neden, row-lock yarışı ve terminal `Closed` davranışını doğrular.
 - API testleri suspended tenant'ın public discovery/yeni booking/işletme operasyonlarına kapandığını ve müşteri geçmişinin erişilebilir kaldığını doğrular.
 

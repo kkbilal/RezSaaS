@@ -28,14 +28,22 @@ public sealed class AdminModule : ModuleBase
             .Validate(
                 options => options.StrikeLifetimeDays > 0
                     && options.MaxBusinessReportsPerActorPerDay > 0
+                    && options.ClosureAppealWindowDays > 0
+                    && options.MaxOpenAppealsPerUser > 0
                     && options.ElevatedStrikeThreshold > 0
                     && options.HighStrikeThreshold > options.ElevatedStrikeThreshold,
                 "Abuse risk options must use positive and ordered values.")
             .ValidateOnStart();
         services.AddScoped<AbuseControlPlaneQueryService>();
         services.AddScoped<AbuseReportQueryService>();
+        services.AddScoped<AbuseWorkflowQueryService>();
+        services.AddScoped<AccountClosureExecutionService>();
         services.AddScoped<ApplyUserSanctionService>();
+        services.AddScoped<CreateAbuseAppealService>();
         services.AddScoped<CreateBusinessAbuseReportService>();
+        services.AddScoped<ProposeAccountClosureService>();
+        services.AddScoped<ReviewAbuseAppealService>();
+        services.AddScoped<ReviewAccountClosureService>();
         services.AddScoped<ReviewBusinessAbuseReportService>();
         services.AddScoped<RevokeUserSanctionService>();
         services.AddScoped<RevokeUserStrikeService>();

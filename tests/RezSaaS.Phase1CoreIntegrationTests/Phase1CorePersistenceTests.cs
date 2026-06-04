@@ -49,6 +49,8 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     {
         Assert.Equal(0, await CountRowsAsync("organization", "Businesses"));
         Assert.Equal(0, await CountRowsAsync("admin", "AbuseEvents"));
+        Assert.Equal(0, await CountRowsAsync("admin", "AbuseAppeals"));
+        Assert.Equal(0, await CountRowsAsync("admin", "AccountClosureCases"));
         Assert.Equal(0, await CountRowsAsync("admin", "BusinessAbuseReports"));
         Assert.Equal(0, await CountRowsAsync("admin", "UserStrikes"));
         Assert.Equal(0, await CountRowsAsync("catalog", "Services"));
@@ -763,6 +765,466 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AccountClosureWaitsForAppealReviewAndCreatesPermanentSanction()
+    {
+        Guid customerUserAccountId = Guid.CreateVersion7();
+        Guid proposingAdminUserAccountId = Guid.CreateVersion7();
+        Guid reviewingAdminUserAccountId = Guid.CreateVersion7();
+        Guid executingAdminUserAccountId = Guid.CreateVersion7();
+        AbuseRiskOptions riskOptions = new()
+        {
+            AccountClosureExecutionEnabled = true,
+            ClosureAppealWindowDays = 7,
+            ElevatedStrikeThreshold = 2,
+            HighStrikeThreshold = 3,
+            MaxOpenAppealsPerUser = 3,
+        };
+        await using AdminDbContext dbContext = new(CreateOptions<AdminDbContext>());
+
+        for (int index = 0; index < riskOptions.HighStrikeThreshold; index++)
+        {
+            BusinessAbuseReport report = BusinessAbuseReport.Create(
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                customerUserAccountId,
+                Guid.CreateVersion7(),
+                AbuseReportReasonCode.SlotSpam,
+                note: null,
+                testTime);
+            report.Review(
+                AbuseReportStatus.Confirmed,
+                reviewingAdminUserAccountId,
+                "Evidence verified.",
+                testTime.AddMinutes(1));
+            dbContext.BusinessAbuseReports.Add(report);
+            dbContext.UserStrikes.Add(
+                UserStrike.Create(
+                    customerUserAccountId,
+                    report.TenantId,
+                    report.Id,
+                    report.ReasonCode,
+                    reviewingAdminUserAccountId,
+                    testTime.AddMinutes(1),
+                    testTime.AddDays(90)));
+        }
+
+        await dbContext.SaveChangesAsync();
+        ProposeAccountClosureService proposeService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddHours(1)));
+        ReviewAccountClosureService reviewClosureService = new(
+            dbContext,
+            new FixedTimeProvider(testTime.AddHours(2)));
+        AbuseWorkflowCommandResult proposalResult =
+            await proposeService.ProposeAsync(
+                new ProposeAccountClosureCommand(
+                    proposingAdminUserAccountId,
+                    customerUserAccountId,
+                    "Verified high-risk evidence.",
+                    "Your account is scheduled for closure after an appeal window."));
+        Assert.True(proposalResult.Succeeded);
+
+        AbuseWorkflowCommandResult selfApprovalResult =
+            await reviewClosureService.ReviewAsync(
+                new ReviewAccountClosureCommand(
+                    proposingAdminUserAccountId,
+                    proposalResult.EntityId!.Value,
+                    AccountClosureCaseStatus.Approved,
+                    "Self approval."));
+        AbuseWorkflowCommandResult approvalResult =
+            await reviewClosureService.ReviewAsync(
+                new ReviewAccountClosureCommand(
+                    reviewingAdminUserAccountId,
+                    proposalResult.EntityId.Value,
+                    AccountClosureCaseStatus.Approved,
+                    "Independent evidence review."));
+        AbuseWorkflowCommandResult selfApprovalReplayResult =
+            await reviewClosureService.ReviewAsync(
+                new ReviewAccountClosureCommand(
+                    proposingAdminUserAccountId,
+                    proposalResult.EntityId.Value,
+                    AccountClosureCaseStatus.Approved,
+                    "Self approval replay."));
+
+        Assert.False(selfApprovalResult.Succeeded);
+        Assert.Equal("ACCOUNT_CLOSURE_REQUIRES_SECOND_ADMIN", selfApprovalResult.ErrorCode);
+        Assert.True(approvalResult.Succeeded);
+        Assert.False(selfApprovalReplayResult.Succeeded);
+        Assert.Equal(
+            "ACCOUNT_CLOSURE_REQUIRES_SECOND_ADMIN",
+            selfApprovalReplayResult.ErrorCode);
+
+        CreateAbuseAppealService createAppealService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddHours(3)));
+        AbuseWorkflowCommandResult appealResult =
+            await createAppealService.CreateAsync(
+                new CreateAbuseAppealCommand(
+                    customerUserAccountId,
+                    AbuseAppealTargetType.AccountClosureCase,
+                    proposalResult.EntityId.Value,
+                    "The evidence is attributed to the wrong account."));
+        Assert.True(appealResult.Succeeded);
+
+        AccountClosureExecutionService executionService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddDays(8)));
+        ExecuteAccountClosureCommand executionCommand =
+            new(executingAdminUserAccountId, proposalResult.EntityId.Value);
+        AbuseWorkflowCommandResult blockedExecutionResult =
+            await executionService.BeginAsync(executionCommand);
+
+        Assert.False(blockedExecutionResult.Succeeded);
+        Assert.Equal("ACCOUNT_CLOSURE_APPEAL_PENDING", blockedExecutionResult.ErrorCode);
+
+        ReviewAbuseAppealService reviewAppealService = new(
+            dbContext,
+            new FixedTimeProvider(testTime.AddDays(8)));
+        AbuseWorkflowCommandResult rejectedAppealResult =
+            await reviewAppealService.ReviewAsync(
+                new ReviewAbuseAppealCommand(
+                    reviewingAdminUserAccountId,
+                    appealResult.EntityId!.Value,
+                    AbuseAppealStatus.Rejected,
+                    "Evidence attribution was reconfirmed."));
+        AbuseWorkflowCommandResult selfAppealReplayResult =
+            await reviewAppealService.ReviewAsync(
+                new ReviewAbuseAppealCommand(
+                    customerUserAccountId,
+                    appealResult.EntityId.Value,
+                    AbuseAppealStatus.Rejected,
+                    "Self review replay."));
+        UserStrike revokedStrike = await dbContext.UserStrikes.FirstAsync();
+        revokedStrike.Revoke(
+            executingAdminUserAccountId,
+            "Evidence was independently corrected.",
+            testTime.AddDays(8));
+        await dbContext.SaveChangesAsync();
+        AbuseWorkflowCommandResult riskBlockedExecutionResult =
+            await executionService.BeginAsync(executionCommand);
+        BusinessAbuseReport replacementReport = BusinessAbuseReport.Create(
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            customerUserAccountId,
+            Guid.CreateVersion7(),
+            AbuseReportReasonCode.SuspectedAutomation,
+            note: null,
+            testTime.AddDays(7));
+        replacementReport.Review(
+            AbuseReportStatus.Confirmed,
+            reviewingAdminUserAccountId,
+            "Replacement evidence verified.",
+            testTime.AddDays(7).AddMinutes(1));
+        dbContext.BusinessAbuseReports.Add(replacementReport);
+        dbContext.UserStrikes.Add(
+            UserStrike.Create(
+                customerUserAccountId,
+                replacementReport.TenantId,
+                replacementReport.Id,
+                replacementReport.ReasonCode,
+                reviewingAdminUserAccountId,
+                testTime.AddDays(7).AddMinutes(1),
+                testTime.AddDays(97)));
+        await dbContext.SaveChangesAsync();
+        AbuseWorkflowCommandResult beginResult =
+            await executionService.BeginAsync(executionCommand);
+        AbuseWorkflowCommandResult completeResult =
+            await executionService.CompleteAsync(executionCommand);
+
+        Assert.True(rejectedAppealResult.Succeeded);
+        Assert.False(selfAppealReplayResult.Succeeded);
+        Assert.Equal("ABUSE_APPEAL_SELF_REVIEW_FORBIDDEN", selfAppealReplayResult.ErrorCode);
+        Assert.False(riskBlockedExecutionResult.Succeeded);
+        Assert.Equal(
+            "ACCOUNT_CLOSURE_RISK_NO_LONGER_HIGH",
+            riskBlockedExecutionResult.ErrorCode);
+        Assert.True(beginResult.Succeeded);
+        Assert.True(completeResult.Succeeded);
+        Assert.Equal(
+            AccountClosureCaseStatus.Executed,
+            await dbContext.AccountClosureCases
+                .Where(entity => entity.Id == proposalResult.EntityId)
+                .Select(entity => entity.Status)
+                .SingleAsync());
+        Assert.Equal(
+            1,
+            await dbContext.UserSanctions.CountAsync(
+                entity => entity.UserAccountId == customerUserAccountId
+                    && entity.Type == UserSanctionType.PermanentClosure));
+    }
+
+    [Fact]
+    public async Task AbuseWorkflowSerializesStrikeRevocationAndClosureExecution()
+    {
+        Guid customerUserAccountId = Guid.CreateVersion7();
+        Guid proposingAdminUserAccountId = Guid.CreateVersion7();
+        Guid reviewingAdminUserAccountId = Guid.CreateVersion7();
+        Guid executingAdminUserAccountId = Guid.CreateVersion7();
+        AbuseRiskOptions riskOptions = new()
+        {
+            AccountClosureExecutionEnabled = true,
+            ClosureAppealWindowDays = 7,
+            HighStrikeThreshold = 3,
+        };
+        List<UserStrike> strikes = [];
+        AccountClosureCase closureCase = AccountClosureCase.Create(
+            customerUserAccountId,
+            proposingAdminUserAccountId,
+            "Verified high-risk evidence.",
+            "Your account is scheduled for closure after an appeal window.",
+            testTime,
+            testTime.AddDays(riskOptions.ClosureAppealWindowDays));
+        closureCase.Approve(
+            reviewingAdminUserAccountId,
+            "Independent evidence review.",
+            testTime.AddHours(1));
+
+        await using (AdminDbContext seedDbContext = new(CreateOptions<AdminDbContext>()))
+        {
+            for (int index = 0; index < riskOptions.HighStrikeThreshold; index++)
+            {
+                BusinessAbuseReport report = BusinessAbuseReport.Create(
+                    Guid.CreateVersion7(),
+                    Guid.CreateVersion7(),
+                    Guid.CreateVersion7(),
+                    customerUserAccountId,
+                    Guid.CreateVersion7(),
+                    AbuseReportReasonCode.SlotSpam,
+                    note: null,
+                    testTime);
+                report.Review(
+                    AbuseReportStatus.Confirmed,
+                    reviewingAdminUserAccountId,
+                    "Evidence verified.",
+                    testTime.AddMinutes(1));
+                UserStrike strike = UserStrike.Create(
+                    customerUserAccountId,
+                    report.TenantId,
+                    report.Id,
+                    report.ReasonCode,
+                    reviewingAdminUserAccountId,
+                    testTime.AddMinutes(1),
+                    testTime.AddDays(90));
+                strikes.Add(strike);
+                seedDbContext.BusinessAbuseReports.Add(report);
+                seedDbContext.UserStrikes.Add(strike);
+            }
+
+            seedDbContext.AccountClosureCases.Add(closureCase);
+            await seedDbContext.SaveChangesAsync();
+        }
+
+        await using NpgsqlConnection lockConnection = new(DatabaseConnectionString);
+        await lockConnection.OpenAsync();
+        await using NpgsqlTransaction revocationLockTransaction =
+            await lockConnection.BeginTransactionAsync();
+        await AcquireAbuseUserWorkflowLockAsync(
+            lockConnection,
+            revocationLockTransaction,
+            customerUserAccountId);
+
+        await using AdminDbContext revocationDbContext = new(CreateOptions<AdminDbContext>());
+        RevokeUserStrikeService revocationService = new(
+            revocationDbContext,
+            new FixedTimeProvider(testTime.AddDays(8)));
+        Task<UserStrikeCommandResult> revocationTask = revocationService.RevokeAsync(
+            new RevokeUserStrikeCommand(
+                reviewingAdminUserAccountId,
+                customerUserAccountId,
+                strikes[0].Id,
+                "Evidence correction."));
+
+        Task firstCompletedTask = await Task.WhenAny(
+            revocationTask,
+            Task.Delay(TimeSpan.FromMilliseconds(300)));
+        Assert.NotSame(revocationTask, firstCompletedTask);
+
+        await revocationLockTransaction.CommitAsync();
+        UserStrikeCommandResult revocationResult =
+            await revocationTask.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(revocationResult.Succeeded);
+
+        ExecuteAccountClosureCommand executionCommand =
+            new(executingAdminUserAccountId, closureCase.Id);
+        await using AdminDbContext riskCheckDbContext = new(CreateOptions<AdminDbContext>());
+        AccountClosureExecutionService riskCheckService = new(
+            riskCheckDbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddDays(8)));
+        AbuseWorkflowCommandResult riskBlockedResult =
+            await riskCheckService.BeginAsync(executionCommand);
+
+        Assert.False(riskBlockedResult.Succeeded);
+        Assert.Equal("ACCOUNT_CLOSURE_RISK_NO_LONGER_HIGH", riskBlockedResult.ErrorCode);
+
+        await using (AdminDbContext replacementDbContext = new(CreateOptions<AdminDbContext>()))
+        {
+            BusinessAbuseReport replacementReport = BusinessAbuseReport.Create(
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                customerUserAccountId,
+                Guid.CreateVersion7(),
+                AbuseReportReasonCode.SuspectedAutomation,
+                note: null,
+                testTime.AddDays(7));
+            replacementReport.Review(
+                AbuseReportStatus.Confirmed,
+                reviewingAdminUserAccountId,
+                "Replacement evidence verified.",
+                testTime.AddDays(7).AddMinutes(1));
+            replacementDbContext.BusinessAbuseReports.Add(replacementReport);
+            replacementDbContext.UserStrikes.Add(
+                UserStrike.Create(
+                    customerUserAccountId,
+                    replacementReport.TenantId,
+                    replacementReport.Id,
+                    replacementReport.ReasonCode,
+                    reviewingAdminUserAccountId,
+                    testTime.AddDays(7).AddMinutes(1),
+                    testTime.AddDays(97)));
+            await replacementDbContext.SaveChangesAsync();
+        }
+
+        await using NpgsqlTransaction executionLockTransaction =
+            await lockConnection.BeginTransactionAsync();
+        await AcquireAbuseUserWorkflowLockAsync(
+            lockConnection,
+            executionLockTransaction,
+            customerUserAccountId);
+        await using AdminDbContext executionDbContext = new(CreateOptions<AdminDbContext>());
+        AccountClosureExecutionService executionService = new(
+            executionDbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddDays(8)));
+        Task<AbuseWorkflowCommandResult> executionTask =
+            executionService.BeginAsync(executionCommand);
+
+        firstCompletedTask = await Task.WhenAny(
+            executionTask,
+            Task.Delay(TimeSpan.FromMilliseconds(300)));
+        Assert.NotSame(executionTask, firstCompletedTask);
+
+        await executionLockTransaction.CommitAsync();
+        AbuseWorkflowCommandResult executionResult =
+            await executionTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.True(executionResult.Succeeded);
+    }
+
+    [Fact]
+    public async Task AbuseWorkflowSerializesSanctionApplicationAndClosureCompletion()
+    {
+        Guid customerUserAccountId = Guid.CreateVersion7();
+        Guid proposingAdminUserAccountId = Guid.CreateVersion7();
+        Guid reviewingAdminUserAccountId = Guid.CreateVersion7();
+        Guid executingAdminUserAccountId = Guid.CreateVersion7();
+        DateTimeOffset executionTime = testTime.AddDays(8);
+        AccountClosureCase closureCase = AccountClosureCase.Create(
+            customerUserAccountId,
+            proposingAdminUserAccountId,
+            "Verified high-risk evidence.",
+            "Your account is scheduled for closure after an appeal window.",
+            testTime,
+            testTime.AddDays(7));
+        closureCase.Approve(
+            reviewingAdminUserAccountId,
+            "Independent evidence review.",
+            testTime.AddHours(1));
+        closureCase.BeginExecution(executingAdminUserAccountId, executionTime);
+
+        await using (AdminDbContext seedDbContext = new(CreateOptions<AdminDbContext>()))
+        {
+            seedDbContext.AccountClosureCases.Add(closureCase);
+            await seedDbContext.SaveChangesAsync();
+        }
+
+        await using NpgsqlConnection lockConnection = new(DatabaseConnectionString);
+        await lockConnection.OpenAsync();
+        await using NpgsqlTransaction sanctionLockTransaction =
+            await lockConnection.BeginTransactionAsync();
+        await AcquireAbuseUserWorkflowLockAsync(
+            lockConnection,
+            sanctionLockTransaction,
+            customerUserAccountId);
+        await using AdminDbContext sanctionDbContext = new(CreateOptions<AdminDbContext>());
+        ApplyUserSanctionService sanctionService = new(
+            sanctionDbContext,
+            new FixedTimeProvider(executionTime));
+        Task<ApplyUserSanctionResult> sanctionTask = sanctionService.ApplyAsync(
+            new ApplyUserSanctionCommand(
+                reviewingAdminUserAccountId,
+                customerUserAccountId,
+                UserSanctionType.Cooldown,
+                "Manual review cooldown.",
+                executionTime.AddHours(1)));
+
+        Task firstCompletedTask = await Task.WhenAny(
+            sanctionTask,
+            Task.Delay(TimeSpan.FromMilliseconds(300)));
+        Assert.NotSame(sanctionTask, firstCompletedTask);
+
+        await sanctionLockTransaction.CommitAsync();
+        ApplyUserSanctionResult sanctionResult =
+            await sanctionTask.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(sanctionResult.Succeeded);
+
+        await using NpgsqlTransaction completionLockTransaction =
+            await lockConnection.BeginTransactionAsync();
+        await AcquireAbuseUserWorkflowLockAsync(
+            lockConnection,
+            completionLockTransaction,
+            customerUserAccountId);
+        await using AdminDbContext completionDbContext = new(CreateOptions<AdminDbContext>());
+        AccountClosureExecutionService completionService = new(
+            completionDbContext,
+            Options.Create(new AbuseRiskOptions()),
+            new FixedTimeProvider(executionTime));
+        ExecuteAccountClosureCommand executionCommand =
+            new(executingAdminUserAccountId, closureCase.Id);
+        Task<AbuseWorkflowCommandResult> completionTask =
+            completionService.CompleteAsync(executionCommand);
+
+        firstCompletedTask = await Task.WhenAny(
+            completionTask,
+            Task.Delay(TimeSpan.FromMilliseconds(300)));
+        Assert.NotSame(completionTask, firstCompletedTask);
+
+        await completionLockTransaction.CommitAsync();
+        AbuseWorkflowCommandResult completionResult =
+            await completionTask.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(completionResult.Succeeded);
+
+        await using AdminDbContext conflictingSanctionDbContext =
+            new(CreateOptions<AdminDbContext>());
+        ApplyUserSanctionService conflictingSanctionService = new(
+            conflictingSanctionDbContext,
+            new FixedTimeProvider(executionTime));
+        ApplyUserSanctionResult conflictingSanctionResult =
+            await conflictingSanctionService.ApplyAsync(
+                new ApplyUserSanctionCommand(
+                    reviewingAdminUserAccountId,
+                    customerUserAccountId,
+                    UserSanctionType.TemporaryBan,
+                    "Conflicting post-closure sanction.",
+                    executionTime.AddHours(25)));
+
+        Assert.False(conflictingSanctionResult.Succeeded);
+        Assert.Equal("USER_ACTIVE_SANCTION_EXISTS", conflictingSanctionResult.ErrorCode);
+        Assert.Equal(
+            1,
+            await conflictingSanctionDbContext.UserSanctions.CountAsync(
+                entity => entity.UserAccountId == customerUserAccountId
+                    && entity.RevokedAtUtc == null
+                    && entity.Type != UserSanctionType.Warning));
+    }
+
+    [Fact]
     public async Task ApproveAppointmentRequestCreatesAppointmentSupersedesConflictsAndQueuesEmail()
     {
         Guid tenantId = Guid.CreateVersion7();
@@ -1244,6 +1706,21 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
             """;
         command.Parameters.AddWithValue("tenantId", tenantId);
         command.Parameters.AddWithValue("appointmentRequestId", appointmentRequestId);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    private static async Task AcquireAbuseUserWorkflowLockAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid userAccountId)
+    {
+        await using NpgsqlCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText =
+            "SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))";
+        command.Parameters.AddWithValue(
+            "lockKey",
+            $"abuse-user-workflow:{userAccountId:D}");
         await command.ExecuteNonQueryAsync();
     }
 

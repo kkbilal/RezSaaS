@@ -72,8 +72,7 @@ Varsayılan operasyon ayarları `Admin:AbuseRisk` altında yapılandırılır:
 
 ## Açık İşler
 
-- Müşteri appeal/itiraz workflow'u ve SLA
-- Strike revoke ile appeal kararının ayrıştırılması
+- Appeal inceleme SLA'sı ve operasyon dashboard'u
 - Reason code taksonomisi için operasyon runbook'u
 - No-show sinyalinin appointment operasyon akışıyla otomatik fakat insan incelemeli bağlanması
 - İşletme raporlama davranışının yanlış/kötüye kullanım risk skoru

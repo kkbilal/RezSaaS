@@ -26,5 +26,6 @@ public sealed class TenantManagementModule : ModuleBase
         services.AddScoped<TenantControlPlaneQueryService>();
         services.AddScoped<CreateTenantWithOwnerService>();
         services.AddScoped<TenantLifecycleQueryService>();
+        services.AddScoped<UserTenantMembershipQueryService>();
     }
 }

@@ -41,6 +41,9 @@ Operasyon:
 
 - İşletme panelinde “isteği spam olarak işaretle” aksiyonu
 - Admin panelde abuse olayları, strike geçmişi, ban gerekçesi ve audit log
+- Müşteri yalnızca kendi yaptırımına itiraz eder; internal karar nedenleri müşteri response'una eklenmez.
+- Kalıcı hesap kapatma iki farklı step-up admin, itiraz penceresi, açık itiraz kontrolü ve platform rolü/aktif tenant membership engeli ister.
+- Kapatılmış veya suspended hesabın eski cookie/bearer token ile authenticated isteği merkezi aktif hesap kapısında reddedilir.
 
 ## MFA ayrımı
 

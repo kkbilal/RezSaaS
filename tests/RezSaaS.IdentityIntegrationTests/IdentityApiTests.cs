@@ -111,6 +111,22 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
     }
 
     [Fact]
+    public async Task SuspendedAccountCannotUseExistingBearerToken()
+    {
+        string email = CreateEmail();
+        const string password = "RezSaaS!Auth1234";
+        await RegisterAsync(email, password);
+        string accessToken = await LoginWithBearerTokenAsync(email, password);
+        await fixture.SuspendUserAsync(email);
+        using HttpRequestMessage request = new(HttpMethod.Get, "/api/auth/manage/info");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        HttpResponseMessage accountInfo = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, accountInfo.StatusCode);
+    }
+
+    [Fact]
     public async Task MigrationDoesNotProvisionPlatformRoles()
     {
         Assert.Equal(0, await fixture.GetPlatformRoleCountAsync());

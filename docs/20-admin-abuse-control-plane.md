@@ -12,6 +12,13 @@ Bu yüzey tenant işletme paneli değildir. Tüm endpoint'ler `PlatformAdminWith
 - `GET /api/admin/abuse/users/{userAccountId}`: kullanıcının abuse event ve sanction geçmişi
 - `POST /api/admin/abuse/users/{userAccountId}/sanctions`: warning/cooldown/temporary ban uygulama
 - `POST /api/admin/abuse/users/{userAccountId}/sanctions/{sanctionId}/revoke`: aktif yaptırımı geçmiş kaydı silmeden geri alma
+- `GET /api/admin/abuse/appeals`: müşteri itirazlarını filtreli listeleme
+- `GET /api/admin/abuse/appeals/{appealId}`: itiraz detayı
+- `POST /api/admin/abuse/appeals/{appealId}/accept|reject`: itiraz kararı
+- `GET /api/admin/abuse/closure-cases`: hesap kapatma vakalarını filtreli listeleme
+- `GET /api/admin/abuse/closure-cases/{closureCaseId}`: hesap kapatma vaka detayı
+- `POST /api/admin/abuse/users/{userAccountId}/closure-cases`: yüksek riskli hesap için kapatma teklifi
+- `POST /api/admin/abuse/closure-cases/{closureCaseId}/approve|reject|execute`: bağımsız karar ve retry edilebilir execution
 
 ## Yaptırım Kuralları
 
@@ -40,10 +47,12 @@ Bu yüzey tenant işletme paneli değildir. Tüm endpoint'ler `PlatformAdminWith
 - IP/device sinyali tek başına kalıcı kapatma sebebi olamaz.
 - Abuse event `DetailsJson` yalnızca step-up platform admin yüzeyinde gösterilir.
 
+İtiraz ve kalıcı kapatma ayrıntıları `22-abuse-itiraz-hesap-kapatma.md` içinde tanımlıdır.
+
 ## Açık İşler
 
-- Appeal/itiraz ve manuel inceleme workflow'u
-- Kalıcı hesap kapatma için Identity orchestration
+- Platform-global closure proposal/appeal review e-posta teslimatı ve bildirim zamanına bağlı itiraz penceresi
+- `Executing` closure case reconciliation/alert ve manuel kurtarma runbook'u
 - İşletme raporlama davranışının kötüye kullanım riski
 - IP/device sinyal toplama, saklama ve privacy kuralları
 - Abuse dashboard pagination, reason-code taksonomisi ve operasyon runbook'u

@@ -14,6 +14,10 @@ public sealed class AdminDbContext : DbContext
 
     public DbSet<AbuseEvent> AbuseEvents => Set<AbuseEvent>();
 
+    public DbSet<AbuseAppeal> AbuseAppeals => Set<AbuseAppeal>();
+
+    public DbSet<AccountClosureCase> AccountClosureCases => Set<AccountClosureCase>();
+
     public DbSet<AdminAuditLogEntry> AdminAuditLogEntries => Set<AdminAuditLogEntry>();
 
     public DbSet<BusinessAbuseReport> BusinessAbuseReports => Set<BusinessAbuseReport>();
@@ -35,6 +39,111 @@ public sealed class AdminDbContext : DbContext
             abuseEvent.Property(entity => entity.DetailsJson).HasColumnType("jsonb").IsRequired();
             abuseEvent.HasIndex(entity => new { entity.UserAccountId, entity.OccurredAtUtc });
             abuseEvent.HasIndex(entity => new { entity.TenantId, entity.OccurredAtUtc });
+        });
+
+        modelBuilder.Entity<AbuseAppeal>(appeal =>
+        {
+            appeal.ToTable(
+                "AbuseAppeals",
+                table => table.HasCheckConstraint(
+                    "CK_AbuseAppeals_ReviewShape",
+                    """
+                    ("Status" = 'PendingReview'
+                        AND "ReviewedAtUtc" IS NULL
+                        AND "ReviewedByUserAccountId" IS NULL
+                        AND "ReviewReason" IS NULL)
+                    OR
+                    ("Status" IN ('Accepted', 'Rejected')
+                        AND "ReviewedAtUtc" IS NOT NULL
+                        AND "ReviewedAtUtc" >= "CreatedAtUtc"
+                        AND "ReviewedByUserAccountId" IS NOT NULL
+                        AND "ReviewReason" IS NOT NULL)
+                    """));
+            appeal.HasKey(entity => entity.Id);
+            appeal.Property(entity => entity.TargetType)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .IsRequired();
+            appeal.Property(entity => entity.Statement).HasMaxLength(1000).IsRequired();
+            appeal.Property(entity => entity.Status)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .IsRequired();
+            appeal.Property(entity => entity.ReviewReason).HasMaxLength(500);
+            appeal.HasIndex(entity => new { entity.UserAccountId, entity.TargetType, entity.TargetId })
+                .IsUnique();
+            appeal.HasIndex(entity => new { entity.UserAccountId, entity.Status, entity.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<AccountClosureCase>(closureCase =>
+        {
+            closureCase.ToTable(
+                "AccountClosureCases",
+                table =>
+                {
+                    table.HasCheckConstraint(
+                        "CK_AccountClosureCases_NoSelfProposal",
+                        "\"UserAccountId\" <> \"ProposedByUserAccountId\"");
+                    table.HasCheckConstraint(
+                        "CK_AccountClosureCases_EligibilityAfterProposal",
+                        "\"EligibleForExecutionAtUtc\" > \"ProposedAtUtc\"");
+                    table.HasCheckConstraint(
+                        "CK_AccountClosureCases_DecisionAfterProposal",
+                        "\"DecidedAtUtc\" IS NULL OR \"DecidedAtUtc\" >= \"ProposedAtUtc\"");
+                    table.HasCheckConstraint(
+                        "CK_AccountClosureCases_ExecutionAfterEligibility",
+                        "\"ExecutionStartedAtUtc\" IS NULL OR \"ExecutionStartedAtUtc\" >= \"EligibleForExecutionAtUtc\"");
+                    table.HasCheckConstraint(
+                        "CK_AccountClosureCases_CompletionAfterExecutionStart",
+                        "\"ExecutedAtUtc\" IS NULL OR \"ExecutedAtUtc\" >= \"ExecutionStartedAtUtc\"");
+                    table.HasCheckConstraint(
+                        "CK_AccountClosureCases_DecisionShape",
+                        """
+                        ("Status" = 'PendingApproval'
+                            AND "ReviewedByUserAccountId" IS NULL
+                            AND "DecisionReason" IS NULL
+                            AND "DecidedAtUtc" IS NULL)
+                        OR
+                        ("Status" IN ('Approved', 'Rejected', 'CancelledByAppeal', 'Executing', 'Executed')
+                            AND "ReviewedByUserAccountId" IS NOT NULL
+                            AND "DecisionReason" IS NOT NULL
+                            AND "DecidedAtUtc" IS NOT NULL)
+                        """);
+                    table.HasCheckConstraint(
+                        "CK_AccountClosureCases_ExecutionShape",
+                        """
+                        ("Status" NOT IN ('Executing', 'Executed')
+                            AND "ExecutionStartedByUserAccountId" IS NULL
+                            AND "ExecutionStartedAtUtc" IS NULL
+                            AND "ExecutedByUserAccountId" IS NULL
+                            AND "ExecutedAtUtc" IS NULL)
+                        OR
+                        ("Status" = 'Executing'
+                            AND "ExecutionStartedByUserAccountId" IS NOT NULL
+                            AND "ExecutionStartedAtUtc" IS NOT NULL
+                            AND "ExecutedByUserAccountId" IS NULL
+                            AND "ExecutedAtUtc" IS NULL)
+                        OR
+                        ("Status" = 'Executed'
+                            AND "ExecutionStartedByUserAccountId" IS NOT NULL
+                            AND "ExecutionStartedAtUtc" IS NOT NULL
+                            AND "ExecutedByUserAccountId" IS NOT NULL
+                            AND "ExecutedAtUtc" IS NOT NULL)
+                        """);
+                });
+            closureCase.HasKey(entity => entity.Id);
+            closureCase.Property(entity => entity.InternalReason).HasMaxLength(500).IsRequired();
+            closureCase.Property(entity => entity.CustomerNotice).HasMaxLength(500).IsRequired();
+            closureCase.Property(entity => entity.Status)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .IsRequired();
+            closureCase.Property(entity => entity.DecisionReason).HasMaxLength(500);
+            closureCase.HasIndex(entity => entity.UserAccountId)
+                .IsUnique()
+                .HasFilter("\"Status\" IN ('PendingApproval', 'Approved', 'Executing')");
+            closureCase.HasIndex(entity => new { entity.UserAccountId, entity.Status, entity.ProposedAtUtc });
+            closureCase.HasIndex(entity => new { entity.Status, entity.EligibleForExecutionAtUtc });
         });
 
         modelBuilder.Entity<UserSanction>(sanction =>

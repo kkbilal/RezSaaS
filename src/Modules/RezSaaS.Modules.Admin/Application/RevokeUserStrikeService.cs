@@ -38,6 +38,10 @@ public sealed class RevokeUserStrikeService
 
         await using IDbContextTransaction transaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await AbuseUserWorkflowLock.AcquireAsync(
+            dbContext,
+            command.UserAccountId,
+            cancellationToken);
         UserStrike? strike = await LockStrikeAsync(
             command.UserAccountId,
             command.StrikeId,

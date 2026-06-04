@@ -39,6 +39,10 @@ public sealed class RevokeUserSanctionService
 
         await using IDbContextTransaction transaction =
             await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await AbuseUserWorkflowLock.AcquireAsync(
+            dbContext,
+            command.UserAccountId,
+            cancellationToken);
         UserSanction? sanction = await LockSanctionAsync(
             command.UserAccountId,
             command.SanctionId,

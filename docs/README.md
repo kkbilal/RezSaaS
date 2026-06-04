@@ -27,6 +27,7 @@
 - `19-calisma-baglam-ozeti.md`: Uzun çalışma geçmişinin kompakt devralma özeti ve güncel faz durumu
 - `20-admin-abuse-control-plane.md`: Abuse event inceleme, süreli sanction, revoke ve booking enforce sınırları
 - `21-isletme-abuse-raporu-strike-risk.md`: İşletme abuse raporu, admin review, strike ve risk seviyesi sınırları
+- `22-abuse-itiraz-hesap-kapatma.md`: Müşteri itirazı, iki-admin onaylı kalıcı kapatma ve Identity orchestration sınırları
 
 ## Bakım Kuralı
 

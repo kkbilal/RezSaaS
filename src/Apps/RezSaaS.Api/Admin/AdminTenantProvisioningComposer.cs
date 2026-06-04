@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using RezSaaS.Modules.Admin.Application;
 using RezSaaS.Modules.Identity.Application;
 using RezSaaS.Modules.TenantManagement.Application;
 using RezSaaS.Modules.TenantManagement.Domain;
@@ -10,10 +11,12 @@ public sealed class AdminTenantProvisioningComposer
     private const string InvalidRequest = "ADMIN_TENANT_PROVISIONING_INVALID";
     private const string InvalidRole = "ADMIN_TENANT_MEMBERSHIP_INVALID_ROLE";
     private const string InvalidStatus = "ADMIN_TENANT_INVALID_STATUS";
+    private const string UserClosureActive = "ADMIN_TENANT_USER_CLOSURE_ACTIVE";
     private const string OwnerNotFound = "ADMIN_TENANT_OWNER_NOT_FOUND";
     private const string Unauthorized = "ADMIN_TENANT_PROVISIONING_UNAUTHORIZED";
 
     private readonly AddTenantMembershipService addTenantMembershipService;
+    private readonly AbuseWorkflowQueryService abuseWorkflowQueryService;
     private readonly ChangeTenantLifecycleService changeTenantLifecycleService;
     private readonly ChangeTenantMembershipStatusService changeTenantMembershipStatusService;
     private readonly CreateTenantWithOwnerService createTenantWithOwnerService;
@@ -26,7 +29,8 @@ public sealed class AdminTenantProvisioningComposer
         AddTenantMembershipService addTenantMembershipService,
         ChangeTenantLifecycleService changeTenantLifecycleService,
         ChangeTenantMembershipStatusService changeTenantMembershipStatusService,
-        UserAccountExistenceService userAccountExistenceService)
+        UserAccountExistenceService userAccountExistenceService,
+        AbuseWorkflowQueryService abuseWorkflowQueryService)
     {
         this.createTenantWithOwnerService = createTenantWithOwnerService;
         this.queryService = queryService;
@@ -34,6 +38,7 @@ public sealed class AdminTenantProvisioningComposer
         this.changeTenantLifecycleService = changeTenantLifecycleService;
         this.changeTenantMembershipStatusService = changeTenantMembershipStatusService;
         this.userAccountExistenceService = userAccountExistenceService;
+        this.abuseWorkflowQueryService = abuseWorkflowQueryService;
     }
 
     public async Task<AdminTenantAccessResult> GetTenantsAsync(
@@ -127,6 +132,15 @@ public sealed class AdminTenantProvisioningComposer
                 OwnerNotFound);
         }
 
+        if (await abuseWorkflowQueryService.HasActiveClosureCaseAsync(
+            request.OwnerUserAccountId,
+            cancellationToken))
+        {
+            return AdminTenantProvisioningResult.Failure(
+                AdminTenantProvisioningOutcome.Conflict,
+                UserClosureActive);
+        }
+
         CreateTenantWithOwnerResult result =
             await createTenantWithOwnerService.CreateAsync(
                 new CreateTenantWithOwnerCommand(
@@ -177,6 +191,15 @@ public sealed class AdminTenantProvisioningComposer
             return AdminTenantAccessResult.Failure(
                 AdminTenantProvisioningOutcome.NotFound,
                 "ADMIN_TENANT_MEMBERSHIP_USER_NOT_FOUND");
+        }
+
+        if (await abuseWorkflowQueryService.HasActiveClosureCaseAsync(
+            request.UserAccountId,
+            cancellationToken))
+        {
+            return AdminTenantAccessResult.Failure(
+                AdminTenantProvisioningOutcome.Conflict,
+                UserClosureActive);
         }
 
         TenantMembershipCommandResult result =

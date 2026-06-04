@@ -32,11 +32,11 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: auditli ve row-lock korumalı tenant suspend/reactivate/close lifecycle ile erişim kapıları.
   - Tamamlandı: abuse event inceleme, süreli sanction apply/revoke ve yeni booking enforce başlangıcı.
   - Tamamlandı: işletme abuse işaretleme, step-up admin review, süreli/revoke edilebilir strike ve yalnızca öneri niteliğinde risk seviyesi.
-  - Sıradaki abuse dilimi: appeal/itiraz ve manuel kalıcı hesap kapatma workflow'u.
-  - Sonraki dilimler: backup/incident runbook ve CI güvenlik kapıları.
+  - Tamamlandı: müşteri self-service abuse itirazı, iki farklı step-up admin onaylı kalıcı hesap kapatma, Identity `Closed` orchestration'ı ve aktif hesap istek kapısı.
+  - Sıradaki dilimler: platform-global closure/appeal e-posta teslimatı ve bildirim zamanına bağlı itiraz penceresi; ardından reconciliation, backup/restore, incident runbook ve CI güvenlik kapıları.
 
 ## Çalışma Disiplini
 
 - Kullanıcı commit izni verdi; push işlemlerini kullanıcı yapar.
-- Bu çalışma öncesi son tamamlanan commit: `adf6803 feat: add abuse control plane`.
+- Bu çalışma öncesi son tamamlanan commit: `78ddbd2 feat: add business abuse reporting and strikes`.
 - Her dilim sonunda solution build, tüm testler, doküman/ADR etkisi ve temiz git durumu doğrulanır.

@@ -20,10 +20,11 @@ Türkiye odaklı, çoklu işletme/şube/personel/kaynak (koltuk/oda/yatak/istasy
 - `docs/11-veri-envanteri-taslagi.md`: KVKK odaklı veri sınıflandırma taslağı
 - `docs/12-acik-sorular.md`: Uygulamaya geçmeden önce kapanacak sorular
 - `docs/13-referanslar.md`: Resmi teknik ve uyumluluk referansları
+- `docs/22-abuse-itiraz-hesap-kapatma.md`: Müşteri itirazı ve kalıcı hesap kapatma güvenlik akışı
 
 ## Not
 
-Repo dokümantasyon-first başlatıldı ve Phase 1 platform iskeleti eklendi. Uygulama dilimleri `docs/15-phase-1-uygulama-plani.md` sırasıyla ilerler.
+Repo dokümantasyon-first başlatıldı. Phase 1 ve Phase 2 tamamlandı; Phase 3 güvenlik/operasyon dilimleri `docs/roadmap/phase-3-guvenlik-operasyon.md` üzerinden ilerler.
 
 ## Geliştirme
 

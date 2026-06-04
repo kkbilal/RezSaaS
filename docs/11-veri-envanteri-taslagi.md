@@ -15,7 +15,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Identity audit | Actor, subject, aksiyon, zaman, JSON detay | Güvenlik ve privileged bootstrap kanıtı | Platform admin | Append-only; saklama süresi netleştirilecek |
 | Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay, lifecycle operasyon nedeni | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |
 | Admin audit | Actor, aksiyon, zaman, JSON detay | Platform operasyon incelemesi | Platform admin | Append-only; saklama süresi netleştirilecek |
-| Abuse | Event, severity, user, tenant, business report, appointment request referansı, sınırlı note, review kararı, strike, risk seviyesi, sanction, apply/revoke actor ve neden | Platform güvenliği | İşletme yalnızca kendi oluşturma cevabını sınırlı görür; detay ve kararlar step-up platform admin | Append-only geçmiş; strike expiry uygulanır, genel saklama süresi netleştirilecek |
+| Abuse | Event, severity, user, tenant, business report, appointment request referansı, sınırlı note, review kararı, strike, risk seviyesi, sanction, appeal statement, closure internal reason/customer notice, apply/revoke/review actor ve neden | Platform güvenliği ve itiraz | Müşteri yalnızca kendi güvenli özetini görür; internal nedenler ve karar detayları step-up platform admin | Append-only geçmiş; strike expiry uygulanır, appeal/closure genel saklama süresi netleştirilecek |
 | Bildirim | Kanal, maskelenmiş alıcı, template, payload, provider sonucu | Teslimat ve hata çözümü | Sınırlı destek | Netleştirilecek |
 | Teknik telemetri | IP, device sinyali, correlation id | Abuse ve hata çözümü | Sınırlı güvenlik ekibi | Netleştirilecek |
 
@@ -25,6 +25,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 - Serbest metin müşteri notları sınırlanır; hassas veri girişi için uyarı ve erişim kısıtı planlanır.
 - Tenant lifecycle operasyon nedeni uzunluk sınırlıdır; PII, secret veya erişim bilgisi içermemelidir.
 - Abuse report note ve review/revoke nedenleri 300 karakterle sınırlıdır; PII, secret, token veya erişim bilgisi içermemelidir.
+- Appeal statement ve closure metinleri uzunluk sınırlıdır; `InternalReason` müşteri response'una veya log'a eklenmez, `CustomerNotice` güvenli müşteri metni olarak ayrı tutulur.
 - Silme, anonimleştirme, export ve itiraz süreçleri veri grubu bazında tasarlanır.
 - Backup kopyaları ve log sistemleri saklama politikasına dahildir.
 - Destek erişimi süreli, gerekçeli ve auditli olmalıdır.

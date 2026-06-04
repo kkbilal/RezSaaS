@@ -82,6 +82,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                             ["ConnectionStrings:OrganizationDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:ResourcesDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:TenantManagementDatabase"] = databaseConnectionString,
+                            ["Admin:AbuseRisk:AccountClosureExecutionEnabled"] = "true",
                             ["Identity:AuthenticationPermitLimit"] = "100",
                             ["Identity:AuthenticationWindowMinutes"] = "1",
                             ["Identity:DeliveryMode"] = "DevelopmentSink",
@@ -141,11 +142,29 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         return factory!.CreateClient();
     }
 
-    public HttpClient CreatePlatformAdminStepUpClient(Guid userAccountId)
+    public HttpClient CreatePlatformAdminStepUpClient(
+        Guid userAccountId,
+        bool? accountClosureExecutionEnabled = null)
     {
+        EnsureActiveTestUser(userAccountId);
+
         return factory!
             .WithWebHostBuilder(builder =>
             {
+                if (accountClosureExecutionEnabled is not null)
+                {
+                    builder.ConfigureAppConfiguration((_, configuration) =>
+                    {
+                        configuration.AddInMemoryCollection(
+                            new Dictionary<string, string?>
+                            {
+                                ["Admin:AbuseRisk:AccountClosureExecutionEnabled"] =
+                                    accountClosureExecutionEnabled.Value.ToString(
+                                        CultureInfo.InvariantCulture),
+                            });
+                    });
+                }
+
                 builder.ConfigureTestServices(services =>
                 {
                     services
@@ -165,6 +184,73 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                 });
             })
             .CreateClient();
+    }
+
+    public async Task SeedHighRiskStrikesAsync(
+        Guid userAccountId,
+        int strikeCount = 3)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        AdminDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<AdminDbContext>();
+        DateTimeOffset issuedAtUtc = DateTimeOffset.UtcNow.AddDays(-1);
+        Guid reviewerUserAccountId = Guid.CreateVersion7();
+
+        for (int index = 0; index < strikeCount; index++)
+        {
+            BusinessAbuseReport report = BusinessAbuseReport.Create(
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                Guid.CreateVersion7(),
+                userAccountId,
+                Guid.CreateVersion7(),
+                AbuseReportReasonCode.SlotSpam,
+                note: null,
+                issuedAtUtc);
+            report.Review(
+                AbuseReportStatus.Confirmed,
+                reviewerUserAccountId,
+                "Integration test evidence verified.",
+                issuedAtUtc.AddMinutes(1));
+            dbContext.BusinessAbuseReports.Add(report);
+            dbContext.UserStrikes.Add(
+                UserStrike.Create(
+                    userAccountId,
+                    report.TenantId,
+                    report.Id,
+                    report.ReasonCode,
+                    reviewerUserAccountId,
+                    issuedAtUtc.AddMinutes(1),
+                    issuedAtUtc.AddDays(90)));
+        }
+
+        await dbContext.SaveChangesAsync();
+    }
+
+    public async Task<Guid> SeedApprovedExecutableClosureCaseAsync(
+        Guid userAccountId,
+        Guid proposedByUserAccountId,
+        Guid reviewedByUserAccountId)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        AdminDbContext dbContext =
+            scope.ServiceProvider.GetRequiredService<AdminDbContext>();
+        DateTimeOffset proposedAtUtc = DateTimeOffset.UtcNow.AddDays(-8);
+        AccountClosureCase closureCase = AccountClosureCase.Create(
+            userAccountId,
+            proposedByUserAccountId,
+            "Verified severe abuse evidence.",
+            "Your account is scheduled for closure after review.",
+            proposedAtUtc,
+            proposedAtUtc.AddDays(7));
+        closureCase.Approve(
+            reviewedByUserAccountId,
+            "Second administrator approved the evidence.",
+            proposedAtUtc.AddHours(1));
+        dbContext.AccountClosureCases.Add(closureCase);
+        await dbContext.SaveChangesAsync();
+
+        return closureCase.Id;
     }
 
     public async Task<PublicBusinessProfileSeed> SeedPublicBusinessProfileAsync(
@@ -514,6 +600,30 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         await bookingDbContext.Database.MigrateAsync();
         await messagingDbContext.Database.MigrateAsync();
         await tenantManagementDbContext.Database.MigrateAsync();
+    }
+
+    private void EnsureActiveTestUser(Guid userAccountId)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        IdentityDbContext dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
+        if (dbContext.Users.Any(entity => entity.Id == userAccountId))
+        {
+            return;
+        }
+
+        string email = $"test-platform-admin-{userAccountId:N}@example.test";
+        dbContext.Users.Add(
+            new UserAccount
+            {
+                Id = userAccountId,
+                Email = email,
+                EmailConfirmed = true,
+                NormalizedEmail = email.ToUpperInvariant(),
+                NormalizedUserName = email.ToUpperInvariant(),
+                UserName = email,
+            });
+        dbContext.SaveChanges();
     }
 
     private static string GetAdminConnectionString()

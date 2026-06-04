@@ -28,6 +28,10 @@
 - Abuse event inceleme ve sanction apply/revoke yalnızca `PlatformAdminWithStepUp` ile yürütülür; kalıcı hesap kapatma sanction endpoint'inden yapılamaz.
 - İşletme abuse raporu `BusinessOwner` için tenant-wide, `BranchManager` için branch-scoped çalışır; bildirim yalnızca inceleme sinyalidir ve strike/sanction üretme yetkisi vermez.
 - Abuse raporu confirm/dismiss ve strike revoke yalnızca `PlatformAdminWithStepUp` ile yürütülür.
+- Müşteri yalnızca kendi strike, aktif bloklayıcı sanction ve uygun closure case kayıtlarını görebilir/itiraz edebilir; başka kullanıcı hedefi `404` kabul edilir.
+- Closure proposal/review/execute yalnızca `PlatformAdminWithStepUp` ile yürütülür; proposal ve approval iki farklı admin ister.
+- Platform rolü veya aktif tenant membership taşıyan kullanıcı için kalıcı hesap kapatma proposal/execute reddedilir.
+- Aktif closure case taşıyan kullanıcıya yeni tenant owner/membership ataması control-plane seviyesinde reddedilir.
 - Public rezervasyon isteği oluşturma yalnızca authenticated platform hesabıyla yapılır; global `Customer` rol kaydı aranmaz, aktif hesap müşteri bağlamı kabul edilir.
 - İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
@@ -46,6 +50,8 @@
 | Tenant suspend/reactivate/close | Hayır | Hayır | Hayır | Hayır | Hayır | Step-up operasyon ile |
 | Abuse işaretleme | Hayır | Hayır | Atandığı şube | Tenant | İnceleme | Evet |
 | Strike/ban uygulama | Hayır | Hayır | Hayır | Hayır | Öneri | Step-up operasyon ile |
+| Kendi yaptırımına itiraz | Evet | Kendi hesabı | Kendi hesabı | Kendi hesabı | Hayır | İnceleme |
+| Kalıcı hesap kapatma | Hayır | Hayır | Hayır | Hayır | Hayır | İki farklı step-up admin |
 | Audit log görüntüleme | Kendi olayları | Sınırlı | Şube | Tenant | Gerekçeli | Evet |
 
 ## Güvenlik Kuralları

@@ -40,6 +40,8 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `UserStrike` | Platform admin tarafından doğrulanmış abuse raporundan üretilen süreli risk kaydı | Tenant kaynağını taşır, kullanıcı risk hesabında platform-global değerlendirilir ve revoke edilebilir |
 | `UserRiskLevel` | Aktif strike sayısından türetilen operasyon seviyesi | `Normal`, `Monitor`, `Elevated`, `High`; otomatik sanction değildir |
 | `UserSanction` | Kullanıcıya uygulanan uyarı, cooldown veya ban | Süreli, gerekçeli, auditlenebilir ve geçmiş kaydı silinmeden revoke edilebilir |
+| `AbuseAppeal` | Müşterinin kendi strike, aktif bloklayıcı sanction veya hesap kapatma vakasına yaptığı itiraz | Aynı kullanıcı+hedef için tekildir; kabul kararı hedefi revoke veya cancel eder |
+| `AccountClosureCase` | Kalıcı hesap kapatma için teklif, bağımsız ikinci admin kararı, itiraz penceresi ve execution durumunu taşıyan vaka | `Executing` retry edilebilir saga ara durumudur; `Executed` terminaldir |
 | `AdminAuditLogEntry` | Platform operasyon aksiyon kaydı | Append-only tutulur |
 | `IdentityAuditLogEntry` | Identity ve privileged bootstrap aksiyon kaydı | Append-only tutulur |
 

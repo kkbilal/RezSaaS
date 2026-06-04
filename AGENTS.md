@@ -15,6 +15,7 @@ Kod değiştirmeden önce ilgili dokümanları oku:
 - `docs/07-yetki-matrisi.md`: roller ve kapsamlar
 - `docs/09-abuse-yaptirim-politikasi.md`: abuse kuralları
 - `docs/17-tenant-management-temeli.md`: tenant management domain/persistence sınırı
+- `docs/22-abuse-itiraz-hesap-kapatma.md`: itiraz ve kalıcı hesap kapatma güvenlik akışı
 
 Çekirdek karar değişirse `docs/06-karar-kaydi.md` içine yeni ADR eklenmeden kod değiştirilmez.
 
@@ -222,7 +223,14 @@ En azından şu aksiyonlar auditlenir:
 - `Suspended`/`Closed` tenant public discovery, slot arama, yeni booking request ve işletme operasyonlarına kapalıdır; müşteri kendi mevcut taleplerini görme ve izin verilen talebini iptal etme hakkını korur.
 - Abuse event inceleme ve user sanction apply/revoke endpoint'leri `PlatformAdminWithStepUp` ister. Warning booking'i bloklamaz; cooldown en fazla 24 saat, temporary ban 24–72 saat olmalı ve aynı kullanıcıda yalnızca bir aktif bloklayıcı sanction bulunmalıdır.
 - Sanction geçmişi silinmez; revoke actor+neden ile auditlenir. Aktif bloklayıcı sanction yeni booking request'i engeller fakat müşterinin mevcut taleplerini görme/iptal hakkını kaldırmaz.
-- `PermanentClosure` sanction endpoint'inden uygulanmaz; manuel inceleme, appeal ve Identity hesap kapatma orchestration'ı tamamlanmadan kalıcı hesap kapatılamaz.
+- `PermanentClosure` sanction endpoint'inden uygulanmaz; yalnızca `High` risk kanıtı, iki farklı `PlatformAdminWithStepUp`, en az 7 günlük appeal penceresi, açık appeal bulunmaması, platform rolü ve aktif tenant membership taşımama kontrolleriyle yürütülen hesap kapatma workflow'u tamamlayabilir.
+- Müşteri yalnızca kendi strike, aktif bloklayıcı sanction veya uygun closure case kaydına appeal açabilir; başka kullanıcı hedefi `404` kabul edilir.
+- Customer abuse response'larına sanction/closure internal reason, review reason veya admin actor kimliği eklenmez; güvenli müşteri metni `CustomerNotice` olarak ayrı tutulur.
+- `AccountClosureCase.Executing` retry edilebilir saga ara durumudur. Identity kapatma başarıp Admin completion başarısız olursa execute retry tamamlamalı; doğrudan tablo düzeltmesi yapılmamalıdır.
+- Aktif closure case taşıyan kullanıcıya tenant/aktif membership atanamaz; execution, Identity kapatmadan hemen önce aktif tenant membership uygunluğunu yeniden doğrular.
+- Closure execution anında aktif strike sayısı yeniden hesaplanır; risk artık `High` değilse kalıcı kapatma ilerleyemez.
+- Production closure execution, zorunlu müşteri bildirimi ve itiraz penceresi başlangıç semantiği tamamlanana kadar güvenli varsayılanla kapalı tutulur; explicit configuration olmadan açılamaz.
+- `UserAccount.Status != Active` olan authenticated istekler merkezi aktif hesap kapısında `401` ile reddedilir; yeni endpoint bu kapıyı bypass edemez.
 
 ---
 
@@ -258,6 +266,7 @@ IP ban sadece güçlü sinyal ve ağır abuse durumunda; NAT/CGNAT nedeniyle “
 - Aynı tenant+appointment request raporu idempotent olmalı; raporlayan actor için günlük limit ve yarış koşulu koruması uygulanmalıdır.
 - Strike yalnızca `PlatformAdminWithStepUp` confirm kararıyla üretilir; süreli, auditli ve revoke edilebilir olmalıdır.
 - Aktif strike sayısından hesaplanan risk seviyesi yalnızca operasyon önerisidir; otomatik sanction veya kalıcı kapatma tetikleyemez.
+- Appeal create/review, strike revoke, sanction apply/revoke ve closure proposal/execution aynı kullanıcı kapsamlı transaction lock ile sıralanmalıdır; risk kanıtını azaltan işlemle eski risk sayımına dayalı kapatma yarışı veya closure tamamlanırken paralel ikinci bloklayıcı sanction oluşturulamaz. Closure review/execute ayrıca auditli, rate limited ve row lock korumalı olmalıdır.
 
 ---
 

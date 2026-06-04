@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using RezSaaS.Api.Admin;
 using RezSaaS.Api.Business;
 using RezSaaS.Api.Configuration;
+using RezSaaS.Api.Customer;
 using RezSaaS.Api.PublicApi;
 using RezSaaS.BuildingBlocks.Modularity;
 using RezSaaS.BuildingBlocks.Tenancy;
@@ -81,6 +82,12 @@ builder.Services.AddOptions<AppointmentRequestExpiryWorkerOptions>()
     .ValidateOnStart();
 builder.Services.AddOptions<UnsafeRequestOriginOptions>()
     .Bind(builder.Configuration.GetSection(UnsafeRequestOriginOptions.SectionName));
+builder.Services.AddOptions<CustomerAbuseRateLimitOptions>()
+    .Bind(builder.Configuration.GetSection(CustomerAbuseRateLimitOptions.SectionName))
+    .Validate(
+        options => options.PermitLimit > 0 && options.WindowMinutes > 0,
+        "Customer abuse action rate limit options must use positive values.")
+    .ValidateOnStart();
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
@@ -89,10 +96,16 @@ builder.Services.AddScoped<BusinessAbuseReportComposer>();
 builder.Services.AddScoped<AdminTenantProvisioningComposer>();
 builder.Services.AddScoped<AdminAbuseControlPlaneComposer>();
 builder.Services.AddScoped<AdminAbuseReportComposer>();
+builder.Services.AddScoped<AdminAbuseWorkflowComposer>();
+builder.Services.AddScoped<CustomerAbuseComposer>();
 builder.Services.AddHostedService<AppointmentRequestExpiryHostedService>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();
+CustomerAbuseRateLimitOptions customerAbuseRateLimitOptions =
+    builder.Configuration.GetSection(CustomerAbuseRateLimitOptions.SectionName)
+        .Get<CustomerAbuseRateLimitOptions>()
+    ?? new CustomerAbuseRateLimitOptions();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -171,6 +184,22 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
             });
     });
+    options.AddPolicy(CustomerAbuseRateLimitPolicyNames.Actions, httpContext =>
+    {
+        string remoteIpAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        string userId = httpContext.User.FindFirst("sub")?.Value
+            ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            $"{remoteIpAddress}:{userId}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = customerAbuseRateLimitOptions.PermitLimit,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(customerAbuseRateLimitOptions.WindowMinutes),
+            });
+    });
 });
 
 WebApplication app = builder.Build();
@@ -188,18 +217,21 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseRateLimiter();
 app.UseMiddleware<TenantContextMiddleware>();
 app.UseMiddleware<UnsafeRequestOriginMiddleware>();
 app.UseAuthentication();
+app.UseRateLimiter();
+app.UseMiddleware<ActiveUserAccountMiddleware>();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapPublicBusinessProfileEndpoints();
 app.MapPublicBusinessSlotEndpoints();
 app.MapPublicAppointmentRequestEndpoints();
 app.MapBusinessAppointmentRequestEndpoints();
+app.MapCustomerAbuseEndpoints();
 app.MapAdminControlPlaneEndpoints();
 app.MapAdminAbuseControlPlaneEndpoints();
+app.MapAdminAbuseWorkflowEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();

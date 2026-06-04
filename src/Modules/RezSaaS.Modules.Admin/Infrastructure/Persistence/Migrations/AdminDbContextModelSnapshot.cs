@@ -23,6 +23,59 @@ namespace RezSaaS.Modules.Admin.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RezSaaS.Modules.Admin.Domain.AbuseAppeal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAccountId", "Status", "CreatedAtUtc");
+
+                    b.HasIndex("UserAccountId", "TargetType", "TargetId")
+                        .IsUnique();
+
+                    b.ToTable("AbuseAppeals", "admin", t =>
+                        {
+                            t.HasCheckConstraint("CK_AbuseAppeals_ReviewShape", "(\"Status\" = 'PendingReview'\n    AND \"ReviewedAtUtc\" IS NULL\n    AND \"ReviewedByUserAccountId\" IS NULL\n    AND \"ReviewReason\" IS NULL)\nOR\n(\"Status\" IN ('Accepted', 'Rejected')\n    AND \"ReviewedAtUtc\" IS NOT NULL\n    AND \"ReviewedAtUtc\" >= \"CreatedAtUtc\"\n    AND \"ReviewedByUserAccountId\" IS NOT NULL\n    AND \"ReviewReason\" IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("RezSaaS.Modules.Admin.Domain.AbuseEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -59,6 +112,89 @@ namespace RezSaaS.Modules.Admin.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserAccountId", "OccurredAtUtc");
 
                     b.ToTable("AbuseEvents", "admin");
+                });
+
+            modelBuilder.Entity("RezSaaS.Modules.Admin.Domain.AccountClosureCase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CustomerNotice")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("DecidedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("EligibleForExecutionAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ExecutedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ExecutedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ExecutionStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ExecutionStartedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("InternalReason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("ProposedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProposedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ReviewedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAccountId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" IN ('PendingApproval', 'Approved', 'Executing')");
+
+                    b.HasIndex("Status", "EligibleForExecutionAtUtc");
+
+                    b.HasIndex("UserAccountId", "Status", "ProposedAtUtc");
+
+                    b.ToTable("AccountClosureCases", "admin", t =>
+                        {
+                            t.HasCheckConstraint("CK_AccountClosureCases_CompletionAfterExecutionStart", "\"ExecutedAtUtc\" IS NULL OR \"ExecutedAtUtc\" >= \"ExecutionStartedAtUtc\"");
+
+                            t.HasCheckConstraint("CK_AccountClosureCases_DecisionAfterProposal", "\"DecidedAtUtc\" IS NULL OR \"DecidedAtUtc\" >= \"ProposedAtUtc\"");
+
+                            t.HasCheckConstraint("CK_AccountClosureCases_DecisionShape", "(\"Status\" = 'PendingApproval'\n    AND \"ReviewedByUserAccountId\" IS NULL\n    AND \"DecisionReason\" IS NULL\n    AND \"DecidedAtUtc\" IS NULL)\nOR\n(\"Status\" IN ('Approved', 'Rejected', 'CancelledByAppeal', 'Executing', 'Executed')\n    AND \"ReviewedByUserAccountId\" IS NOT NULL\n    AND \"DecisionReason\" IS NOT NULL\n    AND \"DecidedAtUtc\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_AccountClosureCases_EligibilityAfterProposal", "\"EligibleForExecutionAtUtc\" > \"ProposedAtUtc\"");
+
+                            t.HasCheckConstraint("CK_AccountClosureCases_ExecutionAfterEligibility", "\"ExecutionStartedAtUtc\" IS NULL OR \"ExecutionStartedAtUtc\" >= \"EligibleForExecutionAtUtc\"");
+
+                            t.HasCheckConstraint("CK_AccountClosureCases_ExecutionShape", "(\"Status\" NOT IN ('Executing', 'Executed')\n    AND \"ExecutionStartedByUserAccountId\" IS NULL\n    AND \"ExecutionStartedAtUtc\" IS NULL\n    AND \"ExecutedByUserAccountId\" IS NULL\n    AND \"ExecutedAtUtc\" IS NULL)\nOR\n(\"Status\" = 'Executing'\n    AND \"ExecutionStartedByUserAccountId\" IS NOT NULL\n    AND \"ExecutionStartedAtUtc\" IS NOT NULL\n    AND \"ExecutedByUserAccountId\" IS NULL\n    AND \"ExecutedAtUtc\" IS NULL)\nOR\n(\"Status\" = 'Executed'\n    AND \"ExecutionStartedByUserAccountId\" IS NOT NULL\n    AND \"ExecutionStartedAtUtc\" IS NOT NULL\n    AND \"ExecutedByUserAccountId\" IS NOT NULL\n    AND \"ExecutedAtUtc\" IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_AccountClosureCases_NoSelfProposal", "\"UserAccountId\" <> \"ProposedByUserAccountId\"");
+                        });
                 });
 
             modelBuilder.Entity("RezSaaS.Modules.Admin.Domain.AdminAuditLogEntry", b =>
