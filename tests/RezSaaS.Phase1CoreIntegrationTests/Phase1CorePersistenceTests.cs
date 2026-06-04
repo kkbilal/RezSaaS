@@ -16,6 +16,8 @@ using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Booking.Domain;
 using RezSaaS.Modules.Booking.Infrastructure.Persistence;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
+using RezSaaS.Modules.Messaging.Application;
+using RezSaaS.Modules.Messaging.Domain;
 using RezSaaS.Modules.Messaging.Infrastructure.Queue;
 using RezSaaS.Modules.Organization.Application;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
@@ -54,11 +56,92 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         Assert.Equal(0, await CountRowsAsync("admin", "BusinessAbuseReports"));
         Assert.Equal(0, await CountRowsAsync("admin", "UserStrikes"));
         Assert.Equal(0, await CountRowsAsync("catalog", "Services"));
+        Assert.Equal(0, await CountRowsAsync("messaging", "PlatformTransactionalMessages"));
         Assert.Equal(0, await CountRowsAsync("messaging", "TransactionalMessages"));
         Assert.Equal(0, await CountRowsAsync("resources", "Resources"));
         Assert.Equal(0, await CountRowsAsync("availability", "BranchWorkingHours"));
         Assert.Equal(0, await CountRowsAsync("booking", "AppointmentRequests"));
         Assert.Equal(0, await CountRowsAsync("booking", "Appointments"));
+    }
+
+    [Fact]
+    public async Task PlatformMessageQueueDeduplicatesAndDoesNotResendAcceptedDeliveries()
+    {
+        Guid userAccountId = Guid.CreateVersion7();
+        Guid correlationId = Guid.CreateVersion7();
+        PlatformTransactionalMessageEnvelope envelope = new(
+            userAccountId,
+            PlatformMessagePurpose.AccountClosureProposed,
+            correlationId,
+            $"account-closure-proposed:{correlationId:D}",
+            "Account closure review",
+            "Your account closure case is ready for review.");
+        Guid messageId;
+
+        await using (MessagingDbContext enqueueDbContext =
+            new(CreateOptions<MessagingDbContext>()))
+        {
+            PlatformTransactionalMessageQueueService enqueueService = new(
+                enqueueDbContext,
+                new FixedTimeProvider(testTime));
+
+            messageId = await enqueueService.EnqueueAsync(envelope);
+            Guid replayMessageId = await enqueueService.EnqueueAsync(envelope);
+            PlatformTransactionalMessageEnvelope collision = envelope with
+            {
+                Subject = "Different immutable content",
+            };
+
+            Assert.Equal(messageId, replayMessageId);
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => enqueueService.EnqueueAsync(collision));
+        }
+
+        await using (MessagingDbContext firstAttemptDbContext =
+            new(CreateOptions<MessagingDbContext>()))
+        {
+            PlatformTransactionalMessageQueueService firstAttemptService = new(
+                firstAttemptDbContext,
+                new FixedTimeProvider(testTime));
+            PlatformTransactionalMessageDeliveryView firstAttempt =
+                Assert.Single(await firstAttemptService.ClaimDueAsync(
+                    batchSize: 10,
+                    lockDuration: TimeSpan.FromMinutes(5)));
+
+            Assert.Equal(messageId, firstAttempt.Id);
+            Assert.Null(firstAttempt.SentAtUtc);
+
+            await firstAttemptService.MarkDeliveryAcceptedAsync(messageId, testTime);
+            await firstAttemptService.ScheduleRetryAsync(
+                messageId,
+                "CALLBACK_FAILED",
+                TimeSpan.FromMinutes(5),
+                maxAttempts: 3);
+        }
+
+        await using (MessagingDbContext retryDbContext =
+            new(CreateOptions<MessagingDbContext>()))
+        {
+            PlatformTransactionalMessageQueueService retryService = new(
+                retryDbContext,
+                new FixedTimeProvider(testTime.AddMinutes(5)));
+            PlatformTransactionalMessageDeliveryView retry =
+                Assert.Single(await retryService.ClaimDueAsync(
+                    batchSize: 10,
+                    lockDuration: TimeSpan.FromMinutes(5)));
+
+            Assert.Equal(testTime, retry.SentAtUtc);
+            await retryService.CompleteAsync(messageId);
+        }
+
+        await using MessagingDbContext verificationDbContext =
+            new(CreateOptions<MessagingDbContext>());
+        PlatformTransactionalMessage persistedMessage =
+            await verificationDbContext.PlatformTransactionalMessages.SingleAsync();
+
+        Assert.Equal(PlatformTransactionalMessageStatus.Sent, persistedMessage.Status);
+        Assert.Equal(2, persistedMessage.AttemptCount);
+        Assert.Equal(1, await CountRowsAsync("messaging", "PlatformTransactionalMessages"));
     }
 
     [Fact]
@@ -856,6 +939,28 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
             "ACCOUNT_CLOSURE_REQUIRES_SECOND_ADMIN",
             selfApprovalReplayResult.ErrorCode);
 
+        AccountClosureExecutionService executionService = new(
+            dbContext,
+            Options.Create(riskOptions),
+            new FixedTimeProvider(testTime.AddDays(8)));
+        ExecuteAccountClosureCommand executionCommand =
+            new(executingAdminUserAccountId, proposalResult.EntityId.Value);
+        AbuseWorkflowCommandResult noticeBlockedExecutionResult =
+            await executionService.BeginAsync(executionCommand);
+        AccountClosureNoticeDeliveryService noticeDeliveryService = new(
+            dbContext,
+            Options.Create(riskOptions));
+        AccountClosureNoticeDeliveryState noticeDeliveryState =
+            await noticeDeliveryService.MarkDeliveredAsync(
+                proposalResult.EntityId.Value,
+                testTime.AddHours(3));
+
+        Assert.False(noticeBlockedExecutionResult.Succeeded);
+        Assert.Equal(
+            "ACCOUNT_CLOSURE_NOTICE_NOT_DELIVERED",
+            noticeBlockedExecutionResult.ErrorCode);
+        Assert.Equal(AccountClosureNoticeDeliveryState.Delivered, noticeDeliveryState);
+
         CreateAbuseAppealService createAppealService = new(
             dbContext,
             Options.Create(riskOptions),
@@ -869,12 +974,6 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
                     "The evidence is attributed to the wrong account."));
         Assert.True(appealResult.Succeeded);
 
-        AccountClosureExecutionService executionService = new(
-            dbContext,
-            Options.Create(riskOptions),
-            new FixedTimeProvider(testTime.AddDays(8)));
-        ExecuteAccountClosureCommand executionCommand =
-            new(executingAdminUserAccountId, proposalResult.EntityId.Value);
         AbuseWorkflowCommandResult blockedExecutionResult =
             await executionService.BeginAsync(executionCommand);
 
@@ -977,8 +1076,10 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
             proposingAdminUserAccountId,
             "Verified high-risk evidence.",
             "Your account is scheduled for closure after an appeal window.",
+            testTime);
+        closureCase.MarkCustomerNoticeDelivered(
             testTime,
-            testTime.AddDays(riskOptions.ClosureAppealWindowDays));
+            TimeSpan.FromDays(riskOptions.ClosureAppealWindowDays));
         closureCase.Approve(
             reviewingAdminUserAccountId,
             "Independent evidence review.",
@@ -1130,8 +1231,8 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
             proposingAdminUserAccountId,
             "Verified high-risk evidence.",
             "Your account is scheduled for closure after an appeal window.",
-            testTime,
-            testTime.AddDays(7));
+            testTime);
+        closureCase.MarkCustomerNoticeDelivered(testTime, TimeSpan.FromDays(7));
         closureCase.Approve(
             reviewingAdminUserAccountId,
             "Independent evidence review.",

@@ -51,7 +51,7 @@ Bu yüzey tenant işletme paneli değildir. Tüm endpoint'ler `PlatformAdminWith
 
 ## Açık İşler
 
-- Platform-global closure proposal/appeal review e-posta teslimatı ve bildirim zamanına bağlı itiraz penceresi
+- Platform notification/closure reconciliation, alarm ve manuel kurtarma runbook'u
 - `Executing` closure case reconciliation/alert ve manuel kurtarma runbook'u
 - İşletme raporlama davranışının kötüye kullanım riski
 - IP/device sinyal toplama, saklama ve privacy kuralları

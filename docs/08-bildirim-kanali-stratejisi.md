@@ -31,7 +31,10 @@ WhatsApp Business Platform teknik olarak kullanılabilir; ancak mesaj template y
 - Template versiyonu, kanal, alıcı, gönderim zamanı, provider sonucu ve hata kodu kaydedilir.
 - Retry idempotent olmalı; kalıcı hata ile geçici hata ayrılmalıdır.
 - Telefon/e-posta loglarda maskelenir.
-- Kalıcı hesap kapatma için itiraz penceresinin hangi bildirim zamanından başlayacağı ve teslimat başarısızlığında execution'ın nasıl bloklanacağı production açılışından önce tanımlanır.
+- Tenant-scoped rezervasyon mesajları ile platform-global abuse/hesap mesajları ayrı outbox modellerinde tutulur.
+- Platform-global outbox raw e-posta adresi değil `UserAccountId` taşır; alıcı adresini yalnızca Identity çözer.
+- Kalıcı hesap kapatma itiraz penceresi, proposal e-postasının sağlayıcı tarafından kabul edildiği anda başlar. Bu kabul kaydedilemezse execution bloklu kalır.
+- Sağlayıcı kabulünden sonra callback/finalization retry'ı aynı mesajı yeniden göndermez. SMTP'nin inbox teslimini garanti etmediği ve dar bir dış-servis/persistence hata aralığında duplicate ihtimali bulunduğu operasyon dokümanında açıkça izlenir.
 
 ## Uyum Notu
 

@@ -12,8 +12,7 @@ public sealed class AccountClosureCase
         Guid proposedByUserAccountId,
         string internalReason,
         string customerNotice,
-        DateTimeOffset proposedAtUtc,
-        DateTimeOffset eligibleForExecutionAtUtc)
+        DateTimeOffset proposedAtUtc)
     {
         RequireNonEmpty(userAccountId, nameof(userAccountId));
         RequireNonEmpty(proposedByUserAccountId, nameof(proposedByUserAccountId));
@@ -23,18 +22,12 @@ public sealed class AccountClosureCase
             throw new ArgumentException("Actor cannot target their own account.", nameof(proposedByUserAccountId));
         }
 
-        if (eligibleForExecutionAtUtc <= proposedAtUtc)
-        {
-            throw new ArgumentException("Execution eligibility must be later than proposal.", nameof(eligibleForExecutionAtUtc));
-        }
-
         Id = id;
         UserAccountId = userAccountId;
         ProposedByUserAccountId = proposedByUserAccountId;
         InternalReason = NormalizeRequiredText(internalReason, nameof(internalReason), maxLength: 500);
         CustomerNotice = NormalizeRequiredText(customerNotice, nameof(customerNotice), maxLength: 500);
         ProposedAtUtc = proposedAtUtc;
-        EligibleForExecutionAtUtc = eligibleForExecutionAtUtc;
     }
 
     public string? DecisionReason { get; private set; }
@@ -43,7 +36,9 @@ public sealed class AccountClosureCase
 
     public string CustomerNotice { get; private set; } = string.Empty;
 
-    public DateTimeOffset EligibleForExecutionAtUtc { get; private set; }
+    public DateTimeOffset? CustomerNoticeDeliveredAtUtc { get; private set; }
+
+    public DateTimeOffset? EligibleForExecutionAtUtc { get; private set; }
 
     public DateTimeOffset? ExecutedAtUtc { get; private set; }
 
@@ -72,8 +67,7 @@ public sealed class AccountClosureCase
         Guid proposedByUserAccountId,
         string internalReason,
         string customerNotice,
-        DateTimeOffset proposedAtUtc,
-        DateTimeOffset eligibleForExecutionAtUtc)
+        DateTimeOffset proposedAtUtc)
     {
         return new AccountClosureCase(
             Guid.CreateVersion7(),
@@ -81,8 +75,7 @@ public sealed class AccountClosureCase
             proposedByUserAccountId,
             internalReason,
             customerNotice,
-            proposedAtUtc,
-            eligibleForExecutionAtUtc);
+            proposedAtUtc);
     }
 
     public void Approve(
@@ -110,7 +103,12 @@ public sealed class AccountClosureCase
             throw new InvalidOperationException("Closure case is not approved.");
         }
 
-        if (startedAtUtc < EligibleForExecutionAtUtc)
+        if (CustomerNoticeDeliveredAtUtc is null || EligibleForExecutionAtUtc is null)
+        {
+            throw new InvalidOperationException("Customer notice has not been delivered.");
+        }
+
+        if (startedAtUtc < EligibleForExecutionAtUtc.Value)
         {
             throw new InvalidOperationException("Appeal window is still open.");
         }
@@ -118,6 +116,32 @@ public sealed class AccountClosureCase
         Status = AccountClosureCaseStatus.Executing;
         ExecutionStartedByUserAccountId = actorUserAccountId;
         ExecutionStartedAtUtc = startedAtUtc;
+    }
+
+    public void MarkCustomerNoticeDelivered(
+        DateTimeOffset deliveredAtUtc,
+        TimeSpan appealWindow)
+    {
+        if (CustomerNoticeDeliveredAtUtc is not null)
+        {
+            return;
+        }
+
+        if (Status is not AccountClosureCaseStatus.PendingApproval
+            and not AccountClosureCaseStatus.Approved)
+        {
+            throw new InvalidOperationException("Customer notice is no longer required.");
+        }
+
+        if (deliveredAtUtc < ProposedAtUtc)
+        {
+            throw new ArgumentException("Notice delivery cannot predate the proposal.", nameof(deliveredAtUtc));
+        }
+
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(appealWindow, TimeSpan.Zero);
+
+        CustomerNoticeDeliveredAtUtc = deliveredAtUtc;
+        EligibleForExecutionAtUtc = deliveredAtUtc.Add(appealWindow);
     }
 
     public void CancelByAcceptedAppeal(

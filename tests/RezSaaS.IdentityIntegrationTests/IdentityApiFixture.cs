@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
+using RezSaaS.Api.Configuration;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Admin.Domain;
 using RezSaaS.Modules.Admin.Infrastructure.Persistence;
@@ -93,6 +94,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                             ["Identity:RequireConfirmedEmail"] = "false",
                             ["Identity:Bootstrap:PlatformAdminBootstrapTokenSha256"] =
                                 "99ECD312D2F24FFD7011532BA5579DAE00103767862BD5B7A79E6EFCEF99E05E",
+                            ["Messaging:PlatformNotificationWorker:Enabled"] = "false",
                         });
                 });
                 builder.ConfigureTestServices(services =>
@@ -186,6 +188,15 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             .CreateClient();
     }
 
+    public async Task<int> DispatchPlatformNotificationsAsync()
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        PlatformNotificationDispatchService dispatchService =
+            scope.ServiceProvider.GetRequiredService<PlatformNotificationDispatchService>();
+
+        return await dispatchService.DispatchDueAsync();
+    }
+
     public async Task SeedHighRiskStrikesAsync(
         Guid userAccountId,
         int strikeCount = 3)
@@ -241,8 +252,10 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             proposedByUserAccountId,
             "Verified severe abuse evidence.",
             "Your account is scheduled for closure after review.",
+            proposedAtUtc);
+        closureCase.MarkCustomerNoticeDelivered(
             proposedAtUtc,
-            proposedAtUtc.AddDays(7));
+            TimeSpan.FromDays(7));
         closureCase.Approve(
             reviewedByUserAccountId,
             "Second administrator approved the evidence.",

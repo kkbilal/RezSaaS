@@ -37,6 +37,7 @@ public sealed class AdminModule : ModuleBase
         services.AddScoped<AbuseControlPlaneQueryService>();
         services.AddScoped<AbuseReportQueryService>();
         services.AddScoped<AbuseWorkflowQueryService>();
+        services.AddScoped<AccountClosureNoticeDeliveryService>();
         services.AddScoped<AccountClosureExecutionService>();
         services.AddScoped<ApplyUserSanctionService>();
         services.AddScoped<CreateAbuseAppealService>();

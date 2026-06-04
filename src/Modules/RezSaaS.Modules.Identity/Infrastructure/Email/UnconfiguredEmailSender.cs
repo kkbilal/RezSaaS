@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Identity;
+using RezSaaS.Modules.Identity.Application;
 using RezSaaS.Modules.Identity.Domain;
 
 namespace RezSaaS.Modules.Identity.Infrastructure.Email;
 
-public sealed class UnconfiguredEmailSender : IEmailSender<UserAccount>
+public sealed class UnconfiguredEmailSender : IEmailSender<UserAccount>, IUserTransactionalEmailSender
 {
     public Task SendConfirmationLinkAsync(
         UserAccount user,
@@ -19,6 +20,16 @@ public sealed class UnconfiguredEmailSender : IEmailSender<UserAccount>
     }
 
     public Task SendPasswordResetLinkAsync(UserAccount user, string email, string resetLink)
+    {
+        return NotConfigured();
+    }
+
+    public Task SendAsync(
+        UserAccount user,
+        string email,
+        string subject,
+        string body,
+        CancellationToken cancellationToken = default)
     {
         return NotConfigured();
     }

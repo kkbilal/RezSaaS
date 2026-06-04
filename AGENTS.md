@@ -229,7 +229,11 @@ En azından şu aksiyonlar auditlenir:
 - `AccountClosureCase.Executing` retry edilebilir saga ara durumudur. Identity kapatma başarıp Admin completion başarısız olursa execute retry tamamlamalı; doğrudan tablo düzeltmesi yapılmamalıdır.
 - Aktif closure case taşıyan kullanıcıya tenant/aktif membership atanamaz; execution, Identity kapatmadan hemen önce aktif tenant membership uygunluğunu yeniden doğrular.
 - Closure execution anında aktif strike sayısı yeniden hesaplanır; risk artık `High` değilse kalıcı kapatma ilerleyemez.
-- Production closure execution, zorunlu müşteri bildirimi ve itiraz penceresi başlangıç semantiği tamamlanana kadar güvenli varsayılanla kapalı tutulur; explicit configuration olmadan açılamaz.
+- Platform-global transactional bildirim outbox'ı yalnızca `UserAccountId` taşır; raw e-posta adresi Messaging tablosuna, response'a veya log'a yazılmaz. Alıcı adresini yalnızca Identity çözer.
+- Hesap kapatma itiraz penceresi, zorunlu proposal e-postasının sağlayıcı tarafından kabul edildiği `CustomerNoticeDeliveredAtUtc` anında başlar. Bu kanıt ve `EligibleForExecutionAtUtc` oluşmadan closure execution ilerleyemez.
+- Sağlayıcı kabulü kaydedildikten sonra Admin callback'i başarısız olursa retry aynı e-postayı yeniden göndermez; yalnızca eksik callback/finalization adımını tamamlar.
+- Platform notification worker tenant context kullanmayan explicit global bir worker'dır; unique delivery key, row lock, lease, sınırlı retry ve terminal durum koruması olmadan yeni platform bildirimi eklenmez.
+- Production closure execution, gerçek SMTP teslimatı ve operasyon/reconciliation kapıları doğrulanana kadar güvenli varsayılanla kapalı tutulur; explicit configuration olmadan açılamaz.
 - `UserAccount.Status != Active` olan authenticated istekler merkezi aktif hesap kapısında `401` ile reddedilir; yeni endpoint bu kapıyı bypass edemez.
 
 ---

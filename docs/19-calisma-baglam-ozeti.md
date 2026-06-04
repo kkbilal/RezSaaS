@@ -33,10 +33,11 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: abuse event inceleme, süreli sanction apply/revoke ve yeni booking enforce başlangıcı.
   - Tamamlandı: işletme abuse işaretleme, step-up admin review, süreli/revoke edilebilir strike ve yalnızca öneri niteliğinde risk seviyesi.
   - Tamamlandı: müşteri self-service abuse itirazı, iki farklı step-up admin onaylı kalıcı hesap kapatma, Identity `Closed` orchestration'ı ve aktif hesap istek kapısı.
-  - Sıradaki dilimler: platform-global closure/appeal e-posta teslimatı ve bildirim zamanına bağlı itiraz penceresi; ardından reconciliation, backup/restore, incident runbook ve CI güvenlik kapıları.
+  - Tamamlandı: raw e-posta taşımayan platform-global closure/appeal e-posta outbox'ı, retry worker'ı ve sağlayıcı kabul zamanına bağlı itiraz penceresi.
+  - Sıradaki dilimler: notification/closure reconciliation ve alarm runbook'u; ardından backup/restore, incident runbook ve CI güvenlik kapıları.
 
 ## Çalışma Disiplini
 
 - Kullanıcı commit izni verdi; push işlemlerini kullanıcı yapar.
-- Bu çalışma öncesi son tamamlanan commit: `78ddbd2 feat: add business abuse reporting and strikes`.
+- Bu çalışma öncesi son tamamlanan commit: `880f951 feat: add abuse appeals and account closure`.
 - Her dilim sonunda solution build, tüm testler, doküman/ADR etkisi ve temiz git durumu doğrulanır.

@@ -96,14 +96,16 @@ public sealed class IdentityModule : ModuleBase
         services.AddScoped<CustomerAccountLookupService>();
         services.AddScoped<UserAccountClosureService>();
         services.AddScoped<UserAccountExistenceService>();
+        services.AddScoped<UserTransactionalEmailService>();
         services.AddScoped<IPlatformAdminBootstrapService, PlatformAdminBootstrapService>();
-        services.AddSingleton<IEmailSender<UserAccount>>(
-            identityOptions.DeliveryMode switch
-            {
-                EmailDeliveryMode.DevelopmentSink => new DevelopmentSinkEmailSender(),
-                EmailDeliveryMode.Smtp => new SmtpEmailSender(smtpOptions),
-                _ => new UnconfiguredEmailSender(),
-            });
+        object emailSender = identityOptions.DeliveryMode switch
+        {
+            EmailDeliveryMode.DevelopmentSink => new DevelopmentSinkEmailSender(),
+            EmailDeliveryMode.Smtp => new SmtpEmailSender(smtpOptions),
+            _ => new UnconfiguredEmailSender(),
+        };
+        services.AddSingleton((IEmailSender<UserAccount>)emailSender);
+        services.AddSingleton((IUserTransactionalEmailSender)emailSender);
     }
 
     public override void MapEndpoints(IEndpointRouteBuilder endpoints)

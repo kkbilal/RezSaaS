@@ -16,7 +16,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay, lifecycle operasyon nedeni | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |
 | Admin audit | Actor, aksiyon, zaman, JSON detay | Platform operasyon incelemesi | Platform admin | Append-only; saklama süresi netleştirilecek |
 | Abuse | Event, severity, user, tenant, business report, appointment request referansı, sınırlı note, review kararı, strike, risk seviyesi, sanction, appeal statement, closure internal reason/customer notice, apply/revoke/review actor ve neden | Platform güvenliği ve itiraz | Müşteri yalnızca kendi güvenli özetini görür; internal nedenler ve karar detayları step-up platform admin | Append-only geçmiş; strike expiry uygulanır, appeal/closure genel saklama süresi netleştirilecek |
-| Bildirim | Kanal, maskelenmiş alıcı, template, payload, provider sonucu | Teslimat ve hata çözümü | Sınırlı destek | Netleştirilecek |
+| Bildirim | Tenant mesajlarında maskelenmiş alıcı; platform mesajlarında user account id, amaç, correlation/delivery key, müşteri-güvenli konu/gövde, deneme ve sağlayıcı kabul zamanı | Teslimat, güvenlik bildirimi ve hata çözümü | Sistem ve sınırlı destek | Raw e-posta platform outbox'a yazılmaz; saklama/temizleme süresi netleştirilecek |
 | Teknik telemetri | IP, device sinyali, correlation id | Abuse ve hata çözümü | Sınırlı güvenlik ekibi | Netleştirilecek |
 
 ## İlkeler

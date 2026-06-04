@@ -88,6 +88,17 @@ builder.Services.AddOptions<CustomerAbuseRateLimitOptions>()
         options => options.PermitLimit > 0 && options.WindowMinutes > 0,
         "Customer abuse action rate limit options must use positive values.")
     .ValidateOnStart();
+builder.Services.AddOptions<PlatformNotificationWorkerOptions>()
+    .Bind(builder.Configuration.GetSection(PlatformNotificationWorkerOptions.SectionName))
+    .Validate(
+        options => options.BatchSize > 0
+            && options.InitialDelay >= TimeSpan.Zero
+            && options.Interval > TimeSpan.Zero
+            && options.LockDuration > TimeSpan.Zero
+            && options.MaxAttempts > 0
+            && options.RetryDelay > TimeSpan.Zero,
+        "Platform notification worker options must use positive values.")
+    .ValidateOnStart();
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
@@ -98,7 +109,9 @@ builder.Services.AddScoped<AdminAbuseControlPlaneComposer>();
 builder.Services.AddScoped<AdminAbuseReportComposer>();
 builder.Services.AddScoped<AdminAbuseWorkflowComposer>();
 builder.Services.AddScoped<CustomerAbuseComposer>();
+builder.Services.AddScoped<PlatformNotificationDispatchService>();
 builder.Services.AddHostedService<AppointmentRequestExpiryHostedService>();
+builder.Services.AddHostedService<PlatformNotificationHostedService>();
 BookingSecurityOptions bookingSecurityOptions =
     builder.Configuration.GetSection(BookingSecurityOptions.SectionName).Get<BookingSecurityOptions>()
     ?? new BookingSecurityOptions();

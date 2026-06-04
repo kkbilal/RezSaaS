@@ -14,6 +14,7 @@ public sealed class AccountClosureExecutionService
     private const string InvalidRequest = "ACCOUNT_CLOSURE_EXECUTION_INVALID";
     private const string NotApproved = "ACCOUNT_CLOSURE_NOT_APPROVED";
     private const string NotFound = "ACCOUNT_CLOSURE_NOT_FOUND";
+    private const string NoticeNotDelivered = "ACCOUNT_CLOSURE_NOTICE_NOT_DELIVERED";
     private const string RiskNoLongerHigh = "ACCOUNT_CLOSURE_RISK_NO_LONGER_HIGH";
     private const string WindowOpen = "ACCOUNT_CLOSURE_APPEAL_WINDOW_OPEN";
 
@@ -84,7 +85,13 @@ public sealed class AccountClosureExecutionService
 
         DateTimeOffset now = timeProvider.GetUtcNow();
 
-        if (now < closureCase.EligibleForExecutionAtUtc)
+        if (closureCase.CustomerNoticeDeliveredAtUtc is null
+            || closureCase.EligibleForExecutionAtUtc is null)
+        {
+            return AbuseWorkflowCommandResult.Failure(NoticeNotDelivered);
+        }
+
+        if (now < closureCase.EligibleForExecutionAtUtc.Value)
         {
             return AbuseWorkflowCommandResult.Failure(WindowOpen);
         }

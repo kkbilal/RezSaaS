@@ -86,8 +86,7 @@ public sealed class ProposeAccountClosureService
             command.ActorUserAccountId,
             command.InternalReason,
             command.CustomerNotice,
-            now,
-            now.AddDays(options.ClosureAppealWindowDays));
+            now);
         dbContext.AccountClosureCases.Add(closureCase);
         dbContext.AdminAuditLogEntries.Add(
             AdminAuditLogEntry.Create(
@@ -99,7 +98,6 @@ public sealed class ProposeAccountClosureService
                         closureCaseId = closureCase.Id,
                         userAccountId = closureCase.UserAccountId,
                         activeStrikeCount,
-                        eligibleForExecutionAtUtc = closureCase.EligibleForExecutionAtUtc,
                     }),
                 now));
         await dbContext.SaveChangesAsync(cancellationToken);

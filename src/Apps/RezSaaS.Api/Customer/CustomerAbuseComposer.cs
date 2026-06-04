@@ -164,6 +164,7 @@ public sealed class CustomerAbuseComposer
                 entity.Id,
                 entity.CustomerNotice,
                 entity.ProposedAtUtc,
+                entity.CustomerNoticeDeliveredAtUtc,
                 entity.EligibleForExecutionAtUtc,
                 entity.Status.ToString(),
                 entity.DecidedAtUtc,

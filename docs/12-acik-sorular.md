@@ -30,7 +30,7 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - KVKK aydınlatma, saklama ve silme politikası için hukuk danışmanlığı takvimi nedir?
 - Platform support erişiminde kim, hangi gerekçeyle ve ne kadar süreyle tenant verisi görebilir?
 - Abuse appeal/itiraz SLA'sı, kalıcı hesap kapatma onay mercii ve reason-code taksonomisinin operasyon runbook'u nasıl olacak?
-- Kalıcı hesap kapatma itiraz penceresi proposal, e-posta outbox kuyruğu veya doğrulanmış teslimat zamanından hangisiyle başlayacak; teslimat başarısızlığında execution nasıl bloklanacak?
+- Sağlayıcı kabulünden sonra bounce/kalıcı teslimat başarısızlığı webhook ile alınırsa closure case ve itiraz penceresi için hangi operasyonel aksiyon uygulanacak?
 - `Executing` durumunda uzun süre kalan hesap kapatma vakaları için reconciliation job, alarm eşiği ve manuel kurtarma runbook'u nasıl olacak?
 - İşletme abuse raporlarını kötüye kullanan tenant/actor için ayrı risk ve yaptırım politikası nasıl olacak?
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 namespace RezSaaS.Modules.Messaging.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(MessagingDbContext))]
-    partial class MessagingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604175102_AddPlatformTransactionalMessages")]
+    partial class AddPlatformTransactionalMessages
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

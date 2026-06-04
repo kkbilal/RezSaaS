@@ -174,7 +174,36 @@ public sealed class AbuseAppealAccountClosureApiTests : IClassFixture<IdentityAp
         HttpResponseMessage earlyExecutionResponse = await reviewingAdminClient.PostAsync(
             $"/api/admin/abuse/closure-cases/{closureCaseId}/execute",
             content: null);
+        string earlyExecutionJson = await earlyExecutionResponse.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.Conflict, earlyExecutionResponse.StatusCode);
+        Assert.Contains(
+            "ACCOUNT_CLOSURE_NOTICE_NOT_DELIVERED",
+            earlyExecutionJson,
+            StringComparison.Ordinal);
+
+        Assert.True(await fixture.DispatchPlatformNotificationsAsync() > 0);
+        HttpResponseMessage deliveredClosureDetailResponse = await reviewingAdminClient.GetAsync(
+            proposalResponse.Headers.Location);
+        using JsonDocument deliveredClosureDetail =
+            JsonDocument.Parse(await deliveredClosureDetailResponse.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.OK, deliveredClosureDetailResponse.StatusCode);
+        Assert.NotEqual(
+            JsonValueKind.Null,
+            deliveredClosureDetail.RootElement.GetProperty("customerNoticeDeliveredAtUtc").ValueKind);
+        Assert.NotEqual(
+            JsonValueKind.Null,
+            deliveredClosureDetail.RootElement.GetProperty("eligibleForExecutionAtUtc").ValueKind);
+
+        HttpResponseMessage appealWindowExecutionResponse = await reviewingAdminClient.PostAsync(
+            $"/api/admin/abuse/closure-cases/{closureCaseId}/execute",
+            content: null);
+        string appealWindowExecutionJson =
+            await appealWindowExecutionResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Conflict, appealWindowExecutionResponse.StatusCode);
+        Assert.Contains(
+            "ACCOUNT_CLOSURE_APPEAL_WINDOW_OPEN",
+            appealWindowExecutionJson,
+            StringComparison.Ordinal);
 
         HttpResponseMessage customerOverviewResponse =
             await SendBearerAsync(

@@ -85,14 +85,26 @@ public sealed class AdminDbContext : DbContext
                         "CK_AccountClosureCases_NoSelfProposal",
                         "\"UserAccountId\" <> \"ProposedByUserAccountId\"");
                     table.HasCheckConstraint(
-                        "CK_AccountClosureCases_EligibilityAfterProposal",
-                        "\"EligibleForExecutionAtUtc\" > \"ProposedAtUtc\"");
+                        "CK_AccountClosureCases_NoticeDeliveryShape",
+                        """
+                        ("CustomerNoticeDeliveredAtUtc" IS NULL
+                            AND "EligibleForExecutionAtUtc" IS NULL)
+                        OR
+                        ("CustomerNoticeDeliveredAtUtc" IS NOT NULL
+                            AND "CustomerNoticeDeliveredAtUtc" >= "ProposedAtUtc"
+                            AND "EligibleForExecutionAtUtc" > "CustomerNoticeDeliveredAtUtc")
+                        """);
                     table.HasCheckConstraint(
                         "CK_AccountClosureCases_DecisionAfterProposal",
                         "\"DecidedAtUtc\" IS NULL OR \"DecidedAtUtc\" >= \"ProposedAtUtc\"");
                     table.HasCheckConstraint(
                         "CK_AccountClosureCases_ExecutionAfterEligibility",
-                        "\"ExecutionStartedAtUtc\" IS NULL OR \"ExecutionStartedAtUtc\" >= \"EligibleForExecutionAtUtc\"");
+                        """
+                        "ExecutionStartedAtUtc" IS NULL
+                        OR
+                        ("EligibleForExecutionAtUtc" IS NOT NULL
+                            AND "ExecutionStartedAtUtc" >= "EligibleForExecutionAtUtc")
+                        """);
                     table.HasCheckConstraint(
                         "CK_AccountClosureCases_CompletionAfterExecutionStart",
                         "\"ExecutedAtUtc\" IS NULL OR \"ExecutedAtUtc\" >= \"ExecutionStartedAtUtc\"");

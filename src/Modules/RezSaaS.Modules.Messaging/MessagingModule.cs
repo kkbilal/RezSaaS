@@ -1,5 +1,6 @@
 using RezSaaS.BuildingBlocks.Messaging;
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.Modules.Messaging.Application;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 using RezSaaS.Modules.Messaging.Infrastructure.Queue;
 using Microsoft.EntityFrameworkCore;
@@ -21,5 +22,6 @@ public sealed class MessagingModule : ModuleBase
         services.AddDbContext<MessagingDbContext>(
             options => options.UseNpgsql(connectionString));
         services.AddScoped<ITransactionalMessageOutbox, TransactionalMessageOutbox>();
+        services.AddScoped<PlatformTransactionalMessageQueueService>();
     }
 }

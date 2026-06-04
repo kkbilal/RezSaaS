@@ -55,10 +55,29 @@ Teklif eden admin kendi vakasını onaylayamaz. `Approved` kararı ikinci ve far
 Execution için:
 
 - vaka `Approved` olmalıdır;
-- `Admin:AbuseRisk:ClosureAppealWindowDays` ile belirlenen pencere dolmuş olmalıdır; varsayılan 7 gündür;
+- zorunlu proposal e-postası sağlayıcı tarafından kabul edilmiş ve kabul zamanı `CustomerNoticeDeliveredAtUtc` olarak kaydedilmiş olmalıdır;
+- `EligibleForExecutionAtUtc`, sağlayıcı kabul zamanına `Admin:AbuseRisk:ClosureAppealWindowDays` eklenerek hesaplanır; varsayılan pencere 7 gündür;
+- bu itiraz penceresi dolmuş olmalıdır;
 - kullanıcıya ait açık `PendingReview` itiraz bulunmamalıdır;
 - aktif strike sayısı execution anında hâlâ `High` risk eşiğini karşılamalıdır;
 - platform rolü ve aktif tenant membership uygunluğu yeniden doğrulanmalıdır.
+
+## Zorunlu Bildirim ve İtiraz Penceresi
+
+- Closure proposal ve appeal review sonucu platform-global `PlatformTransactionalMessage`
+  outbox'ına enqueue edilir.
+- Outbox raw e-posta adresi taşımaz; yalnızca `UserAccountId` tutar ve alıcı adresini
+  Identity teslimat anında çözer.
+- Proposal e-postası henüz gönderilmeden vaka `Rejected` veya `CancelledByAppeal`
+  olursa worker mesajı iptal eder.
+- Sağlayıcı e-postayı kabul ettiğinde Messaging `SentAtUtc`, Admin ise aynı zamanı
+  `CustomerNoticeDeliveredAtUtc` olarak kaydeder.
+- Admin callback başarısız olursa outbox retry aynı e-postayı yeniden göndermeden
+  callback'i tamamlar.
+- Bildirim kabul kanıtı yoksa execution
+  `ACCOUNT_CLOSURE_NOTICE_NOT_DELIVERED` ile bloklanır.
+- SMTP sağlayıcı kabulü inbox teslim garantisi değildir; bounce/webhook ve uzun süre
+  başarısız teslimat reconciliation işi olarak izlenir.
 
 ## Durum Makinesi
 
@@ -78,21 +97,26 @@ PendingApproval/Approved -> CancelledByAppeal
 
 API composition root aşağıdaki sırayı uygular:
 
-1. Admin closure case ve uygunluk bilgilerini okur.
-2. Identity platform rolü ve hesap durumunu, Tenant Management aktif üyelik durumunu doğrular.
-3. Admin transaction içinde vaka satırını ve kullanıcı kapsamlı advisory lock'ı alır; pencere/açık itiraz kontrolünden sonra vakayı `Executing` yapar.
-4. Aktif tenant membership uygunluğu execution kilidinden sonra yeniden doğrulanır; aktif closure case taşıyan kullanıcıya control-plane üzerinden yeni tenant/üyelik verilmez.
-5. Identity transaction içinde hesabı `Closed` yapar, security/concurrency stamp değerlerini döndürür ve Identity audit kaydı üretir.
-6. Admin transaction içinde aktif bloklayıcı yaptırımları revoke eder, tek `PermanentClosure` geçmiş kaydı üretir ve vakayı `Executed` yapar.
+1. API composition root proposal/appeal kararını platform-global outbox'a idempotent enqueue eder.
+2. Notification worker alıcıyı Identity üzerinden çözer, sağlayıcı kabulünü Messaging içinde kalıcılaştırır ve closure proposal için Admin teslim callback'ini tamamlar.
+3. Admin closure case ve uygunluk bilgilerini okur.
+4. Identity platform rolü ve hesap durumunu, Tenant Management aktif üyelik durumunu doğrular.
+5. Admin transaction içinde vaka satırını ve kullanıcı kapsamlı advisory lock'ı alır; bildirim, pencere ve açık itiraz kontrolünden sonra vakayı `Executing` yapar.
+6. Aktif tenant membership uygunluğu execution kilidinden sonra yeniden doğrulanır; aktif closure case taşıyan kullanıcıya control-plane üzerinden yeni tenant/üyelik verilmez.
+7. Identity transaction içinde hesabı `Closed` yapar, security/concurrency stamp değerlerini döndürür ve Identity audit kaydı üretir.
+8. Admin transaction içinde aktif bloklayıcı yaptırımları revoke eder, tek `PermanentClosure` geçmiş kaydı üretir ve vakayı `Executed` yapar.
 
 `Executing` durumu bilinçli bir saga ara durumudur. Identity kapanıp Admin tamamlama başarısız olursa aynı execute isteği güvenli biçimde tekrar çalıştırılabilir. Operasyonel reconciliation/alert mekanizması sonraki sertleşme işidir.
 
 ## Production Açılış Kapıları
 
-- Müşteriye closure proposal ve appeal review sonucu için zorunlu transactional e-posta henüz platform-global Messaging outbox modeliyle bağlanmamıştır.
-- İtiraz penceresinin proposal, outbox kuyruğu veya doğrulanmış teslimat zamanından hangisiyle başlayacağı kararlaştırılmadan production closure execution açılmaz.
-- `Admin:AbuseRisk:AccountClosureExecutionEnabled` güvenli varsayılan olarak `false` değerindedir; Development/test dışında ancak bu kapılar tamamlandıktan sonra bilinçli olarak açılır.
-- Bildirim teslimat hatası, uzun süre `Executing` kalan vaka ve cross-module saga yarım kalması için reconciliation/alert runbook'u tamamlanmalıdır.
+- Platform-global outbox, Identity alıcı çözümü ve sağlayıcı kabul zamanına bağlı itiraz
+  penceresi uygulanmıştır.
+- `Admin:AbuseRisk:AccountClosureExecutionEnabled` güvenli varsayılan olarak `false`
+  değerindedir; gerçek SMTP sağlayıcısı, alarm/reconciliation ve operasyon runbook'u
+  doğrulanmadan bilinçli olarak açılmaz.
+- Bildirim teslimat hatası, uzun süre `Executing` kalan vaka ve cross-module saga yarım
+  kalması için reconciliation/alert runbook'u tamamlanmalıdır.
 
 ## Güvenlik, Audit ve Veri
 
@@ -107,11 +131,15 @@ API composition root aşağıdaki sırayı uygular:
 ## Persistence ve Eşzamanlılık
 
 - `AbuseAppeals` ve `AccountClosureCases` platform-global Admin tablolarıdır; tenant-scoped değildir.
+- `PlatformTransactionalMessages` platform-global Messaging tablosudur; raw e-posta
+  adresi taşımaz ve delivery key ile idempotent enqueue edilir.
 - Aynı kullanıcı+hedef için itiraz unique index ile tekilleştirilir.
 - Kullanıcı başına yalnızca bir aktif (`PendingApproval`, `Approved`, `Executing`) closure case bulunması partial unique index ile de korunur.
 - Review ve execution state geçişleri PostgreSQL row lock ile korunur.
 - Appeal create/review, strike revoke, sanction apply/revoke ve closure proposal/execution aynı kullanıcı kapsamlı advisory transaction lock ile sıralanır; risk kanıtı azaltılırken eski risk sayımıyla kapatma başlatılamaz ve closure tamamlanırken paralel ikinci bloklayıcı sanction üretilemez.
 - DB check constraint'leri review/execution alanlarının durumla uyumunu ve self-proposal yasağını korur.
+- `CustomerNoticeDeliveredAtUtc` ile `EligibleForExecutionAtUtc` birlikte null veya
+  birlikte geçerli olmak zorundadır; execution eligibility sonrasına düşmelidir.
 
 ## Doğrulanan Senaryolar
 
@@ -121,4 +149,6 @@ API composition root aşağıdaki sırayı uygular:
 - Teklif eden admin kendi closure case'ini onaylayamaz.
 - Aktif tenant üyeliği veya platform rolü closure teklifini engeller.
 - İtiraz penceresi ve açık itiraz execution'ı engeller.
+- Proposal e-postası sağlayıcı tarafından kabul edilmeden execution bloklanır; kabul
+  sonrası callback retry aynı e-postayı yeniden göndermez.
 - Execution retry idempotent davranır, kalıcı yaptırım geçmişi üretir ve eski bearer token'ı geçersiz kılar.

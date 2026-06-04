@@ -34,6 +34,7 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `AppointmentLine` | Kesin rezervasyon içindeki hizmet satırı | Talep satırından snapshot taşır |
 | `BookingIdempotencyRecord` | Booking komut tekrarlarını tenant+actor+operation kapsamında takip eden teknik kayıt | Raw idempotency key saklanmaz; hash ve response özeti tutulur |
 | `TransactionalMessage` | Rezervasyon gibi mevcut işlemle ilgili operasyonel bildirim | Pazarlama mesajından ayrıdır |
+| `PlatformTransactionalMessage` | Tenant'a bağlı olmayan hesap/abuse operasyonları için `UserAccountId` hedefli transactional outbox kaydı | Raw e-posta taşımaz; alıcıyı Identity çözer, delivery key ile idempotent işlenir |
 | `CommercialMessage` | Kampanya, yeniden aktivasyon veya satış amaçlı ileti | İzin ve İYS değerlendirmesi gerektirir |
 | `AbuseEvent` | Abuse şüphesi veya doğrulanmış ihlal olayı | Otomatik veya manuel kaynaktan gelebilir |
 | `BusinessAbuseReport` | Yetkili işletme kullanıcısının belirli appointment request için oluşturduğu inceleme sinyali | Tek başına strike veya sanction üretmez; platform admin review ister |
@@ -41,7 +42,7 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `UserRiskLevel` | Aktif strike sayısından türetilen operasyon seviyesi | `Normal`, `Monitor`, `Elevated`, `High`; otomatik sanction değildir |
 | `UserSanction` | Kullanıcıya uygulanan uyarı, cooldown veya ban | Süreli, gerekçeli, auditlenebilir ve geçmiş kaydı silinmeden revoke edilebilir |
 | `AbuseAppeal` | Müşterinin kendi strike, aktif bloklayıcı sanction veya hesap kapatma vakasına yaptığı itiraz | Aynı kullanıcı+hedef için tekildir; kabul kararı hedefi revoke veya cancel eder |
-| `AccountClosureCase` | Kalıcı hesap kapatma için teklif, bağımsız ikinci admin kararı, itiraz penceresi ve execution durumunu taşıyan vaka | `Executing` retry edilebilir saga ara durumudur; `Executed` terminaldir |
+| `AccountClosureCase` | Kalıcı hesap kapatma için teklif, bağımsız ikinci admin kararı, müşteri bildirimi, itiraz penceresi ve execution durumunu taşıyan vaka | Pencere `CustomerNoticeDeliveredAtUtc` ile başlar; `Executing` retry edilebilir saga ara durumudur, `Executed` terminaldir |
 | `AdminAuditLogEntry` | Platform operasyon aksiyon kaydı | Append-only tutulur |
 | `IdentityAuditLogEntry` | Identity ve privileged bootstrap aksiyon kaydı | Append-only tutulur |
 

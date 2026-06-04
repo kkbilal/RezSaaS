@@ -2,6 +2,7 @@ using System.Security.Claims;
 using RezSaaS.Modules.Admin.Application;
 using RezSaaS.Modules.Admin.Domain;
 using RezSaaS.Modules.Identity.Application;
+using RezSaaS.Modules.Messaging.Application;
 using RezSaaS.Modules.TenantManagement.Application;
 
 namespace RezSaaS.Api.Admin;
@@ -17,6 +18,7 @@ public sealed class AdminAbuseWorkflowComposer
 
     private readonly AccountClosureExecutionService accountClosureExecutionService;
     private readonly AbuseWorkflowQueryService queryService;
+    private readonly PlatformTransactionalMessageQueueService platformMessageQueueService;
     private readonly ProposeAccountClosureService proposeAccountClosureService;
     private readonly ReviewAbuseAppealService reviewAbuseAppealService;
     private readonly ReviewAccountClosureService reviewAccountClosureService;
@@ -30,7 +32,8 @@ public sealed class AdminAbuseWorkflowComposer
         ReviewAccountClosureService reviewAccountClosureService,
         AccountClosureExecutionService accountClosureExecutionService,
         UserAccountClosureService userAccountClosureService,
-        UserTenantMembershipQueryService userTenantMembershipQueryService)
+        UserTenantMembershipQueryService userTenantMembershipQueryService,
+        PlatformTransactionalMessageQueueService platformMessageQueueService)
     {
         this.queryService = queryService;
         this.reviewAbuseAppealService = reviewAbuseAppealService;
@@ -39,6 +42,7 @@ public sealed class AdminAbuseWorkflowComposer
         this.accountClosureExecutionService = accountClosureExecutionService;
         this.userAccountClosureService = userAccountClosureService;
         this.userTenantMembershipQueryService = userTenantMembershipQueryService;
+        this.platformMessageQueueService = platformMessageQueueService;
     }
 
     public async Task<AdminAbuseWorkflowAccessResult> GetAppealsAsync(
@@ -138,11 +142,18 @@ public sealed class AdminAbuseWorkflowComposer
                     request.Reason),
                 cancellationToken);
 
-        return result.Succeeded
-            ? AdminAbuseWorkflowAccessResult.Success(
-                ToAppealResponse(
-                    (await queryService.GetAppealByIdAsync(appealId, cancellationToken))!))
-            : MapFailure(result.ErrorCode!);
+        if (!result.Succeeded)
+        {
+            return MapFailure(result.ErrorCode!);
+        }
+
+        AbuseAppealView appeal =
+            (await queryService.GetAppealByIdAsync(appealId, cancellationToken))!;
+        await platformMessageQueueService.EnqueueAsync(
+            PlatformAbuseNotificationContent.CreateAppealDecision(appeal),
+            cancellationToken);
+
+        return AdminAbuseWorkflowAccessResult.Success(ToAppealResponse(appeal));
     }
 
     public async Task<AdminAbuseWorkflowAccessResult> ProposeClosureAsync(
@@ -198,6 +209,9 @@ public sealed class AdminAbuseWorkflowComposer
 
         AccountClosureCaseView closureCase =
             (await queryService.GetClosureCaseByIdAsync(result.EntityId!.Value, cancellationToken))!;
+        await platformMessageQueueService.EnqueueAsync(
+            PlatformAbuseNotificationContent.CreateClosureProposal(closureCase),
+            cancellationToken);
 
         return result.Created
             ? AdminAbuseWorkflowAccessResult.Created(ToClosureCaseResponse(closureCase))
@@ -342,6 +356,7 @@ public sealed class AdminAbuseWorkflowComposer
             "ACCOUNT_CLOSURE_NOT_APPROVED" => AdminAbuseOutcome.Conflict,
             "ACCOUNT_CLOSURE_APPEAL_WINDOW_OPEN" => AdminAbuseOutcome.Conflict,
             "ACCOUNT_CLOSURE_APPEAL_PENDING" => AdminAbuseOutcome.Conflict,
+            "ACCOUNT_CLOSURE_NOTICE_NOT_DELIVERED" => AdminAbuseOutcome.Conflict,
             "ACCOUNT_CLOSURE_RISK_NO_LONGER_HIGH" => AdminAbuseOutcome.Conflict,
             "ACCOUNT_CLOSURE_EXECUTION_DISABLED" => AdminAbuseOutcome.Conflict,
             "USER_ACCOUNT_CLOSURE_HAS_PLATFORM_ROLE" => AdminAbuseOutcome.Conflict,
@@ -376,6 +391,7 @@ public sealed class AdminAbuseWorkflowComposer
             closureCase.InternalReason,
             closureCase.CustomerNotice,
             closureCase.ProposedAtUtc,
+            closureCase.CustomerNoticeDeliveredAtUtc,
             closureCase.EligibleForExecutionAtUtc,
             closureCase.Status.ToString(),
             closureCase.ReviewedByUserAccountId,
