@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using RezSaaS.Api.Business;
+using RezSaaS.Modules.Identity.Domain;
+using RezSaaS.Modules.TenantManagement.Domain;
 
 namespace RezSaaS.IdentityIntegrationTests;
 
@@ -20,6 +23,97 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
         HttpResponseMessage response = await fixture.Client.GetAsync("/swagger/v1/swagger.json");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SwaggerDocumentIncludesFrontendBootstrapEndpoints()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        JsonElement paths = body.RootElement.GetProperty("paths");
+        Assert.True(paths.TryGetProperty("/api/session/bootstrap", out _));
+        Assert.True(paths.TryGetProperty("/api/business/context", out _));
+    }
+
+    [Fact]
+    public async Task SessionBootstrapRequiresAuthenticatedUser()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/api/session/bootstrap");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task SessionBootstrapReturnsAccountRolesStepUpAndMemberships()
+    {
+        Guid userAccountId = Guid.CreateVersion7();
+        PublicBusinessProfileSeed seed = await fixture.SeedPublicBusinessProfileAsync();
+        await fixture.GrantTenantMembershipAsync(
+            seed.TenantId,
+            userAccountId,
+            TenantMembershipRole.BusinessOwner);
+        using HttpClient client = fixture.CreatePlatformAdminStepUpClient(userAccountId);
+
+        HttpResponseMessage response = await client.GetAsync("/api/session/bootstrap");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        JsonElement root = body.RootElement;
+        Assert.Equal(userAccountId, root.GetProperty("account").GetProperty("userAccountId").GetGuid());
+        Assert.Contains(
+            PlatformRoleNames.Administrator,
+            root.GetProperty("platformRoles").EnumerateArray().Select(element => element.GetString() ?? string.Empty));
+        Assert.True(root.GetProperty("stepUp").GetProperty("isSatisfied").GetBoolean());
+        Assert.Equal(
+            seed.TenantId,
+            root.GetProperty("tenantMemberships")[0].GetProperty("tenantId").GetGuid());
+        Assert.Equal(
+            nameof(TenantMembershipRole.BusinessOwner),
+            root.GetProperty("tenantMemberships")[0].GetProperty("role").GetString());
+    }
+
+    [Fact]
+    public async Task BusinessContextRequiresAuthenticatedUser()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/api/business/context");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task BusinessContextReturnsActiveTenantMembershipsAndCapabilities()
+    {
+        string email = CreateEmail();
+        const string password = "RezSaaS!Auth1234";
+        await RegisterAsync(email, password);
+        string accessToken = await LoginWithBearerTokenAsync(email, password);
+        Guid userAccountId = await fixture.GetUserAccountIdAsync(email);
+        PublicBusinessProfileSeed seed = await fixture.SeedPublicBusinessProfileAsync();
+        await fixture.GrantTenantMembershipAsync(
+            seed.TenantId,
+            userAccountId,
+            TenantMembershipRole.BranchManager,
+            seed.BranchId);
+        using HttpRequestMessage request = new(HttpMethod.Get, "/api/business/context");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        HttpResponseMessage response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        JsonElement tenant = body.RootElement.GetProperty("tenants")[0];
+        Assert.Equal(seed.TenantId, tenant.GetProperty("tenantId").GetGuid());
+        Assert.Equal(seed.BranchId, tenant.GetProperty("branchId").GetGuid());
+        Assert.Equal(nameof(TenantMembershipRole.BranchManager), tenant.GetProperty("role").GetString());
+        Assert.False(tenant.GetProperty("isTenantWide").GetBoolean());
+        Assert.Contains(
+            BusinessCapabilityNames.ManageAppointmentRequests,
+            tenant.GetProperty("capabilities").EnumerateArray().Select(element => element.GetString() ?? string.Empty));
     }
 
     [Fact]

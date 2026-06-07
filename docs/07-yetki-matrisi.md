@@ -34,6 +34,8 @@
 - Aktif closure case taşıyan kullanıcıya yeni tenant owner/membership ataması control-plane seviyesinde reddedilir.
 - Public rezervasyon isteği oluşturma yalnızca authenticated platform hesabıyla yapılır; global `Customer` rol kaydı aranmaz, aktif hesap müşteri bağlamı kabul edilir.
 - İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
+- İşletme frontend bağlamı yalnızca authenticated kullanıcının aktif tenant membership'lerinden üretilir; `GET /api/business/context` tenant header istemez ve serbest tenant GUID seçimine izin vermez.
+- Business context capability'leri endpoint authz yerine geçmez; her işletme operasyonu yine tenant header, membership scope ve ilgili application service kontrolünden geçer.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
 - Müşteri kendi talep listesi/detayı için yalnızca kendi `UserAccount` kapsamında veri görebilir; başka kullanıcının talebi `404` kabul edilir.
 

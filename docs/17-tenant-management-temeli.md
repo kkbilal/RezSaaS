@@ -48,6 +48,8 @@ Bu modül tenant yaşam döngüsü için domain/persistence temelini ve Phase 3 
 - `Suspended` ve `Closed` tenant public discovery, slot arama, yeni booking request ve işletme booking operasyonlarına kapalıdır.
 - Müşteri kendi mevcut booking request geçmişini görmeye ve izin verilen talebini iptal etmeye devam eder.
 - Booking approval yüzeyi için `BusinessOwner` tenant-wide, `BranchManager` branch-scoped authz kullanılır; `Staff` onay/ret yetkisi almaz.
+- Frontend işletme bağlamı `GET /api/business/context` üzerinden authenticated kullanıcının aktif tenant membership listesinden üretilir; kullanıcıya serbest tenant GUID seçtirilmez.
+- Business context yalnızca `Active` tenant + `Active` membership döndürür; `BusinessOwner` tenant-wide, `BranchManager` branch-scoped capability alır, `Staff` varsayılan olarak yönetim capability'si almaz.
 - Endpoint açıldığında her komut authn, authz, tenant isolation, audit, rate limit ve idempotency değerlendirmesinden geçmelidir.
 - Platform admin tenant provisioning endpoint'i owner kullanıcısının aktif `UserAccount` olduğunu Identity üzerinden doğrular; Tenant Management modülü Identity assembly'sine doğrudan referans almaz.
 

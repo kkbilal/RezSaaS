@@ -25,4 +25,38 @@ public sealed class UserTenantMembershipQueryService
                         && entity.Status == TenantMembershipStatus.Active,
                     cancellationToken);
     }
+
+    public async Task<IReadOnlyCollection<UserTenantMembershipView>> GetActiveMembershipsAsync(
+        Guid userAccountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userAccountId == Guid.Empty)
+        {
+            return [];
+        }
+
+        return await dbContext.Memberships
+            .AsNoTracking()
+            .Join(
+                dbContext.Tenants.AsNoTracking(),
+                membership => membership.TenantId,
+                tenant => tenant.Id,
+                (membership, tenant) => new { membership, tenant })
+            .Where(entity => entity.membership.UserAccountId == userAccountId
+                && entity.membership.Status == TenantMembershipStatus.Active
+                && entity.tenant.Status == TenantStatus.Active)
+            .OrderBy(entity => entity.tenant.DisplayName)
+            .ThenBy(entity => entity.membership.CreatedAtUtc)
+            .Select(entity => new UserTenantMembershipView(
+                entity.membership.Id,
+                entity.membership.TenantId,
+                entity.tenant.Slug,
+                entity.tenant.DisplayName,
+                entity.tenant.Status,
+                entity.membership.Role,
+                entity.membership.Status,
+                entity.membership.BranchId,
+                entity.membership.CreatedAtUtc))
+            .ToListAsync(cancellationToken);
+    }
 }

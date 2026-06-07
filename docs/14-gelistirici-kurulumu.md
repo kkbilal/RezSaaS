@@ -74,6 +74,29 @@ Swagger UI yalnızca Development ortamında açıktır:
 GET /swagger
 ```
 
+## OpenAPI Artifact ve TypeScript Tipleri
+
+Frontend API kontratı elle çoğaltılmaz. Development Swagger dokümanı versiyonlu
+artifact olarak üretilir ve frontend tipi/client üretiminin kaynağı bu artifact'tir.
+
+OpenAPI artifact üret:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Export-OpenApi.ps1
+```
+
+Üretilen dosya:
+
+```text
+artifacts/openapi/rezsaas-api-v1.json
+```
+
+`src/Apps/RezSaaS.Web` oluşturulduktan sonra TypeScript tiplerini üret:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Generate-OpenApiTypes.ps1
+```
+
 ## Yerel PostgreSQL
 
 - Image: `postgres:18.4-alpine3.23`
