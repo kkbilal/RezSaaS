@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using RezSaaS.Modules.Identity.Domain;
+using RezSaaS.Modules.Identity.Infrastructure.Security;
 using RezSaaS.Modules.TenantManagement.Application;
 
 namespace RezSaaS.Api.Session;
@@ -9,17 +10,21 @@ public sealed class SessionBootstrapComposer
 {
     private readonly UserManager<UserAccount> userManager;
     private readonly UserTenantMembershipQueryService tenantMembershipQueryService;
+    private readonly StepUpSessionService stepUpSessionService;
 
     public SessionBootstrapComposer(
         UserManager<UserAccount> userManager,
-        UserTenantMembershipQueryService tenantMembershipQueryService)
+        UserTenantMembershipQueryService tenantMembershipQueryService,
+        StepUpSessionService stepUpSessionService)
     {
         this.userManager = userManager;
         this.tenantMembershipQueryService = tenantMembershipQueryService;
+        this.stepUpSessionService = stepUpSessionService;
     }
 
     public async Task<SessionBootstrapResponse?> CreateAsync(
         ClaimsPrincipal principal,
+        string? stepUpToken,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserAccountId(principal, out Guid userAccountId))
@@ -50,6 +55,19 @@ public sealed class SessionBootstrapComposer
         }
 
         HashSet<string> authenticationMethods = GetClaimValues(principal, "amr");
+        DateTimeOffset? stepUpExpiresAtUtc = null;
+        StepUpSessionView? stepUpSession = await stepUpSessionService.ValidateAsync(
+            userAccountId,
+            stepUpToken,
+            StepUpSessionService.MethodMfa,
+            cancellationToken);
+
+        if (stepUpSession is not null)
+        {
+            authenticationMethods.Add(stepUpSession.Method);
+            stepUpExpiresAtUtc = stepUpSession.ExpiresAtUtc;
+        }
+
         IReadOnlyCollection<SessionTenantMembershipResponse> memberships =
             (await tenantMembershipQueryService.GetActiveMembershipsAsync(
                 userAccountId,
@@ -71,8 +89,11 @@ public sealed class SessionBootstrapComposer
                 account.Status.ToString()),
             platformRoles.Order(StringComparer.Ordinal).ToList(),
             new SessionStepUpResponse(
-                authenticationMethods.Contains("mfa", StringComparer.OrdinalIgnoreCase),
-                authenticationMethods.Order(StringComparer.Ordinal).ToList()),
+                authenticationMethods.Contains(
+                    StepUpSessionService.MethodMfa,
+                    StringComparer.OrdinalIgnoreCase),
+                authenticationMethods.Order(StringComparer.Ordinal).ToList(),
+                stepUpExpiresAtUtc),
             memberships);
     }
 

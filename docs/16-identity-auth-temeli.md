@@ -22,6 +22,8 @@ Identity/Auth yüzeyi diğer domain API'lerinden önce tamamlanan zorunlu güven
 - Production için SMTP e-posta gönderici konfigürasyonu (`Identity:DeliveryMode=Smtp`)
 - Token-hash kontrollü, auditli ilk `PlatformAdmin` bootstrap servisi
 - Token-hash kontrollü, rate limited ilk `PlatformAdmin` HTTP bootstrap endpoint'i
+- Hashlenmiş token saklayan, kısa ömürlü, httpOnly cookie tabanlı step-up session endpoint'i
+- `PlatformAdminWithStepUp` için claim tabanlı test/entegrasyon sinyaline ek olarak DB-backed MFA step-up session doğrulaması
 - Identity audit log tablosu
 
 ## Rol Ayrımı
@@ -73,10 +75,12 @@ mevcut authentication claim'lerinden frontend bootstrap sinyali üretir.
 ## MFA / Kod Politikası
 
 - Normal müşteri login akışı her girişte tek kullanımlık kod istemez.
-- MFA ayrıcalıklı hesaplar, yüksek riskli oturumlar ve kritik aksiyonlar için step-up olarak tasarlanır.
-- Ayrıcalıklı MFA tamamlandığında kullanıcıyı yormamak için makul süreli güvenilir cihaz/oturum stratejisi belirlenir.
-- Production admin veya işletme yönetim endpoint'leri bu step-up politikası tamamlanmadan yayınlanmaz.
-- Kod tarafındaki policy hazırdır; enrollment ve güvenilir cihaz UX'i endpoint/UI açılışında tamamlanır.
+- MFA ayrıcalıklı hesaplar, yüksek riskli oturumlar ve kritik aksiyonlar için step-up olarak kullanılır.
+- `POST /api/session/step-up`, authenticated kullanıcıdan parola ve MFA kanıtı ister; privileged hesaplarda MFA/recovery-code olmadan step-up session üretmez.
+- Başarılı step-up response'u token değerini dönmez; token yalnızca httpOnly cookie olarak yazılır ve DB'de SHA-256 hash'i saklanır.
+- Varsayılan step-up süresi `Identity:StepUp:DurationMinutes` ile 30 dakikadır.
+- `GET /api/session/bootstrap`, aktif step-up session varsa `stepUp.isSatisfied=true` ve expiry bilgisini döndürür.
+- MFA enrollment UX'i frontend/platform yüzeyinde tamamlanacaktır; backend policy ve session enforcement hazırdır.
 
 ## Environment Davranışı
 
@@ -109,4 +113,4 @@ dotnet tool run dotnet-ef database update --project src/Modules/RezSaaS.Modules.
 
 - Production SMTP sağlayıcısı seçimi ve secret yönetimi
 - Confirmation/password reset teslimatının gerçek sağlayıcıyla uçtan uca testi
-- Ayrıcalıklı hesap MFA enrollment ekranı ve güvenilir cihaz/oturum politikası
+- Ayrıcalıklı hesap MFA enrollment ekranı ve trusted-device UX'i

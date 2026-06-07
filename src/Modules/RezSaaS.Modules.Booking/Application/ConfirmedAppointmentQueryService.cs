@@ -43,4 +43,47 @@ public sealed class ConfirmedAppointmentQueryService
                 entity.EndUtc))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyCollection<CustomerConfirmedAppointmentView>> GetOwnAsync(
+        Guid customerUserAccountId,
+        Guid[] branchIds,
+        int take = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (tenantContextAccessor.TenantId is null
+            || customerUserAccountId == Guid.Empty
+            || branchIds.Length == 0)
+        {
+            return [];
+        }
+
+        List<Appointment> appointments = await dbContext.Appointments
+            .AsNoTracking()
+            .Include(entity => entity.Lines)
+            .Where(entity => entity.CustomerUserAccountId == customerUserAccountId
+                && branchIds.Contains(entity.BranchId))
+            .OrderByDescending(entity => entity.StartUtc)
+            .Take(Math.Clamp(take, 1, 100))
+            .ToListAsync(cancellationToken);
+
+        return appointments
+            .Select(entity => new CustomerConfirmedAppointmentView(
+                entity.Id,
+                entity.AppointmentRequestId,
+                entity.BranchId,
+                entity.StaffMemberId,
+                entity.ResourceId,
+                entity.StartUtc,
+                entity.EndUtc,
+                entity.Status.ToString(),
+                entity.Lines
+                    .Select(line => new CustomerConfirmedAppointmentLineView(
+                        line.ServiceVariantId,
+                        line.ServiceNameSnapshot,
+                        line.DurationMinutes,
+                        line.PriceAmount,
+                        line.CurrencyCode))
+                    .ToArray()))
+            .ToArray();
+    }
 }

@@ -14,7 +14,8 @@ public sealed record SessionAccountResponse(
 
 public sealed record SessionStepUpResponse(
     bool IsSatisfied,
-    IReadOnlyCollection<string> Methods);
+    IReadOnlyCollection<string> Methods,
+    DateTimeOffset? ExpiresAtUtc);
 
 public sealed record SessionTenantMembershipResponse(
     Guid MembershipId,
@@ -23,3 +24,15 @@ public sealed record SessionTenantMembershipResponse(
     string TenantDisplayName,
     string Role,
     Guid? BranchId);
+
+public sealed record SessionStepUpRequest(
+    string Password,
+    string? TwoFactorCode,
+    string? RecoveryCode);
+
+public sealed record SessionStepUpCompletedResponse(
+    bool IsSatisfied,
+    string Method,
+    DateTimeOffset ExpiresAtUtc);
+
+public sealed record SessionStepUpErrorResponse(string ErrorCode);

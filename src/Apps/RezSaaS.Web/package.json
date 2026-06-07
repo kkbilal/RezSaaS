@@ -1,0 +1,17 @@
+{
+  "name": "@rezsaas/web",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.0.0",
+  "scripts": {
+    "generate:api": "openapi-typescript ../../../artifacts/openapi/rezsaas-api-v1.json --output src/shared/api/rezsaas-api.generated.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "6.0.3"
+  }
+}

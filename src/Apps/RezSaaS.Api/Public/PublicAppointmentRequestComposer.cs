@@ -104,10 +104,18 @@ public sealed class PublicAppointmentRequestComposer
             .SingleOrDefault(entity =>
                 string.Equals(entity.Slug, request.BranchSlug, StringComparison.OrdinalIgnoreCase));
 
-        PublicStaffMemberView? selectedStaff = branch?.StaffMembers
-            .SingleOrDefault(entity => entity.Id == request.StaffMemberId);
+        if (branch is null)
+        {
+            return PublicAppointmentRequestCreateResult.Failure(
+                PublicAppointmentRequestCreateOutcome.NotFound,
+                NotFound);
+        }
 
-        if (branch is null || selectedStaff is null)
+        PublicStaffMemberView? selectedStaff = request.StaffMemberId is null
+            ? null
+            : branch.StaffMembers.SingleOrDefault(entity => entity.Id == request.StaffMemberId);
+
+        if (request.StaffMemberId is not null && selectedStaff is null)
         {
             return PublicAppointmentRequestCreateResult.Failure(
                 PublicAppointmentRequestCreateOutcome.NotFound,
@@ -150,7 +158,12 @@ public sealed class PublicAppointmentRequestComposer
                 .Distinct()
                 .ToArray();
 
-            if (requiredSkillIds.Any(requiredSkillId => !selectedStaff.SkillIds.Contains(requiredSkillId)))
+            PublicStaffMemberView[] staffCandidates = GetStaffCandidates(
+                branch,
+                request.StaffMemberId,
+                requiredSkillIds);
+
+            if (staffCandidates.Length == 0)
             {
                 return PublicAppointmentRequestCreateResult.Failure(
                     PublicAppointmentRequestCreateOutcome.Conflict,
@@ -173,31 +186,24 @@ public sealed class PublicAppointmentRequestComposer
             Guid? requiredResourceTypeId = requiredResourceTypeIds.Length == 0
                 ? null
                 : requiredResourceTypeIds[0];
-            IReadOnlyCollection<PublicResourceCandidateView> resourceCandidates =
-                await resourceAvailabilityQueryService.GetActiveResourcesAsync(
+            PublicResourceCandidateView[] resourceCandidates =
+                (await resourceAvailabilityQueryService.GetActiveResourcesAsync(
                     branch.Id,
                     requiredResourceTypeId,
-                    cancellationToken);
-            PublicResourceCandidateView? selectedResource = resourceCandidates
-                .SingleOrDefault(entity => entity.Id == request.ResourceId);
-
-            if (selectedResource is null)
-            {
-                return PublicAppointmentRequestCreateResult.Failure(
-                    PublicAppointmentRequestCreateOutcome.NotFound,
-                    NotFound);
-            }
+                    cancellationToken))
+                .ToArray();
 
             int durationMinutes = variants.Sum(entity => entity.DurationMinutes);
             DateTimeOffset endUtc = request.StartUtc.AddMinutes(durationMinutes);
-
-            if (!await IsSlotAvailableAsync(
+            PublicAppointmentAssignment? assignment = await FindAvailableAssignmentAsync(
                 branch,
-                request.StaffMemberId,
-                selectedResource.Id,
+                staffCandidates,
+                resourceCandidates,
                 request.StartUtc,
                 endUtc,
-                cancellationToken))
+                cancellationToken);
+
+            if (assignment is null)
             {
                 return PublicAppointmentRequestCreateResult.Failure(
                     PublicAppointmentRequestCreateOutcome.Conflict,
@@ -223,8 +229,8 @@ public sealed class PublicAppointmentRequestComposer
                     new CreateAppointmentRequestCommand(
                         customerUserAccountId,
                         branch.Id,
-                        request.StaffMemberId,
-                        selectedResource.Id,
+                        assignment.StaffMemberId,
+                        assignment.ResourceId,
                         request.StartUtc,
                         endUtc,
                         lines,
@@ -445,17 +451,22 @@ public sealed class PublicAppointmentRequestComposer
         }
     }
 
-    private async Task<bool> IsSlotAvailableAsync(
+    private async Task<PublicAppointmentAssignment?> FindAvailableAssignmentAsync(
         PublicBusinessBranchContext branch,
-        Guid staffMemberId,
-        Guid resourceId,
+        PublicStaffMemberView[] staffCandidates,
+        PublicResourceCandidateView[] resourceCandidates,
         DateTimeOffset startUtc,
         DateTimeOffset endUtc,
         CancellationToken cancellationToken)
     {
+        if (staffCandidates.Length == 0 || resourceCandidates.Length == 0)
+        {
+            return null;
+        }
+
         if (!PublicTimeZoneResolver.TryFind(branch.TimeZoneId, out TimeZoneInfo? timeZoneInfo))
         {
-            return false;
+            return null;
         }
 
         DateTime localStart = PublicTimeZoneResolver.ConvertUtcToLocal(startUtc, timeZoneInfo!);
@@ -464,7 +475,7 @@ public sealed class PublicAppointmentRequestComposer
 
         if (DateOnly.FromDateTime(localEnd) != localDate)
         {
-            return false;
+            return null;
         }
 
         DateTimeOffset dayStartUtc = PublicTimeZoneResolver.ConvertLocalToUtc(
@@ -478,12 +489,12 @@ public sealed class PublicAppointmentRequestComposer
                 branch.Id,
                 dayStartUtc,
                 dayEndUtc,
-                [staffMemberId],
+                staffCandidates.Select(entity => entity.Id).ToArray(),
                 cancellationToken);
 
         if (availabilitySnapshot is null)
         {
-            return false;
+            return null;
         }
 
         BranchWorkingHoursView? workingHours = availabilitySnapshot.WorkingHours
@@ -491,7 +502,7 @@ public sealed class PublicAppointmentRequestComposer
 
         if (workingHours is null || workingHours.IsClosed)
         {
-            return false;
+            return null;
         }
 
         DateTime opensAtLocal = localDate.ToDateTime(workingHours.OpensAt, DateTimeKind.Unspecified);
@@ -499,7 +510,7 @@ public sealed class PublicAppointmentRequestComposer
 
         if (localStart < opensAtLocal || localEnd > closesAtLocal)
         {
-            return false;
+            return null;
         }
 
         if (!IsAlignedToSlotGrid(
@@ -507,29 +518,15 @@ public sealed class PublicAppointmentRequestComposer
             opensAtLocal,
             branch.SlotIntervalMinutes ?? slotSearchOptions.Value.SlotIntervalMinutes))
         {
-            return false;
-        }
-
-        if (availabilitySnapshot.StaffUnavailableTimes.Any(entity =>
-            entity.StaffMemberId == staffMemberId
-            && Overlaps(startUtc, endUtc, entity.StartUtc, entity.EndUtc)))
-        {
-            return false;
+            return null;
         }
 
         IReadOnlyCollection<PublicResourceBlockView> resourceBlocks =
             await resourceAvailabilityQueryService.GetResourceBlocksAsync(
-                [resourceId],
+                resourceCandidates.Select(entity => entity.Id).ToArray(),
                 startUtc,
                 endUtc,
                 cancellationToken);
-
-        if (resourceBlocks.Any(entity =>
-            entity.ResourceId == resourceId
-            && Overlaps(startUtc, endUtc, entity.StartUtc, entity.EndUtc)))
-        {
-            return false;
-        }
 
         IReadOnlyCollection<ConfirmedAppointmentBusyTimeView> confirmedBusyTimes =
             await confirmedAppointmentQueryService.GetBusyTimesAsync(
@@ -538,9 +535,34 @@ public sealed class PublicAppointmentRequestComposer
                 endUtc,
                 cancellationToken);
 
-        return !confirmedBusyTimes.Any(entity =>
-            (entity.StaffMemberId == staffMemberId || entity.ResourceId == resourceId)
-            && Overlaps(startUtc, endUtc, entity.StartUtc, entity.EndUtc));
+        foreach (PublicStaffMemberView staff in staffCandidates)
+        {
+            if (availabilitySnapshot.StaffUnavailableTimes.Any(entity =>
+                entity.StaffMemberId == staff.Id
+                && Overlaps(startUtc, endUtc, entity.StartUtc, entity.EndUtc))
+                || confirmedBusyTimes.Any(entity =>
+                    entity.StaffMemberId == staff.Id
+                    && Overlaps(startUtc, endUtc, entity.StartUtc, entity.EndUtc)))
+            {
+                continue;
+            }
+
+            PublicResourceCandidateView? resource = resourceCandidates
+                .FirstOrDefault(entity =>
+                    !resourceBlocks.Any(block =>
+                        block.ResourceId == entity.Id
+                        && Overlaps(startUtc, endUtc, block.StartUtc, block.EndUtc))
+                    && !confirmedBusyTimes.Any(busy =>
+                        busy.ResourceId == entity.Id
+                        && Overlaps(startUtc, endUtc, busy.StartUtc, busy.EndUtc)));
+
+            if (resource is not null)
+            {
+                return new PublicAppointmentAssignment(staff.Id, resource.Id);
+            }
+        }
+
+        return null;
     }
 
     private static bool IsRequestShapeValid(PublicAppointmentRequestCreateRequest request)
@@ -549,8 +571,28 @@ public sealed class PublicAppointmentRequestComposer
             && request.ServiceVariantIds.Count > 0
             && request.ServiceVariantIds.All(entity => entity != Guid.Empty)
             && request.StaffMemberId != Guid.Empty
-            && request.ResourceId != Guid.Empty
             && request.StartUtc != default;
+    }
+
+    private static PublicStaffMemberView[] GetStaffCandidates(
+        PublicBusinessBranchContext branch,
+        Guid? staffMemberId,
+        Guid[] requiredSkillIds)
+    {
+        IEnumerable<PublicStaffMemberView> staffMembers = branch.StaffMembers;
+
+        if (staffMemberId is not null)
+        {
+            staffMembers = staffMembers.Where(entity => entity.Id == staffMemberId);
+        }
+
+        if (requiredSkillIds.Length > 0)
+        {
+            staffMembers = staffMembers.Where(entity =>
+                requiredSkillIds.All(requiredSkillId => entity.SkillIds.Contains(requiredSkillId)));
+        }
+
+        return staffMembers.ToArray();
     }
 
     private static bool IsAlignedToSlotGrid(
@@ -636,7 +678,6 @@ public sealed class PublicAppointmentRequestComposer
             branch.Slug,
             branch.DisplayName,
             request.StaffMemberId,
-            request.ResourceId,
             request.RequestedStartUtc,
             request.RequestedEndUtc,
             request.ExpiresAtUtc,
@@ -668,8 +709,7 @@ public sealed class PublicAppointmentRequestComposer
             $"business={businessSlug.Trim().ToUpperInvariant()}",
             $"branch={request.BranchSlug.Trim().ToUpperInvariant()}",
             $"variants={serviceVariantIds}",
-            $"staff={request.StaffMemberId:D}",
-            $"resource={request.ResourceId:D}",
+            $"staff={request.StaffMemberId?.ToString("D") ?? "ANY"}",
             $"startUtc={request.StartUtc.UtcDateTime:O}");
     }
 
@@ -683,4 +723,8 @@ public sealed class PublicAppointmentRequestComposer
             $"business={businessSlug.Trim().ToUpperInvariant()}",
             $"appointmentRequestId={appointmentRequestId:D}");
     }
+
+    private sealed record PublicAppointmentAssignment(
+        Guid StaffMemberId,
+        Guid ResourceId);
 }

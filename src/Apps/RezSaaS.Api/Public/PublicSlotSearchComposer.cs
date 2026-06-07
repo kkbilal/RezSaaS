@@ -273,8 +273,7 @@ public sealed class PublicSlotSearchComposer
                 endUtc,
                 localStart,
                 localEnd,
-                availableStaff,
-                availableResources));
+                availableStaff));
         }
 
         return slots;

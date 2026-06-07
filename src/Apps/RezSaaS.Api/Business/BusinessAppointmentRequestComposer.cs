@@ -3,6 +3,8 @@ using RezSaaS.Api.Idempotency;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Identity.Application;
+using RezSaaS.Modules.Organization.Application;
+using RezSaaS.Modules.Resources.Application;
 using RezSaaS.Modules.TenantManagement.Application;
 
 namespace RezSaaS.Api.Business;
@@ -18,8 +20,10 @@ public sealed class BusinessAppointmentRequestComposer
     private readonly ApproveAppointmentRequestService approveAppointmentRequestService;
     private readonly TenantBookingAuthorizationService authorizationService;
     private readonly DeclineAppointmentRequestService declineAppointmentRequestService;
+    private readonly BusinessEntityLabelQueryService labelQueryService;
     private readonly CustomerAccountLookupService customerAccountLookupService;
     private readonly BusinessAppointmentRequestQueryService queryService;
+    private readonly ResourceLabelQueryService resourceLabelQueryService;
     private readonly ITenantContextAccessor tenantContextAccessor;
 
     public BusinessAppointmentRequestComposer(
@@ -28,6 +32,8 @@ public sealed class BusinessAppointmentRequestComposer
         ApproveAppointmentRequestService approveAppointmentRequestService,
         DeclineAppointmentRequestService declineAppointmentRequestService,
         CustomerAccountLookupService customerAccountLookupService,
+        BusinessEntityLabelQueryService labelQueryService,
+        ResourceLabelQueryService resourceLabelQueryService,
         ITenantContextAccessor tenantContextAccessor)
     {
         this.authorizationService = authorizationService;
@@ -35,6 +41,8 @@ public sealed class BusinessAppointmentRequestComposer
         this.approveAppointmentRequestService = approveAppointmentRequestService;
         this.declineAppointmentRequestService = declineAppointmentRequestService;
         this.customerAccountLookupService = customerAccountLookupService;
+        this.labelQueryService = labelQueryService;
+        this.resourceLabelQueryService = resourceLabelQueryService;
         this.tenantContextAccessor = tenantContextAccessor;
     }
 
@@ -347,6 +355,18 @@ public sealed class BusinessAppointmentRequestComposer
             await customerAccountLookupService.GetMaskedProfilesAsync(
                 requests.Select(entity => entity.CustomerUserAccountId).ToArray(),
                 cancellationToken);
+        IReadOnlyDictionary<Guid, BranchLabelView> branches =
+            await labelQueryService.GetBranchLabelsAsync(
+                requests.Select(entity => entity.BranchId).ToArray(),
+                cancellationToken);
+        IReadOnlyDictionary<Guid, StaffMemberLabelView> staffMembers =
+            await labelQueryService.GetStaffMemberLabelsAsync(
+                requests.Select(entity => entity.StaffMemberId).ToArray(),
+                cancellationToken);
+        IReadOnlyDictionary<Guid, ResourceLabelView> resources =
+            await resourceLabelQueryService.GetResourceLabelsAsync(
+                requests.Select(entity => entity.ResourceId).ToArray(),
+                cancellationToken);
 
         return requests
             .Select(entity =>
@@ -354,6 +374,9 @@ public sealed class BusinessAppointmentRequestComposer
                 customers.TryGetValue(
                     entity.CustomerUserAccountId,
                     out CustomerAccountMaskView? customer);
+                branches.TryGetValue(entity.BranchId, out BranchLabelView? branch);
+                staffMembers.TryGetValue(entity.StaffMemberId, out StaffMemberLabelView? staff);
+                resources.TryGetValue(entity.ResourceId, out ResourceLabelView? resource);
 
                 return new BusinessAppointmentRequestResponse(
                     entity.Id,
@@ -363,8 +386,12 @@ public sealed class BusinessAppointmentRequestComposer
                         customer?.MaskedEmail ?? string.Empty,
                         customer?.MaskedPhone ?? string.Empty),
                     entity.BranchId,
+                    branch?.DisplayName ?? string.Empty,
+                    branch?.TimeZoneId ?? string.Empty,
                     entity.StaffMemberId,
+                    staff?.DisplayName ?? string.Empty,
                     entity.ResourceId,
+                    resource?.DisplayName ?? string.Empty,
                     entity.RequestedStartUtc,
                     entity.RequestedEndUtc,
                     entity.ExpiresAtUtc,

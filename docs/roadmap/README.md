@@ -17,3 +17,14 @@ Bu yol haritası “kod yazmadan önce doğru parçalama” prensibiyle hazırla
 - Güvenlik, tenancy ve audit minimumları sonraki fazlara ertelenmez.
 - Açık ürün kararları `../12-acik-sorular.md`, alınan kararlar `../06-karar-kaydi.md` içinde izlenir.
 
+## Frontend Paralel Planı
+
+Frontend; ürün/backend fazlarıyla karışmaması için `F0-F7` olarak ayrı fakat
+bağımlılıkları açık bir planla ilerler:
+
+- Mimari ve tasarım kararları: `../23-frontend-mimari-tasarim-kararlari.md`
+- Uygulama dilimleri: `../24-frontend-uygulama-plani.md`
+
+Frontend fazı, ihtiyaç duyduğu backend endpoint/authz/tenant sözleşmesi
+tamamlanmadan sahte veri veya geçici güvenlik bypass'ı ile kapatılmaz.
+

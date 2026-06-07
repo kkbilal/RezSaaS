@@ -5,5 +5,4 @@ public sealed record PublicSlotResponse(
     DateTimeOffset EndUtc,
     DateTime LocalStart,
     DateTime LocalEnd,
-    IReadOnlyCollection<PublicSlotStaffResponse> StaffCandidates,
-    IReadOnlyCollection<PublicSlotResourceResponse> ResourceCandidates);
+    IReadOnlyCollection<PublicSlotStaffResponse> StaffCandidates);

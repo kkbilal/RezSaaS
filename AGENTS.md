@@ -156,6 +156,9 @@ Slot bloklanmadığı için onay ekranında yarış olur:
 - Public rezervasyon isteği oluşturma auth zorunludur; tenant header beklemez, tenant context doğrulanmış `businessSlug` üzerinden geçici set edilir ve request `PendingApproval` olarak kalır.
 - Create öncesi staff/resource/variant/branch eşleşmesi ve slot uygunluğu doğrulanmadan `AppointmentRequest` üretilmez.
 - Public slot ve create doğrulaması `ServiceRequiredSkill` + `StaffSkill` eşleşmesini zorunlu uygular; unvan veya display name bookability yerine kullanılamaz.
+- Public booking create kontratında staff tercihi opsiyoneldir; staff seçilmezse API uygun staff atar.
+- Public/customer yüzeylerinde resource GUID veya resource display name gösterilmez; resource seçimi internal kapasite atamasıdır.
+- Internal resource ataması kullanıcıya açık slot hold değildir; persisted `AppointmentRequest` yine tam olarak `1 Staff + 1 Resource` taşır.
 - Branch public slot ayarları (`SlotIntervalMinutes`, `MaxPublicSlots`) varsa config default'larını override eder; ayarlar pozitif değer olmak zorundadır.
 - İşletme onay/ret endpoint'leri tenant header + authenticated user + tenant membership authz ister; `BusinessOwner` tenant-wide, `BranchManager` branch-scoped, `Staff` varsayılan deny.
 - Approve/decline API'leri mevcut Booking application servislerini kullanır; audit, transactional outbox ve `Superseded` davranışı bypass edilmez.
@@ -360,4 +363,31 @@ Her yeni özellikte aşağıdaki etkileri kontrol et. Etki varsa ilgili doküman
 - Yeni DB tablosu: tenant-scoped/global kararı, index, migration ve saklama politikası
 - Yeni background job: explicit tenant scope, idempotency, retry ve audit/telemetry
 - Yeni modül bağımlılığı: doğrudan reference ekleme; önce contract/event ve ADR
+
+---
+
+## 13) Frontend Sınırları
+
+Frontend geliştirmeden önce:
+
+- `docs/23-frontend-mimari-tasarim-kararlari.md`
+- `docs/24-frontend-uygulama-plani.md`
+
+okunur.
+
+- Frontend ayrı repo yerine `src/Apps/RezSaaS.Web` altında başlar; yeni web app,
+  ayrı repo veya micro-frontend için ADR gerekir.
+- Browser auth cookie tabanlıdır; bearer/access token browser storage'a yazılmaz.
+- Business tenant header yalnızca authenticated backend context'inden merkezi API
+  client tarafından eklenir; kullanıcıya serbest tenant GUID seçtirilmez.
+- API DTO'ları elle çoğaltılmaz; versioned OpenAPI artifact ve üretilen TypeScript
+  tipleri kullanılır.
+- Frontend route guard backend authz'nin yerine geçmez.
+- `PendingApproval`, confirmed appointment gibi gösterilmez; branch timezone'u
+  browser timezone'una sessizce çevrilmez.
+- Tasarım sistemi Figma + semantic token + Storybook disiplinini izler. Hazır
+  component library görünümü, sahte dashboard metriği ve backend'i olmayan form
+  teslimat kabul edilmez.
+- Her frontend dilimi lint, typecheck, test, Storybook a11y, ilgili Playwright
+  journey ve responsive visual QA ile kapanır.
 

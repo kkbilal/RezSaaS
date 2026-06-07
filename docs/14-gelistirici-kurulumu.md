@@ -97,6 +97,22 @@ artifacts/openapi/rezsaas-api-v1.json
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Generate-OpenApiTypes.ps1
 ```
 
+Global `pnpm`/`npx` yoksa, `pnpm install` sonrası yerel CLI doğrudan Node yolu ile
+çalıştırılabilir:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Generate-OpenApiTypes.ps1 -NodePath "C:\Path\To\node.exe"
+```
+
+Web client iskeleti `src/Apps/RezSaaS.Web` altındadır. `pnpm install` sonrası
+aynı işlem web app içinden de çalıştırılabilir:
+
+```powershell
+Set-Location src/Apps/RezSaaS.Web
+pnpm generate:api
+pnpm typecheck
+```
+
 ## Yerel PostgreSQL
 
 - Image: `postgres:18.4-alpine3.23`

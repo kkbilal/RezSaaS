@@ -26,6 +26,18 @@ public sealed class TenantLifecycleQueryService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Guid>> GetTenantIdsAsync(
+        int take = 500,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Tenants
+            .AsNoTracking()
+            .OrderBy(entity => entity.CreatedAtUtc)
+            .Take(Math.Clamp(take, 1, 5000))
+            .Select(entity => entity.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> IsActiveAsync(
         Guid tenantId,
         CancellationToken cancellationToken = default)

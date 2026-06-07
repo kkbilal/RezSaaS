@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -48,6 +49,23 @@ public sealed class IdentityModule : ModuleBase
         services.AddDbContext<IdentityDbContext>(options => options.UseNpgsql(connectionString));
         services.Configure<PlatformAdminBootstrapOptions>(
             configuration.GetSection(PlatformAdminBootstrapOptions.SectionName));
+        services.AddOptions<StepUpSessionOptions>()
+            .Bind(configuration.GetSection(StepUpSessionOptions.SectionName))
+            .Validate(
+                options =>
+                {
+                    try
+                    {
+                        options.Validate();
+                        return true;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        return false;
+                    }
+                },
+                "Step-up session options are invalid.")
+            .ValidateOnStart();
         services.AddAuthorization(options =>
         {
             options.AddPolicy(
@@ -57,7 +75,7 @@ public sealed class IdentityModule : ModuleBase
                 AuthorizationPolicies.PlatformAdminWithStepUp,
                 policy => policy
                     .RequireRole(PlatformRoleNames.Administrator)
-                    .RequireClaim("amr", "mfa"));
+                    .AddRequirements(new PlatformStepUpRequirement(StepUpSessionService.MethodMfa)));
             options.AddPolicy(
                 AuthorizationPolicies.PlatformSupportOrAdmin,
                 policy => policy.RequireRole(
@@ -97,6 +115,9 @@ public sealed class IdentityModule : ModuleBase
         services.AddScoped<UserAccountClosureService>();
         services.AddScoped<UserAccountExistenceService>();
         services.AddScoped<UserTransactionalEmailService>();
+        services.AddScoped<StepUpSessionService>();
+        services.AddScoped<IAuthorizationHandler, PlatformStepUpAuthorizationHandler>();
+        services.AddHttpContextAccessor();
         services.AddScoped<IPlatformAdminBootstrapService, PlatformAdminBootstrapService>();
         object emailSender = identityOptions.DeliveryMode switch
         {

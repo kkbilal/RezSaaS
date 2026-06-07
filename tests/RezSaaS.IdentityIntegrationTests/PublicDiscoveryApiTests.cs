@@ -85,9 +85,7 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
 
         JsonElement staff = slot.GetProperty("staffCandidates").EnumerateArray().Single();
         Assert.Equal(seed.StaffMemberId, staff.GetProperty("id").GetGuid());
-
-        JsonElement resource = slot.GetProperty("resourceCandidates").EnumerateArray().Single();
-        Assert.Equal("Chair 1", resource.GetProperty("displayName").GetString());
+        Assert.False(slot.TryGetProperty("resourceCandidates", out _));
     }
 
     [Fact]
@@ -134,8 +132,6 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
             {
                 branchSlug = seed.BranchSlug,
                 serviceVariantIds = new[] { seed.ServiceVariantId },
-                staffMemberId = seed.StaffMemberId,
-                resourceId = seed.ResourceId,
                 startUtc = seed.AvailableSlotStartUtc,
             });
 
@@ -206,7 +202,6 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
                 branchSlug = seed.BranchSlug,
                 serviceVariantIds = new[] { seed.ServiceVariantId },
                 staffMemberId = seed.StaffMemberId,
-                resourceId = seed.ResourceId,
                 startUtc = seed.AvailableSlotStartUtc.AddMinutes(1),
             });
 
@@ -228,8 +223,6 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
             {
                 branchSlug = seed.BranchSlug,
                 serviceVariantIds = new[] { seed.ServiceVariantId },
-                staffMemberId = seed.StaffMemberId,
-                resourceId = seed.ResourceId,
                 startUtc = seed.AvailableSlotStartUtc,
             });
 
@@ -283,6 +276,7 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
             .EnumerateArray()
             .Single();
         Assert.Equal(appointmentRequestId, listedRequest.GetProperty("id").GetGuid());
+        Assert.False(listedRequest.TryGetProperty("resourceId", out _));
 
         using HttpRequestMessage detailRequest = new(
             HttpMethod.Get,
@@ -292,6 +286,34 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         HttpResponseMessage detailResponse = await fixture.Client.SendAsync(detailRequest);
 
         Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
+        using JsonDocument detailBody =
+            JsonDocument.Parse(await detailResponse.Content.ReadAsStringAsync());
+        Assert.False(detailBody.RootElement.TryGetProperty("resourceId", out _));
+
+        using HttpRequestMessage globalHistoryRequest = new(
+            HttpMethod.Get,
+            "/api/customer/appointment-history?status=PendingApproval");
+        globalHistoryRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", accessToken);
+
+        HttpResponseMessage globalHistoryResponse =
+            await fixture.Client.SendAsync(globalHistoryRequest);
+
+        Assert.Equal(HttpStatusCode.OK, globalHistoryResponse.StatusCode);
+
+        using JsonDocument globalHistoryBody =
+            JsonDocument.Parse(await globalHistoryResponse.Content.ReadAsStringAsync());
+        JsonElement historyItem = globalHistoryBody.RootElement
+            .GetProperty("items")
+            .EnumerateArray()
+            .Single();
+        Assert.Equal("AppointmentRequest", historyItem.GetProperty("itemType").GetString());
+        Assert.Equal(appointmentRequestId, historyItem.GetProperty("appointmentRequestId").GetGuid());
+        Assert.Equal(seed.Slug, historyItem.GetProperty("businessSlug").GetString());
+        Assert.Equal("Atlas Hair", historyItem.GetProperty("businessDisplayName").GetString());
+        Assert.Equal("Kadikoy", historyItem.GetProperty("branchDisplayName").GetString());
+        Assert.Equal("Ayse Usta", historyItem.GetProperty("staffMemberDisplayName").GetString());
+        Assert.False(historyItem.TryGetProperty("resourceId", out _));
 
         using HttpRequestMessage cancelRequest = new(
             HttpMethod.Post,
@@ -345,6 +367,10 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         Assert.Equal(appointmentRequestId, pendingItem.GetProperty("id").GetGuid());
         Assert.Equal("PendingApproval", pendingItem.GetProperty("status").GetString());
         Assert.Equal("b***@example.test", pendingItem.GetProperty("customer").GetProperty("maskedEmail").GetString());
+        Assert.Equal("Kadikoy", pendingItem.GetProperty("branchDisplayName").GetString());
+        Assert.Equal("Europe/Istanbul", pendingItem.GetProperty("branchTimeZoneId").GetString());
+        Assert.Equal("Ayse Usta", pendingItem.GetProperty("staffMemberDisplayName").GetString());
+        Assert.Equal("Chair 1", pendingItem.GetProperty("resourceDisplayName").GetString());
 
         using HttpRequestMessage detailRequest = new(
             HttpMethod.Get,
@@ -391,6 +417,27 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
         Assert.Equal(
             appointmentId,
             approveReplayBody.RootElement.GetProperty("appointmentId").GetGuid());
+
+        using HttpRequestMessage globalHistoryRequest = new(
+            HttpMethod.Get,
+            "/api/customer/appointment-history");
+        globalHistoryRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", customerToken);
+        HttpResponseMessage globalHistoryResponse =
+            await fixture.Client.SendAsync(globalHistoryRequest);
+
+        Assert.Equal(HttpStatusCode.OK, globalHistoryResponse.StatusCode);
+
+        using JsonDocument globalHistoryBody =
+            JsonDocument.Parse(await globalHistoryResponse.Content.ReadAsStringAsync());
+        JsonElement appointmentItem = globalHistoryBody.RootElement
+            .GetProperty("items")
+            .EnumerateArray()
+            .Single();
+        Assert.Equal("Appointment", appointmentItem.GetProperty("itemType").GetString());
+        Assert.Equal(appointmentId, appointmentItem.GetProperty("appointmentId").GetGuid());
+        Assert.Equal(appointmentRequestId, appointmentItem.GetProperty("appointmentRequestId").GetGuid());
+        Assert.Equal("Confirmed", appointmentItem.GetProperty("status").GetString());
     }
 
     [Fact]
@@ -703,7 +750,6 @@ public sealed class PublicDiscoveryApiTests : IClassFixture<IdentityApiFixture>
                 branchSlug = seed.BranchSlug,
                 serviceVariantIds = new[] { seed.ServiceVariantId },
                 staffMemberId = seed.StaffMemberId,
-                resourceId = seed.ResourceId,
                 startUtc = seed.AvailableSlotStartUtc,
             });
 

@@ -184,6 +184,44 @@ namespace RezSaaS.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.ToTable("IdentityAuditLogEntries", "identity");
                 });
 
+            modelBuilder.Entity("RezSaaS.Modules.Identity.Domain.StepUpSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("UserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserAccountId", "ExpiresAtUtc");
+
+                    b.ToTable("StepUpSessions", "identity");
+                });
+
             modelBuilder.Entity("RezSaaS.Modules.Identity.Domain.UserAccount", b =>
                 {
                     b.Property<Guid>("Id")

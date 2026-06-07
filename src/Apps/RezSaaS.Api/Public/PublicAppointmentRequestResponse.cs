@@ -6,7 +6,6 @@ public sealed record PublicAppointmentRequestResponse(
     string BranchSlug,
     string BranchDisplayName,
     Guid StaffMemberId,
-    Guid ResourceId,
     DateTimeOffset RequestedStartUtc,
     DateTimeOffset RequestedEndUtc,
     DateTimeOffset ExpiresAtUtc,

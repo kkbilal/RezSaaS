@@ -50,6 +50,8 @@ Bu modül tenant yaşam döngüsü için domain/persistence temelini ve Phase 3 
 - Booking approval yüzeyi için `BusinessOwner` tenant-wide, `BranchManager` branch-scoped authz kullanılır; `Staff` onay/ret yetkisi almaz.
 - Frontend işletme bağlamı `GET /api/business/context` üzerinden authenticated kullanıcının aktif tenant membership listesinden üretilir; kullanıcıya serbest tenant GUID seçtirilmez.
 - Business context yalnızca `Active` tenant + `Active` membership döndürür; `BusinessOwner` tenant-wide, `BranchManager` branch-scoped capability alır, `Staff` varsayılan olarak yönetim capability'si almaz.
+- Global müşteri appointment history tenant'ları Tenant Management üzerinden enumerate eder, her tenant için explicit `TenantId` set eder ve yalnızca müşterinin kendi request/appointment kayıtlarını döndürür.
+- Business appointment request read model'i Organization/Resources label servisleri üzerinden branch/staff/resource görünen adlarını döndürür; bu label'lar endpoint authz yerine geçmez.
 - Endpoint açıldığında her komut authn, authz, tenant isolation, audit, rate limit ve idempotency değerlendirmesinden geçmelidir.
 - Platform admin tenant provisioning endpoint'i owner kullanıcısının aktif `UserAccount` olduğunu Identity üzerinden doğrular; Tenant Management modülü Identity assembly'sine doğrudan referans almaz.
 

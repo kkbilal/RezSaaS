@@ -35,7 +35,9 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
         using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         JsonElement paths = body.RootElement.GetProperty("paths");
         Assert.True(paths.TryGetProperty("/api/session/bootstrap", out _));
+        Assert.True(paths.TryGetProperty("/api/session/step-up", out _));
         Assert.True(paths.TryGetProperty("/api/business/context", out _));
+        Assert.True(paths.TryGetProperty("/api/customer/appointment-history", out _));
     }
 
     [Fact]

@@ -47,3 +47,18 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - Bir tenant içinde birden fazla `Business` desteklenecekse MVP sınırı hangi noktada açılacak?
 - `BranchManager`/`Staff` tenant membership branch scope doğrulaması Organization branch lifecycle kaynağına hangi contract ile bağlanacak?
 - Tenant suspend/close sonrasında açık `PendingApproval` taleplerinin otomatik kapanma/expiry politikası hangi integration event veya maintenance job ile yürütülecek?
+
+## Frontend ve API Sözleşmesi
+
+- Authenticated session/bootstrap response'u platform rolleri, aktif tenant
+  membership'leri ve MFA/step-up geçerlilik süresini hangi tekil kontratla
+  döndürecek?
+- Public booking'de staff tercihi "fark etmez" olduğunda exact staff ve internal
+  resource create sırasında server tarafından nasıl seçilecek ve concurrency
+  altında nasıl yeniden doğrulanacak?
+- Müşterinin tüm işletmelerdeki request ve confirmed appointment geçmişi hangi
+  global customer read model'i ile sunulacak?
+- Business panel context response'u tenant, branch scope, branch/staff/resource
+  görünen adları ve timezone bilgisini hangi composition contract ile döndürecek?
+- Discovery filtreleri için kategori/şehir/ilçe facet taksonomisi statik ürün
+  sözlüğü mü, backend read model'i mi olacak?

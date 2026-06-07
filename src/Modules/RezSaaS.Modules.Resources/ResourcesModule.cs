@@ -20,5 +20,6 @@ public sealed class ResourcesModule : ModuleBase
         services.AddDbContext<ResourcesDbContext>(
             options => options.UseNpgsql(connectionString));
         services.AddScoped<PublicResourceAvailabilityQueryService>();
+        services.AddScoped<ResourceLabelQueryService>();
     }
 }

@@ -37,7 +37,9 @@
 - İşletme frontend bağlamı yalnızca authenticated kullanıcının aktif tenant membership'lerinden üretilir; `GET /api/business/context` tenant header istemez ve serbest tenant GUID seçimine izin vermez.
 - Business context capability'leri endpoint authz yerine geçmez; her işletme operasyonu yine tenant header, membership scope ve ilgili application service kontrolünden geçer.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
+- Public/customer booking response'ları internal resource GUID veya resource görünen adı taşımaz; resource yalnızca işletme operasyon panelinde label olarak döner.
 - Müşteri kendi talep listesi/detayı için yalnızca kendi `UserAccount` kapsamında veri görebilir; başka kullanıcının talebi `404` kabul edilir.
+- Müşteri global appointment history endpoint'i slug bilmeden tüm tenant'lar üzerinde yalnızca kendi request/confirmed appointment kayıtlarını görebilir.
 
 ## Yetki Özeti
 

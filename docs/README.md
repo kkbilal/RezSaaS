@@ -28,6 +28,8 @@
 - `20-admin-abuse-control-plane.md`: Abuse event inceleme, süreli sanction, revoke ve booking enforce sınırları
 - `21-isletme-abuse-raporu-strike-risk.md`: İşletme abuse raporu, admin review, strike ve risk seviyesi sınırları
 - `22-abuse-itiraz-hesap-kapatma.md`: Müşteri itirazı, iki-admin onaylı kalıcı kapatma ve Identity orchestration sınırları
+- `23-frontend-mimari-tasarim-kararlari.md`: Frontend repo, runtime, güvenlik, API sözleşmesi ve tasarım sistemi kararları
+- `24-frontend-uygulama-plani.md`: Backend fazlarına bağlı frontend `F0-F7` uygulama planı
 - `25-platform-bildirim-outbox.md`: Platform-global transactional e-posta outbox'ı ve closure bildirim güvenliği
 - `26-platform-operasyon-reconciliation-runbook.md`: Notification/closure alarm eşikleri ve güvenli manuel kurtarma adımları
 

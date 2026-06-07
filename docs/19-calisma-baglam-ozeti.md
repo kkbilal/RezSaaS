@@ -37,6 +37,16 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: salt-okunur notification/closure reconciliation, ayrı operasyon health yüzeyi, step-up admin snapshot'ı, PII-minimum alarmlar ve manuel kurtarma runbook'u.
   - Sıradaki dilimler: backup/restore tatbikatı, genel incident runbook ve CI güvenlik kapıları.
 
+## Frontend Durumu
+
+- Frontend tam UI geliştirmesi henüz başlatılmadı; OpenAPI tabanlı API client iskeleti `src/Apps/RezSaaS.Web` altında başladı.
+- Aynı repo içinde `src/Apps/RezSaaS.Web` altında tek Next.js web uygulamasıyla
+  başlama kararı alındı; ayrı repo ve micro-frontend ilk fazda kullanılmayacak.
+- Frontend mimari/tasarım kararları `23-frontend-mimari-tasarim-kararlari.md`,
+  `F0-F7` uygulama sırası `24-frontend-uygulama-plani.md` içindedir.
+- İlk kapı tamamlandı: OpenAPI artifact, session/bootstrap, business context, MFA step-up session, global customer history, business labels ve optional staff/internal resource kontratları uygulanmıştır.
+- Sıradaki frontend adımı: `pnpm install`, gerçek generated API types, ardından F0/F1 route ve tasarım sistemi iskeleti.
+
 ## Çalışma Disiplini
 
 - Kullanıcı commit izni verdi; push işlemlerini kullanıcı yapar.

@@ -32,3 +32,9 @@ Bu hedefler ilk sürüm için doğrulanacak SLO/NFR taslağıdır. Kodlama sıra
 
 - Public işletme sayfaları indexlenebilir, paylaşılabilir ve SSR/SSG uyumlu olmalıdır.
 - Formlar klavye ile kullanılabilir ve temel erişilebilirlik kontrolünden geçmelidir.
+- Frontend hedefi WCAG 2.2 AA'dır; otomatik axe kontrolleri manuel klavye ve
+  yardımcı teknoloji incelemesinin yerine geçmez.
+- Public sayfalarda 75. percentile hedefleri `LCP <= 2.5s`, `INP <= 200ms` ve
+  `CLS <= 0.1` olarak ölçülür.
+- Private customer/business/platform route'ları indexlenmez; public profil
+  metadata, canonical, sitemap ve paylaşım görselleriyle doğrulanır.

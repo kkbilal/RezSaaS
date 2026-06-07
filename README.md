@@ -21,6 +21,8 @@ Türkiye odaklı, çoklu işletme/şube/personel/kaynak (koltuk/oda/yatak/istasy
 - `docs/12-acik-sorular.md`: Uygulamaya geçmeden önce kapanacak sorular
 - `docs/13-referanslar.md`: Resmi teknik ve uyumluluk referansları
 - `docs/22-abuse-itiraz-hesap-kapatma.md`: Müşteri itirazı ve kalıcı hesap kapatma güvenlik akışı
+- `docs/23-frontend-mimari-tasarim-kararlari.md`: Frontend mimari ve tasarım sistemi kararları
+- `docs/24-frontend-uygulama-plani.md`: Frontend fazları ve uygulama sırası
 
 ## Not
 

@@ -549,6 +549,26 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             .SingleAsync();
     }
 
+    public async Task<string> EnableTwoFactorAndGenerateRecoveryCodeAsync(string email)
+    {
+        using IServiceScope scope = factory!.Services.CreateScope();
+        UserManager<UserAccount> userManager =
+            scope.ServiceProvider.GetRequiredService<UserManager<UserAccount>>();
+        UserAccount user = await userManager.FindByEmailAsync(email)
+            ?? throw new InvalidOperationException($"User '{email}' was not found.");
+
+        IdentityResult resetKeyResult = await userManager.ResetAuthenticatorKeyAsync(user);
+        Assert.True(resetKeyResult.Succeeded);
+        IdentityResult enableResult = await userManager.SetTwoFactorEnabledAsync(user, true);
+        Assert.True(enableResult.Succeeded);
+
+        IEnumerable<string>? recoveryCodes =
+            await userManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 1);
+
+        return recoveryCodes?.Single()
+            ?? throw new InvalidOperationException("A recovery code was not generated.");
+    }
+
     public async Task<PlatformAdminBootstrapResult> BootstrapPlatformAdminAsync(
         string email,
         string password,

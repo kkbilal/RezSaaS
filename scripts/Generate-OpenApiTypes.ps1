@@ -3,7 +3,9 @@ param(
 
     [string] $WebAppPath = "src/Apps/RezSaaS.Web",
 
-    [string] $OutputPath = "src/shared/api/rezsaas-api.generated.ts"
+    [string] $OutputPath = "src/shared/api/rezsaas-api.generated.ts",
+
+    [string] $NodePath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,7 +29,32 @@ New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 
 Push-Location $resolvedWebAppPath
 try {
-    npx --yes openapi-typescript $resolvedOpenApiPath --output $resolvedOutputPath
+    $pnpm = Get-Command pnpm -ErrorAction SilentlyContinue
+    $npx = Get-Command npx -ErrorAction SilentlyContinue
+    $localOpenApiTypescript = Join-Path $resolvedWebAppPath "node_modules/openapi-typescript/bin/cli.js"
+
+    if ($pnpm) {
+        pnpm exec openapi-typescript $resolvedOpenApiPath --output $resolvedOutputPath
+    }
+    elseif ($npx) {
+        npx --yes openapi-typescript@7.13.0 $resolvedOpenApiPath --output $resolvedOutputPath
+    }
+    elseif ((Test-Path -LiteralPath $localOpenApiTypescript) -and ($NodePath -or (Get-Command node -ErrorAction SilentlyContinue))) {
+        $nodeExecutable = if ($NodePath) { $NodePath } else { (Get-Command node -ErrorAction Stop).Source }
+
+        if (-not (Test-Path -LiteralPath $nodeExecutable)) {
+            throw "Node executable '$nodeExecutable' was not found."
+        }
+
+        & $nodeExecutable $localOpenApiTypescript $resolvedOpenApiPath --output $resolvedOutputPath
+    }
+    else {
+        throw "Neither pnpm nor npx is available, and local openapi-typescript cannot be run. Install Node.js with pnpm 11, run pnpm install, or pass -NodePath to this script."
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "OpenAPI TypeScript generation failed with exit code $LASTEXITCODE."
+    }
 }
 finally {
     Pop-Location

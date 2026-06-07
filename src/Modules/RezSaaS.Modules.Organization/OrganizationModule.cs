@@ -32,6 +32,7 @@ public sealed class OrganizationModule : ModuleBase
                 "Public discovery options must use positive values and MaxTake must be at least DefaultTake.")
             .ValidateOnStart();
         services.AddScoped<PublicBusinessDirectoryService>();
+        services.AddScoped<BusinessEntityLabelQueryService>();
     }
 
     public override void MapEndpoints(IEndpointRouteBuilder endpoints)
