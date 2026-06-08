@@ -64,7 +64,7 @@ Operasyon:
 - Veri envanteri + saklama süreleri
 - Erişim matrisi
 - Silme/anonymization akışları
-- Backup şifreleme ve incident runbook
+- Backup şifreleme ve incident runbook (`27-backup-restore-tatbikat-runbook.md`, `28-genel-incident-runbook.md`)
 - İhlal bildirim süreçleri (72 saat çerçevesi için operasyon planı)
 - Hassas müşteri notları serbest metin olarak sınırsız tutulmaz; minimum veri ilkesi uygulanır.
 
@@ -90,5 +90,5 @@ Operasyon:
 
 - State değiştiren endpoint'lerde CSRF stratejisi, güvenli cookie/token ayarları ve origin kontrolü mimari kararla sabitlenir.
 - Input doğrulama, parametrik sorgu ve dosya yükleme sınırlamaları merkezi uygulanır.
-- Dependency taraması, secret taraması ve temel SAST CI kapısı olarak planlanır.
+- Dependency taraması, secret taraması ve temel SAST CI kapısı workflow olarak uygulanır.
 - Audit log append-only yaklaşımıyla tutulur; uygulama kullanıcıları geçmiş audit kayıtlarını değiştiremez.

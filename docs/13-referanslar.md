@@ -8,6 +8,7 @@ Bu liste dokümanlardaki teknik yönü destekleyen bir başlangıç setidir. Fiy
 - Azure multitenant mimari rehberi: <https://learn.microsoft.com/en-us/azure/architecture/guide/multitenant/overview>
 - PostgreSQL range types: <https://www.postgresql.org/docs/current/rangetypes.html>
 - PostgreSQL constraints: <https://www.postgresql.org/docs/current/ddl-constraints.html>
+- PostgreSQL backup/restore: <https://www.postgresql.org/docs/current/backup.html>
 - PostgreSQL Docker Official Image: <https://hub.docker.com/_/postgres>
 - .NET Windows kurulumu: <https://learn.microsoft.com/en-us/dotnet/core/install/windows>
 - ASP.NET Core Identity API authorization: <https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity-api-authorization>
@@ -30,6 +31,9 @@ Bu liste dokümanlardaki teknik yönü destekleyen bir başlangıç setidir. Fiy
 - OWASP Logging Cheat Sheet: <https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html>
 - WCAG 2.2: <https://www.w3.org/TR/WCAG22/>
 - Core Web Vitals: <https://web.dev/articles/vitals>
+- GitHub Actions workflow syntax: <https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions>
+- GitHub CodeQL: <https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql>
+- Gitleaks: <https://github.com/gitleaks/gitleaks>
 
 ## Uyum ve Bildirim
 

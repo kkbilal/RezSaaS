@@ -30,8 +30,9 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `BookableSlot` | Public yüzeyde gösterilen, talep gönderilebilir zaman aralığı | `PendingApproval` ile bloklanmaz; confirmed appointment, staff unavailable ve resource block ile filtrelenir |
 | `AppointmentRequest` | Müşterinin işletmeye gönderdiği rezervasyon talebi | Slotu bloklamaz; `PendingApproval`, `Approved`, `Declined`, `Expired` veya `Superseded` ile kapanır |
 | `AppointmentRequestLine` | Talep içindeki hizmet satırı | Süre ve fiyat snapshot içerir |
-| `Appointment` | İşletme tarafından onaylanmış kesin rezervasyon | Staff ve resource zamanını bloklar |
+| `Appointment` | İşletme tarafından onaylanmış kesin rezervasyon | `Confirmed` iken staff ve resource zamanını bloklar; `Cancelled`, `Completed`, `NoShow` veya `Rebooked` ile operasyonel kapanır |
 | `AppointmentLine` | Kesin rezervasyon içindeki hizmet satırı | Talep satırından snapshot taşır |
+| `AppointmentBusinessNote` | İşletmenin appointment üzerinde tuttuğu iç operasyon notu | Müşteri response'larına taşınmaz; actor ve zaman izi tutulur |
 | `BookingIdempotencyRecord` | Booking komut tekrarlarını tenant+actor+operation kapsamında takip eden teknik kayıt | Raw idempotency key saklanmaz; hash ve response özeti tutulur |
 | `TransactionalMessage` | Rezervasyon gibi mevcut işlemle ilgili operasyonel bildirim | Pazarlama mesajından ayrıdır |
 | `PlatformTransactionalMessage` | Tenant'a bağlı olmayan hesap/abuse operasyonları için `UserAccountId` hedefli transactional outbox kaydı | Raw e-posta taşımaz; alıcıyı Identity çözer, delivery key ile idempotent işlenir |

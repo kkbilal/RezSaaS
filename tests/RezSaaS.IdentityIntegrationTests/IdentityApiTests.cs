@@ -37,6 +37,9 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
         Assert.True(paths.TryGetProperty("/api/session/bootstrap", out _));
         Assert.True(paths.TryGetProperty("/api/session/step-up", out _));
         Assert.True(paths.TryGetProperty("/api/business/context", out _));
+        Assert.True(paths.TryGetProperty("/api/business/appointments", out _));
+        Assert.True(paths.TryGetProperty("/api/business/appointments/{appointmentId}", out _));
+        Assert.True(paths.TryGetProperty("/api/business/resources/{resourceId}/blocks", out _));
         Assert.True(paths.TryGetProperty("/api/customer/appointment-history", out _));
     }
 

@@ -17,6 +17,12 @@ Bu yol haritası “kod yazmadan önce doğru parçalama” prensibiyle hazırla
 - Güvenlik, tenancy ve audit minimumları sonraki fazlara ertelenmez.
 - Açık ürün kararları `../12-acik-sorular.md`, alınan kararlar `../06-karar-kaydi.md` içinde izlenir.
 
+## Mevcut Durum
+
+- Phase 1, Phase 2 ve Phase 3 tamamlandı.
+- Sıradaki ürün fazı Phase 4 ödeme/gelir optimizasyonu hazırlığıdır.
+- Paralel uygulama adımı frontend F0/F1 iskeleti ve auth/session UX'idir.
+
 ## Frontend Paralel Planı
 
 Frontend; ürün/backend fazlarıyla karışmaması için `F0-F7` olarak ayrı fakat

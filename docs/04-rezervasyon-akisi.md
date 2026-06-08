@@ -10,9 +10,10 @@
 - `Expired`: istek zaman aşımı ile kapandı
 - `Superseded`: aynı staff veya resource zaman aralığı artık confirmed appointment ile karşılanamadığı için kapandı
 - `CancelledByCustomer`
-- `CancelledByBusiness`
+- `Cancelled`: işletme confirmed appointment'ı iptal etti
 - `Completed`
 - `NoShow`
+- `Rebooked`: eski appointment yeni bir `Confirmed` appointment'a taşındı
 
 ## Temel kurallar
 
@@ -24,6 +25,9 @@
 - İşletme, TTL dolmadan onay/ret verebilir; TTL dolduktan sonra istek kapanmış sayılır (onaylanamaz).
 - İşletme onayı transaction içinde çalışır; DB constraint çakışması varsa onay reddedilir.
 - İşletme bir isteği onayladığında, artık karşılanamayacak çakışan `PendingApproval` istekleri `Superseded` gerekçesiyle kapatılır.
+- Business appointment operasyonları tenant header + authenticated user + membership authz ister; komutlar `Idempotency-Key` destekler.
+- `Complete` yalnız appointment end zamanından sonra, `NoShow` yalnız appointment start zamanından sonra uygulanır.
+- Rebook eski appointment'ı `Rebooked` yapar, yeni `Confirmed` appointment üretir ve staff/resource conflict kontrolünü tekrar çalıştırır.
 - `Confirmed` olmayan randevularda ödeme yok; bildirim sadece transactional seviyede başlar.
 
 ## Durum geçişleri
@@ -34,9 +38,10 @@
 | `PendingApproval` | İşletme reddeder | `Declined` |
 | `PendingApproval` | TTL dolar | `Expired` |
 | `Confirmed` | Müşteri iptal eder | `CancelledByCustomer` |
-| `Confirmed` | İşletme iptal eder | `CancelledByBusiness` |
+| `Confirmed` | İşletme iptal eder | `Cancelled` |
 | `Confirmed` | Hizmet tamamlanır | `Completed` |
 | `Confirmed` | Müşteri gelmez | `NoShow` |
+| `Confirmed` | İşletme yeni zamana taşır | Eski appointment `Rebooked`, yeni appointment `Confirmed` |
 
 Her komut idempotent olmalı ve actor, zaman, gerekçe ile auditlenmelidir.
 

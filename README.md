@@ -23,10 +23,12 @@ Türkiye odaklı, çoklu işletme/şube/personel/kaynak (koltuk/oda/yatak/istasy
 - `docs/22-abuse-itiraz-hesap-kapatma.md`: Müşteri itirazı ve kalıcı hesap kapatma güvenlik akışı
 - `docs/23-frontend-mimari-tasarim-kararlari.md`: Frontend mimari ve tasarım sistemi kararları
 - `docs/24-frontend-uygulama-plani.md`: Frontend fazları ve uygulama sırası
+- `docs/27-backup-restore-tatbikat-runbook.md`: Backup/restore tatbikat runbook'u
+- `docs/28-genel-incident-runbook.md`: Genel incident runbook'u
 
 ## Not
 
-Repo dokümantasyon-first başlatıldı. Phase 1 ve Phase 2 tamamlandı; Phase 3 güvenlik/operasyon dilimleri `docs/roadmap/phase-3-guvenlik-operasyon.md` üzerinden ilerler.
+Repo dokümantasyon-first başlatıldı. Phase 1, Phase 2 ve Phase 3 tamamlandı; sıradaki ürün fazı Phase 4 ödeme/gelir optimizasyonu, paralel uygulama adımı frontend F0/F1'dir.
 
 ## Geliştirme
 

@@ -1,0 +1,28 @@
+namespace RezSaaS.Api.Business;
+
+public sealed record BusinessAppointmentResponse(
+    Guid AppointmentId,
+    Guid? AppointmentRequestId,
+    BusinessAppointmentRequestCustomerResponse Customer,
+    Guid BranchId,
+    string BranchDisplayName,
+    string BranchTimeZoneId,
+    Guid StaffMemberId,
+    string StaffMemberDisplayName,
+    Guid ResourceId,
+    string ResourceDisplayName,
+    DateTimeOffset StartUtc,
+    DateTimeOffset EndUtc,
+    string Status,
+    string? BusinessNote,
+    DateTimeOffset? CancelledAtUtc,
+    string? CancellationReason,
+    DateTimeOffset? CompletedAtUtc,
+    string? CompletionNote,
+    DateTimeOffset? NoShowAtUtc,
+    string? NoShowReason,
+    Guid? RebookedFromAppointmentId,
+    Guid? RebookedToAppointmentId,
+    DateTimeOffset? RebookedAtUtc,
+    string? RebookReason,
+    IReadOnlyCollection<BusinessAppointmentLineResponse> Lines);

@@ -34,6 +34,8 @@ public sealed class BookingModule : ModuleBase
         services.AddScoped<CreateAppointmentRequestService>();
         services.AddScoped<CancelAppointmentRequestService>();
         services.AddScoped<BusinessAppointmentRequestQueryService>();
+        services.AddScoped<BusinessAppointmentQueryService>();
+        services.AddScoped<BusinessAppointmentOperationService>();
         services.AddScoped<CustomerAppointmentRequestQueryService>();
         services.AddScoped<ConfirmedAppointmentQueryService>();
         services.AddScoped<ApproveAppointmentRequestService>();

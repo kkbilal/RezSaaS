@@ -18,11 +18,11 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
 | --- | --- | --- | --- |
 | Phase 1 Identity/Auth | Register, login, refresh, confirmation, reset ve manage endpoint'leri mevcut | Auth ekranları ve hesap güvenliği | Session/rol/tenant bootstrap kontratı ve gerçek MFA step-up oturumu tamamlanmalı |
 | Phase 2 public keşif | İşletme arama, profil, hizmet, branch, staff, çalışma saati ve galeri mevcut | Keşif listesi ve `/isletme/{businessSlug}` profili | Arama kartı için görsel, puan, başlangıç fiyatı ve facet/taksonomi verisi yetersiz |
-| Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı | Opsiyonel staff tercihi ve teknik resource seçiminin kullanıcı deneyimi kontratı netleştirilmeli |
-| Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel mevcut | Müşteri talep geçmişi | Tüm işletmeleri kapsayan müşteri geçmişi ve confirmed appointment görünümü yok |
-| Phase 2 işletme onayı | Pending/liste/detay, approve/decline ve abuse report mevcut | İşletme talep kutusu | Kullanıcının tenant seçimi, branch/staff/resource görünen adları ve timezone bootstrap kontratı yok |
-| Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal ve closure API'leri mevcut | Platform operasyon paneli | Production MFA/step-up UX'i ve güvenli session introspection tamamlanmadan kullanılamaz |
-| Phase 3 operasyon derinliği | Calendar, no-show, rebook ve yönetim CRUD'ları açık iş | İşletme operasyon paneli | Appointment calendar ve Organization/Catalog/Resources/Availability command API'leri yok |
+| Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı | Frontend resource seçtirmez; optional staff tercihi backend kontratına bağlıdır |
+| Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel ve global customer history mevcut | Müşteri talep geçmişi | Cursor pagination ileride iyileştirilecek |
+| Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | İşletme talep kutusu | Liste pagination/search contract'ı ileride iyileştirilecek |
+| Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | Platform operasyon paneli | UI açılışı F5 içinde güvenli route ve step-up UX ile yapılmalı |
+| Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | İşletme operasyon paneli | Organization/Catalog/Resources/Availability tam CRUD ayar ekranları sonraki dilimlerdir |
 | Reviews, Analytics, Payments | Backend fazları bekleniyor | Yorum, rapor ve ödeme ekranları | API olmadan sahte dashboard veya form üretilmez |
 
 ## Repo ve Deploy Kararı
@@ -232,7 +232,7 @@ read model'i ve optional staff/internal resource create kontratı mevcuttur.
 | P1 | Business request read model'inde branch/staff/resource adları ve timezone | Operasyon panelinde GUID gösterilmemesi |
 | P1 | Tutarlı error envelope ve validation sözleşmesi | Güvenilir form ve hata UX'i |
 | P1 | Cursor pagination/search sözleşmesi | Business/admin listelerinin `take` ile sınırlı kalmaması |
-| P2 | Appointment calendar ve command API'leri | Takvim, cancel, complete, no-show ve rebook |
+| P2 | Appointment calendar ve command API'leri | Tamamlandı; takvim, cancel, complete, no-show ve rebook frontend F6'da kullanılabilir |
 | P2 | Organization/Catalog/Resources/Availability yönetim API'leri | Gerçek işletme yönetim ekranları |
 | P2 | Reviews API | Verified review deneyimi |
 

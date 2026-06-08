@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-contract:
+    name: Build, test, and contract drift
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4-alpine3.23
+        env:
+          POSTGRES_DB: rezsaas
+          POSTGRES_USER: rezsaas
+          POSTGRES_PASSWORD: rezsaas-ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rezsaas -d rezsaas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      REZSAAS_TEST_POSTGRES_CONNECTION_STRING: Host=localhost;Port=5432;Database=postgres;Username=rezsaas;Password=rezsaas-ci-password
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/Apps/RezSaaS.Web/pnpm-lock.yaml
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Restore .NET packages
+        run: dotnet restore RezSaaS.sln
+
+      - name: Install web dependencies
+        run: pnpm --dir src/Apps/RezSaaS.Web install --frozen-lockfile
+
+      - name: Build
+        run: dotnet build RezSaaS.sln --no-restore
+
+      - name: Test
+        run: dotnet test RezSaaS.sln --no-build
+
+      - name: Prepare local environment for OpenAPI export
+        shell: pwsh
+        run: |
+          @"
+          REZSAAS_POSTGRES_HOST=localhost
+          REZSAAS_POSTGRES_DB=rezsaas
+          REZSAAS_POSTGRES_USER=rezsaas
+          REZSAAS_POSTGRES_PASSWORD=rezsaas-ci-password
+          REZSAAS_POSTGRES_PORT=5432
+          "@ | Set-Content -Path .env -Encoding utf8
+
+      - name: Export OpenAPI and generate TypeScript client
+        shell: pwsh
+        run: |
+          ./scripts/Export-OpenApi.ps1 -SkipBuild
+          ./scripts/Generate-OpenApiTypes.ps1
+
+      - name: Typecheck web API client
+        run: pnpm --dir src/Apps/RezSaaS.Web typecheck
+
+      - name: Fail on contract drift
+        run: git diff --exit-code artifacts/openapi/rezsaas-api-v1.json src/Apps/RezSaaS.Web/src/shared/api/rezsaas-api.generated.ts

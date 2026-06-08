@@ -212,24 +212,26 @@ Kapanış kriterleri:
 
 ## F6 - İşletme Operasyon Derinliği
 
-Durum: backend API'leri bekleniyor.
+Durum: appointment calendar/detail, note, cancel, complete, no-show, rebook ve
+resource block backend API'leri hazır; ayar CRUD'larının bir kısmı sonraki
+dilimlerde açılacak.
 
 Amaç: request onay kutusundan gerçek salon operasyon paneline geçmek.
 
 Planlanan teslimatlar:
 
-- Gün/hafta appointment calendar
-- Confirmed appointment detail, business/customer cancel, complete, no-show ve
+- Gün/hafta appointment calendar (`GET /api/business/appointments`)
+- Confirmed appointment detail, business cancel, complete, no-show, note ve
   rebook
 - Branch, staff, skill ve membership scope yönetimi
 - Service, service variant ve required skill/resource type yönetimi
-- Resource, resource block ve out-of-service yönetimi
+- Resource block ve out-of-service yönetimi
 - Working hours ve staff unavailable yönetimi
 - Public profil metadata, galeri ve slot ayarı yönetimi
 - Verified review operasyonu
 
-Bu fazda frontend başlamadan her use-case için backend endpoint, authz, tenant
-isolation, audit, idempotency ve concurrency kontratı tamamlanır.
+Tamamlanan appointment/resource operasyonları tenant header, branch-scope authz,
+audit, idempotency ve conflict kontrolüyle kullanılmalıdır.
 
 ## F7 - Lansman Sertleşmesi
 

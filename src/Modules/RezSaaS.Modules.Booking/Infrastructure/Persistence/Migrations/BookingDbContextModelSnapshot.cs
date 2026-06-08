@@ -35,6 +35,36 @@ namespace RezSaaS.Modules.Booking.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("BranchId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("BusinessNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("BusinessNoteUpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("BusinessNoteUpdatedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("CancelledAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CancelledByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CompletedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CompletionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -43,6 +73,32 @@ namespace RezSaaS.Modules.Booking.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset>("EndUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("NoShowAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("NoShowByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NoShowReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RebookReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("RebookedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RebookedByUserAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RebookedFromAppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RebookedToAppointmentId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ResourceId")
                         .HasColumnType("uuid");
@@ -62,6 +118,10 @@ namespace RezSaaS.Modules.Booking.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "RebookedFromAppointmentId");
+
+                    b.HasIndex("TenantId", "RebookedToAppointmentId");
 
                     b.HasIndex("TenantId", "BranchId", "StartUtc");
 

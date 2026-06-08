@@ -32,6 +32,8 @@
 - `24-frontend-uygulama-plani.md`: Backend fazlarına bağlı frontend `F0-F7` uygulama planı
 - `25-platform-bildirim-outbox.md`: Platform-global transactional e-posta outbox'ı ve closure bildirim güvenliği
 - `26-platform-operasyon-reconciliation-runbook.md`: Notification/closure alarm eşikleri ve güvenli manuel kurtarma adımları
+- `27-backup-restore-tatbikat-runbook.md`: PostgreSQL backup/restore tatbikat komutları ve kabul kriteri
+- `28-genel-incident-runbook.md`: Genel incident severity, müdahale ve postmortem akışı
 
 ## Bakım Kuralı
 

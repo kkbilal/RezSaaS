@@ -34,6 +34,7 @@
 - Aktif closure case taşıyan kullanıcıya yeni tenant owner/membership ataması control-plane seviyesinde reddedilir.
 - Public rezervasyon isteği oluşturma yalnızca authenticated platform hesabıyla yapılır; global `Customer` rol kaydı aranmaz, aktif hesap müşteri bağlamı kabul edilir.
 - İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
+- İşletme appointment calendar, cancel, complete, no-show, rebook, note ve resource block operasyonları `BusinessOwner` için tenant-wide, `BranchManager` için branch-scoped çalışır; `Staff` varsayılan deny'dır.
 - İşletme frontend bağlamı yalnızca authenticated kullanıcının aktif tenant membership'lerinden üretilir; `GET /api/business/context` tenant header istemez ve serbest tenant GUID seçimine izin vermez.
 - Business context capability'leri endpoint authz yerine geçmez; her işletme operasyonu yine tenant header, membership scope ve ilgili application service kontrolünden geçer.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
@@ -49,6 +50,7 @@
 | Rezervasyon isteği oluşturma | Kendi hesabı | Hayır | Hayır | Hayır | Hayır | Hayır |
 | Kendi talebini iptal | Evet | Hayır | Hayır | Hayır | Hayır | Hayır |
 | Talep onay/ret | Hayır | Politika ile | Atandığı şube | Tenant | Hayır | Acil operasyon ile |
+| Appointment calendar/operasyon | Hayır | Hayır | Atandığı şube | Tenant | Hayır | Acil operasyon ile |
 | Staff/resource düzenleme | Hayır | Hayır | Atandığı şube | Tenant | Hayır | Hayır |
 | Rol ve üyelik yönetimi | Hayır | Hayır | Hayır | Tenant | Hayır | Step-up operasyon ile |
 | Tenant suspend/reactivate/close | Hayır | Hayır | Hayır | Hayır | Hayır | Step-up operasyon ile |

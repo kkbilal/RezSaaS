@@ -31,11 +31,13 @@ Phase 1-2 güvenlik minimumlarının üstüne sertleşme kontrolleri, geri dön�
 - Tamamlandı: branch-scope işletme abuse raporu, step-up admin review, süreli/revoke edilebilir strike ve otomatik sanction uygulamayan kullanıcı risk seviyesi.
 - Tamamlandı: müşteri abuse itirazı, iki farklı step-up admin onaylı kalıcı hesap kapatma, Identity `Closed` orchestration'ı ve kapalı hesap aktif istek kapısı.
 - Tamamlandı: platform-global closure/appeal e-posta teslimatı, bildirim zamanına bağlı itiraz penceresi, salt-okunur closure/notification reconciliation, operasyon health'i, PII-minimum alarm ve manuel kurtarma runbook'u.
-- Devam: backup/restore tatbikatı, genel incident runbook, CI güvenlik kapıları ve kalan operasyonel derinleşme.
+- Tamamlandı: business appointment calendar/detail, internal note, cancel, complete, no-show ve rebook operasyonları; komutlar idempotent ve branch-scoped authz korumalıdır.
+- Tamamlandı: resource out-of-service/block komutu resource->branch doğrulamasıyla açıldı ve public slot hesaplama resource block sinyalini kullanmaya devam eder.
+- Tamamlandı: backup/restore tatbikat scriptleri, genel incident runbook, build/test/OpenAPI contract drift CI kapısı, secret scan, dependency audit ve CodeQL SAST workflow'ları.
 
 ## Kabul kriterleri (örnek)
 
 - OTP gönderimi belirgin maliyet patlamasına karşı kısıtlıdır (kota/overage ve abuse limitleri).
 - Tenant izolasyonu için temel güvenlik testleri otomasyonda koşar.
-- Backup restore tatbikatı staging ortamında tamamlanmıştır.
+- Backup restore tatbikatı script/runbook ile doğrulanabilir; staging periyodu operasyon takvimine bağlanır.
 - Kalıcı ban yalnızca manuel inceleme ile uygulanır.

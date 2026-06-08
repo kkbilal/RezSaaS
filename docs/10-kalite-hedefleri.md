@@ -11,8 +11,8 @@ Bu hedefler ilk sürüm için doğrulanacak SLO/NFR taslağıdır. Kodlama sıra
 
 ## Güvenlik
 
-- Tenant izolasyon testleri CI içinde çalışmalıdır.
-- Secret, dependency ve temel statik analiz taraması CI kapısı olmalıdır.
+- Tenant izolasyon testleri CI içinde çalışır (`.github/workflows/ci.yml`).
+- Secret, dependency ve temel statik analiz taraması CI kapısıdır (`.github/workflows/security.yml`).
 - Audit log append-only tutulmalıdır.
 - PII log masking test edilmelidir.
 
@@ -25,7 +25,7 @@ Bu hedefler ilk sürüm için doğrulanacak SLO/NFR taslağıdır. Kodlama sıra
 ## Operasyon
 
 - Health check, structured logging, correlation id ve hata izleme ilk deploy'dan itibaren olmalıdır.
-- Backup/restore prosedürü staging üzerinde periyodik denenmelidir.
+- Backup/restore prosedürü `27-backup-restore-tatbikat-runbook.md` ve scriptlerle staging/local tatbikata bağlanır.
 - Migration'lar geri dönüş veya ileri düzeltme planıyla yayınlanmalıdır.
 
 ## Erişilebilirlik ve SEO

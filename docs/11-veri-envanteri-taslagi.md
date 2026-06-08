@@ -10,7 +10,7 @@ Bu belge hukuki metin değildir; KVKK danışmanlığı öncesi teknik veri enva
 | Organizasyon | Business, public slug, açıklama, profil kuralları, SEO metadata, galeri URL/alt text, rating özeti, branch şehir/ilçe/adres, timezone, staff, skill | İşletme kurulumu, public keşif ve operasyon | Public özet/profil alanları anonim; detay/yönetim işletme rolleri | Netleştirilecek |
 | Katalog ve kaynak | Hizmet, varyant, fiyat, resource type, resource, block | Rezervasyon uygunluğu ve planlama | Public hizmet/varyant menüsü anonim; kaynak ve yönetim işletme rolleri | Netleştirilecek |
 | Uygunluk | Çalışma saatleri, staff unavailable time | Slot hesaplama | Public çalışma saatleri anonim; staff unavailable yönetimi işletme rolleri | Netleştirilecek |
-| Rezervasyon | Hizmet, zaman, staff, resource, durum | Operasyon | Müşteri, ilgili işletme | Netleştirilecek |
+| Rezervasyon | Hizmet, zaman, staff, resource, durum, işletme iç notu, cancel/complete/no-show/rebook actor ve nedenleri | Operasyon | Müşteri yalnız kendi güvenli özetini görür; iç not ve operasyon nedenleri ilgili işletme rolleri | Netleştirilecek |
 | Booking idempotency | Tenant, actor id, operation, key hash, request hash, response özeti | Komut retry güvenliği ve çift işlem engelleme | Sistem ve sınırlı operasyon | Saklama/temizleme süresi netleştirilecek |
 | Identity audit | Actor, subject, aksiyon, zaman, JSON detay | Güvenlik ve privileged bootstrap kanıtı | Platform admin | Append-only; saklama süresi netleştirilecek |
 | Tenant audit | Actor id, tenant, aksiyon, zaman, JSON detay, lifecycle operasyon nedeni | Güvenlik, inceleme ve değişiklik kanıtı | Yetkili admin | Append-only; saklama süresi netleştirilecek |

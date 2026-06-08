@@ -127,6 +127,15 @@ kimlik bilgileri zorunludur.
 `scripts/Import-LocalEnvironment.ps1`, `.env` değerlerini geçerli PowerShell sürecine
 elle yüklemek gerektiğinde opsiyonel yardımcıdır; API çalıştırmak için zorunlu değildir.
 
+Backup al ve restore doğrula:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Backup-Postgres.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Verify-PostgresRestore.ps1
+```
+
+Backup çıktıları `artifacts/backups/` altında tutulur ve repo'ya commit edilmez.
+
 ## Solution Yapısı
 
 ```text

@@ -165,6 +165,11 @@ Slot bloklanmadığı için onay ekranında yarış olur:
 - Booking create/approve/decline/customer-cancel komutları `Idempotency-Key` destekler; raw key asla saklanmaz, yalnızca tenant+actor+operation kapsamlı hash tutulur.
 - Müşteri kendi request listesi/detayı/cancel akışı public business slug ile tenant context set ederek çalışır; başka kullanıcıya ait request `404` kabul edilir.
 - Business panel appointment request response'larında müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII response veya log'a eklenmez.
+- Business appointment calendar/cancel/complete/no-show/rebook/note endpoint'leri tenant header + authenticated user + tenant membership authz ister; `BusinessOwner` tenant-wide, `BranchManager` branch-scoped çalışır.
+- Business appointment cancel/complete/no-show/rebook/note komutları `Idempotency-Key` destekler; raw key saklanmaz, yalnızca tenant+actor+operation kapsamlı hash tutulur.
+- `Complete` yalnız appointment end zamanından sonra, `NoShow` yalnız appointment start zamanından sonra uygulanır; future slotu erken boşaltan operasyon yazılmaz.
+- Rebook eski appointment'ı `Rebooked` yapar ve yeni `Confirmed` appointment üretir; onaylı staff/resource çakışması uygulama ve DB düzeyinde tekrar kontrol edilir.
+- Resource out-of-service/block komutları resource->branch doğrulaması ve tenant membership authz olmadan yayınlanmaz; public slot hesaplama resource block sinyalini kullanmaya devam eder.
 - `PendingApproval` expiry worker aktif tenant'ları Tenant Management üzerinden enumerate eder ve her tenant için explicit `TenantId` set eder; implicit HTTP context'e güvenmez.
 
 ---

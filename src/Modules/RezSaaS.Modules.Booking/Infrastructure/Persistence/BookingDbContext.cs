@@ -71,11 +71,18 @@ public sealed class BookingDbContext : DbContext
                     "\"EndUtc\" > \"StartUtc\""));
             appointment.HasKey(entity => entity.Id);
             appointment.Property(entity => entity.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
+            appointment.Property(entity => entity.BusinessNote).HasMaxLength(1_000);
+            appointment.Property(entity => entity.CancellationReason).HasMaxLength(500);
+            appointment.Property(entity => entity.CompletionNote).HasMaxLength(500);
+            appointment.Property(entity => entity.NoShowReason).HasMaxLength(500);
+            appointment.Property(entity => entity.RebookReason).HasMaxLength(500);
             appointment.HasMany(entity => entity.Lines)
                 .WithOne()
                 .HasForeignKey(entity => entity.AppointmentId)
                 .OnDelete(DeleteBehavior.Cascade);
             appointment.HasIndex(entity => new { entity.TenantId, entity.BranchId, entity.StartUtc });
+            appointment.HasIndex(entity => new { entity.TenantId, entity.RebookedFromAppointmentId });
+            appointment.HasIndex(entity => new { entity.TenantId, entity.RebookedToAppointmentId });
             appointment.HasIndex(entity => new { entity.TenantId, entity.StaffMemberId, entity.StartUtc });
             appointment.HasIndex(entity => new { entity.TenantId, entity.ResourceId, entity.StartUtc });
             appointment.HasQueryFilter(entity => entity.TenantId == CurrentTenantId);

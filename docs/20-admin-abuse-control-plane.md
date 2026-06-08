@@ -54,6 +54,6 @@ Bu yüzey tenant işletme paneli değildir. Tüm endpoint'ler `PlatformAdminWith
 
 - İşletme raporlama davranışının kötüye kullanım riski
 - IP/device sinyal toplama, saklama ve privacy kuralları
-- Abuse dashboard pagination, reason-code taksonomisi ve operasyon runbook'u
+- Abuse dashboard pagination ve reason-code taksonomisi
 
 İşletme abuse raporu, admin review, strike ve risk seviyesi akışı `21-isletme-abuse-raporu-strike-risk.md` içinde tanımlıdır.

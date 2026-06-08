@@ -10,4 +10,7 @@ public sealed record PublicBusinessProfileSeed(
     Guid StaffMemberId,
     Guid? UnqualifiedStaffMemberId,
     Guid ResourceId,
+    Guid ConfirmedAppointmentId,
+    DateTimeOffset ConfirmedAppointmentStartUtc,
+    DateTimeOffset ConfirmedAppointmentEndUtc,
     DateTimeOffset AvailableSlotStartUtc);

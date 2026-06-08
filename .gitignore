@@ -30,3 +30,6 @@ build/
 
 # Logs
 *.log
+
+# Local operational artifacts
+artifacts/backups/

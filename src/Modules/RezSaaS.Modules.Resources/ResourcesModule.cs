@@ -21,5 +21,6 @@ public sealed class ResourcesModule : ModuleBase
             options => options.UseNpgsql(connectionString));
         services.AddScoped<PublicResourceAvailabilityQueryService>();
         services.AddScoped<ResourceLabelQueryService>();
+        services.AddScoped<ResourceOperationalBlockService>();
     }
 }

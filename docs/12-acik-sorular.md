@@ -29,7 +29,7 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 - İlk pilot şehir ve işletme kategorileri hangileri?
 - KVKK aydınlatma, saklama ve silme politikası için hukuk danışmanlığı takvimi nedir?
 - Platform support erişiminde kim, hangi gerekçeyle ve ne kadar süreyle tenant verisi görebilir?
-- Abuse appeal/itiraz SLA'sı, kalıcı hesap kapatma onay mercii ve reason-code taksonomisinin operasyon runbook'u nasıl olacak?
+- Abuse appeal/itiraz SLA'sı, kalıcı hesap kapatma onay mercii ve reason-code taksonomisi nasıl netleşecek?
 - Sağlayıcı kabulünden sonra bounce/kalıcı teslimat başarısızlığı webhook ile alınırsa closure case ve itiraz penceresi için hangi operasyonel aksiyon uygulanacak?
 - Terminal `Failed` platform bildirimleri için step-up, auditli ve idempotent kontrollü requeue yüzeyi hangi sağlayıcı/incident gereksinimleriyle açılacak?
 - İşletme abuse raporlarını kötüye kullanan tenant/actor için ayrı risk ve yaptırım politikası nasıl olacak?

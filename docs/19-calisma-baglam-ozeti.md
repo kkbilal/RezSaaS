@@ -25,7 +25,7 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
 
 - Phase 1 tamamlandı: solution/mimari temel, Identity/Auth, tenant temeli, güvenlik kapıları.
 - Phase 2 tamamlandı: public keşif, slot bulma, request create, işletme onay/ret, müşteri self-service ve booking hardening.
-- Phase 3 devam ediyor:
+- Phase 3 tamamlandı:
   - Tamamlandı: ilk `PlatformAdmin` bootstrap.
   - Tamamlandı: tenant provisioning.
   - Tamamlandı: tenant liste/detay ve membership add/suspend/revoke control-plane.
@@ -35,7 +35,9 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: müşteri self-service abuse itirazı, iki farklı step-up admin onaylı kalıcı hesap kapatma, Identity `Closed` orchestration'ı ve aktif hesap istek kapısı.
   - Tamamlandı: raw e-posta taşımayan platform-global closure/appeal e-posta outbox'ı, retry worker'ı ve sağlayıcı kabul zamanına bağlı itiraz penceresi.
   - Tamamlandı: salt-okunur notification/closure reconciliation, ayrı operasyon health yüzeyi, step-up admin snapshot'ı, PII-minimum alarmlar ve manuel kurtarma runbook'u.
-  - Sıradaki dilimler: backup/restore tatbikatı, genel incident runbook ve CI güvenlik kapıları.
+  - Tamamlandı: business appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block operasyonları.
+  - Tamamlandı: backup/restore tatbikat scriptleri, genel incident runbook ve CI güvenlik kapıları.
+- Sıradaki ürün fazı: Phase 4 ödeme/gelir optimizasyonu hazırlığı; paralel frontend adımı F0/F1.
 
 ## Frontend Durumu
 
@@ -50,5 +52,5 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
 ## Çalışma Disiplini
 
 - Kullanıcı commit izni verdi; push işlemlerini kullanıcı yapar.
-- Bu çalışma öncesi son tamamlanan commit: `ccf6304 feat: add platform notification outbox`.
+- Bu çalışma öncesi son tamamlanan commit: `c3f7526 feat: close frontend readiness backend gates`.
 - Her dilim sonunda solution build, tüm testler, doküman/ADR etkisi ve temiz git durumu doğrulanır.

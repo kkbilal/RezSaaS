@@ -513,6 +513,9 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             staffMember.Id,
             unqualifiedStaffMember?.Id,
             chair.Id,
+            confirmedAppointment.Id,
+            confirmedStartUtc,
+            confirmedEndUtc,
             availableSlotStartUtc);
     }
 
