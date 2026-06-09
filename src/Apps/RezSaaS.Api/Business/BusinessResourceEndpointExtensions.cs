@@ -41,7 +41,15 @@ public static class BusinessResourceEndpointExtensions
                 }
 
                 return ToErrorResult(result.Outcome, result.ErrorCode);
-            });
+            })
+            .WithName("CreateBusinessResourceBlock")
+            .Produces<BusinessResourceBlockResponse>(StatusCodes.Status201Created)
+            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         return endpoints;
     }

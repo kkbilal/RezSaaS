@@ -1,6 +1,6 @@
 # Frontend Uygulama Planı
 
-Son güncelleme: 2026-06-04
+Son güncelleme: 2026-06-09
 
 Bu plan frontend geliştirmesini küçük, doğrulanabilir dikey dilimlere böler.
 Frontend fazları mevcut ürün/backend `Phase 0-5` numaralarıyla karışmaması için
@@ -21,7 +21,7 @@ responsive davranış, test, doküman ve güvenlik kontrolüyle kapanır.
 
 ## F0 - Ürün UX Keşfi, API Hazırlığı ve Repo İskeleti
 
-Durum: başlanmadı.
+Durum: devam ediyor.
 
 Amaç: kod üretmeden önce kullanıcı akışını, görsel yönü, frontend sınırını ve
 backend sözleşmesi kapılarını doğrulamak.
@@ -42,6 +42,14 @@ Teslimatlar:
 - Session/bootstrap, business context ve MFA step-up backend kontratlarının
   uygulanması veya ilgili frontend fazını bloke eden açık iş olarak bağlanması
 
+2026-06-09 notu:
+
+- `src/Apps/RezSaaS.Web` Next.js/Tailwind/OpenAPI client iskeleti oluştu.
+- `/` ve `/panel` route'ları ile ilk business panel görsel yönü uygulanmaya
+  başlandı.
+- Global `pnpm` bu geliştirme makinesinde PATH'te olmadığı için yerel
+  doğrulamalar şimdilik `node_modules/.bin/*` komutları üzerinden koşuluyor.
+
 Kapanış kriterleri:
 
 - Route haritası ve kullanıcı akışları onaylıdır.
@@ -54,7 +62,7 @@ Kapanış kriterleri:
 
 ## F1 - Tasarım Sistemi ve Uygulama Kabukları
 
-Durum: başlanmadı.
+Durum: devam ediyor.
 
 Amaç: sonraki ekranların tutarlı ve hızlı üretilebileceği, ancak hazır tema gibi
 görünmeyen temel UI sistemini kurmak.
@@ -72,6 +80,14 @@ Teslimatlar:
 - Keyboard, focus, reduced-motion ve a11y test başlangıcı
 - Merkezi error-code ve domain status Türkçe sözlüğü
 
+F1.1 uygulama sırası:
+
+- Auth route'ları: `/giris`, `/kayit`, `/sifremi-unuttum`, `/sifre-sifirla`
+- Cookie login/register/password reset formları
+- `GET /api/session/bootstrap` tabanlı session guard
+- `/panel` route'unun authenticated kapıya alınması
+- Backend ulaşılamazken private veri render etmeyen güvenli unavailable state
+
 Kapanış kriterleri:
 
 - Component'ler mobile/desktop, loading/empty/error ve uzun Türkçe içerik
@@ -82,7 +98,7 @@ Kapanış kriterleri:
 
 ## F2 - Public Keşif ve İşletme Profili
 
-Durum: başlanmadı.
+Durum: tasarım/prototip başladı; canlı veri bağlantısı bekliyor.
 
 Amaç: anonim kullanıcının güven veren, hızlı ve paylaşılabilir bir işletme
 keşif deneyimi yaşaması.
@@ -167,6 +183,15 @@ Backend bağımlılıkları:
 - Business context endpoint'i
 - Request read model'inde branch/staff/resource label ve timezone
 - Cursor pagination
+
+2026-06-09 notu:
+
+- Business panel görsel yönü, session guard ve request inbox interaction'ı uygulandı.
+- `GET /api/business/context` server tarafından çağrılıyor ve unavailable/401
+  durumları güvenli UX'e dönüştürülüyor.
+- `/api/business/appointment-requests` ve `/api/business/appointments` response
+  content tipleri OpenAPI artifact'a işlendi; `/panel` artık request inbox
+  satırlarını typed generated client ile canlı API'den okur.
 
 Kapanış kriterleri:
 
@@ -261,16 +286,18 @@ Kapanış kriterleri:
 
 1. P0 backend kontratları kapandı: OpenAPI artifact, session/bootstrap, business
    context, MFA step-up, global customer history ve internal resource kontratı.
-2. `src/Apps/RezSaaS.Web` UI iskeletini ve CI job'larını oluştur; API client
-   başlangıç iskeleti hazırdır.
-3. Figma flow/wireframe ve token çalışmasını başlat.
-4. Storybook ve temel design-system component'lerini kur.
-5. Public işletme profili dikey dilimini gerçek API ile tamamla.
-6. Slot seçimi ve booking draft prototipini tamamla.
-7. Auth dönüşü + idempotent request create ile customer journey'yi kapat.
-8. Business request inbox + approve/decline dilimini tamamla.
-9. Customer self-service ve abuse appeal yüzeyini tamamla.
-10. MFA hazır olduğunda platform control-plane'i dilim dilim aç.
+2. `src/Apps/RezSaaS.Web` UI iskeletini oluştur; API client başlangıç iskeleti
+   hazırdır.
+3. Auth ekranları ve session/bootstrap guard'ı tamamla.
+4. Business paneli authenticated kapıya al; tenant context'i canlı tut.
+5. Tamamlandı: Business appointment/request read model OpenAPI response tipleri
+   ve canlı appointment inbox bağlantısı.
+6. Storybook ve temel design-system component'lerini kur.
+7. Public işletme profili dikey dilimini gerçek API ile tamamla.
+8. Slot seçimi ve booking draft prototipini tamamla.
+9. Auth dönüşü + idempotent request create ile customer journey'yi kapat.
+10. Customer self-service ve abuse appeal yüzeyini tamamla.
+11. MFA hazır olduğunda platform control-plane'i dilim dilim aç.
 
 ## Bilinçli Olarak Ertelenenler
 

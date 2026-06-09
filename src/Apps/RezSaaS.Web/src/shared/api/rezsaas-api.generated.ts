@@ -1105,27 +1105,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                    take?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["ListPendingBusinessAppointmentRequests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1141,30 +1121,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                    status?: string;
-                    fromUtc?: string;
-                    toUtc?: string;
-                    take?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["ListBusinessAppointmentRequests"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1180,26 +1137,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    appointmentRequestId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["GetBusinessAppointmentRequest"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1217,28 +1155,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    appointmentRequestId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["ApproveBusinessAppointmentRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1254,28 +1171,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    appointmentRequestId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["DeclineBusinessAppointmentRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1291,30 +1187,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    appointmentRequestId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BusinessAbuseReportRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["CreateBusinessAppointmentRequestAbuseReport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1328,30 +1201,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    branchId?: string;
-                    status?: string;
-                    fromUtc?: string;
-                    toUtc?: string;
-                    take?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["ListBusinessAppointments"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1367,26 +1217,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    appointmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["GetBusinessAppointment"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1404,32 +1235,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    appointmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BusinessAppointmentCancelRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["CancelBusinessAppointment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1445,32 +1251,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    appointmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BusinessAppointmentCompleteRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["CompleteBusinessAppointment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1486,32 +1267,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    appointmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BusinessAppointmentNoShowRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["MarkBusinessAppointmentNoShow"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1527,32 +1283,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    appointmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BusinessAppointmentNoteRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["UpdateBusinessAppointmentNote"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1568,32 +1299,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: {
-                    "Idempotency-Key"?: string;
-                };
-                path: {
-                    appointmentId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BusinessAppointmentRebookRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["RebookBusinessAppointment"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1625,30 +1331,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    resourceId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["BusinessResourceBlockRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["CreateBusinessResourceBlock"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2567,17 +2250,47 @@ export interface components {
             reasonCode?: string | null;
             note?: string | null;
         };
+        BusinessAbuseReportResponse: {
+            /** Format: uuid */
+            reportId?: string;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
         BusinessAppointmentCancelRequest: {
             reason?: string | null;
         };
         BusinessAppointmentCompleteRequest: {
             note?: string | null;
         };
+        BusinessAppointmentErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessAppointmentLineResponse: {
+            /** Format: uuid */
+            serviceVariantId?: string;
+            serviceNameSnapshot?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: double */
+            priceAmount?: number;
+            currencyCode?: string | null;
+        };
+        BusinessAppointmentListResponse: {
+            appointments?: components["schemas"]["BusinessAppointmentResponse"][] | null;
+        };
         BusinessAppointmentNoShowRequest: {
             reason?: string | null;
         };
         BusinessAppointmentNoteRequest: {
             note?: string | null;
+        };
+        BusinessAppointmentOperationResponse: {
+            /** Format: uuid */
+            appointmentId?: string;
+            /** Format: uuid */
+            relatedAppointmentId?: string | null;
+            status?: string | null;
         };
         BusinessAppointmentRebookRequest: {
             /** Format: date-time */
@@ -2590,10 +2303,117 @@ export interface components {
             resourceId?: string | null;
             reason?: string | null;
         };
+        BusinessAppointmentRequestCustomerResponse: {
+            /** Format: uuid */
+            userAccountId?: string;
+            maskedEmail?: string | null;
+            maskedPhone?: string | null;
+        };
+        BusinessAppointmentRequestDecisionResponse: {
+            /** Format: uuid */
+            appointmentId?: string | null;
+            /** Format: int32 */
+            affectedRequests?: number;
+            status?: string | null;
+        };
+        BusinessAppointmentRequestErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessAppointmentRequestLineResponse: {
+            /** Format: uuid */
+            serviceVariantId?: string;
+            serviceNameSnapshot?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: double */
+            priceAmount?: number;
+            currencyCode?: string | null;
+        };
+        BusinessAppointmentRequestListResponse: {
+            requests?: components["schemas"]["BusinessAppointmentRequestResponse"][] | null;
+        };
+        BusinessAppointmentRequestResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            customerUserAccountId?: string;
+            customer?: components["schemas"]["BusinessAppointmentRequestCustomerResponse"];
+            /** Format: uuid */
+            branchId?: string;
+            branchDisplayName?: string | null;
+            branchTimeZoneId?: string | null;
+            /** Format: uuid */
+            staffMemberId?: string;
+            staffMemberDisplayName?: string | null;
+            /** Format: uuid */
+            resourceId?: string;
+            resourceDisplayName?: string | null;
+            /** Format: date-time */
+            requestedStartUtc?: string;
+            /** Format: date-time */
+            requestedEndUtc?: string;
+            /** Format: date-time */
+            expiresAtUtc?: string;
+            status?: string | null;
+            lines?: components["schemas"]["BusinessAppointmentRequestLineResponse"][] | null;
+        };
+        BusinessAppointmentResponse: {
+            /** Format: uuid */
+            appointmentId?: string;
+            /** Format: uuid */
+            appointmentRequestId?: string | null;
+            customer?: components["schemas"]["BusinessAppointmentRequestCustomerResponse"];
+            /** Format: uuid */
+            branchId?: string;
+            branchDisplayName?: string | null;
+            branchTimeZoneId?: string | null;
+            /** Format: uuid */
+            staffMemberId?: string;
+            staffMemberDisplayName?: string | null;
+            /** Format: uuid */
+            resourceId?: string;
+            resourceDisplayName?: string | null;
+            /** Format: date-time */
+            startUtc?: string;
+            /** Format: date-time */
+            endUtc?: string;
+            status?: string | null;
+            businessNote?: string | null;
+            /** Format: date-time */
+            cancelledAtUtc?: string | null;
+            cancellationReason?: string | null;
+            /** Format: date-time */
+            completedAtUtc?: string | null;
+            completionNote?: string | null;
+            /** Format: date-time */
+            noShowAtUtc?: string | null;
+            noShowReason?: string | null;
+            /** Format: uuid */
+            rebookedFromAppointmentId?: string | null;
+            /** Format: uuid */
+            rebookedToAppointmentId?: string | null;
+            /** Format: date-time */
+            rebookedAtUtc?: string | null;
+            rebookReason?: string | null;
+            lines?: components["schemas"]["BusinessAppointmentLineResponse"][] | null;
+        };
         BusinessContextResponse: {
             tenants?: components["schemas"]["BusinessTenantContextResponse"][] | null;
         };
         BusinessResourceBlockRequest: {
+            /** Format: date-time */
+            startUtc?: string;
+            /** Format: date-time */
+            endUtc?: string;
+            reason?: string | null;
+        };
+        BusinessResourceBlockResponse: {
+            /** Format: uuid */
+            resourceBlockId?: string;
+            /** Format: uuid */
+            resourceId?: string;
+            /** Format: uuid */
+            branchId?: string;
             /** Format: date-time */
             startUtc?: string;
             /** Format: date-time */
@@ -2785,6 +2605,926 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ListPendingBusinessAppointmentRequests: {
+        parameters: {
+            query?: {
+                branchId?: string;
+                take?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+        };
+    };
+    ListBusinessAppointmentRequests: {
+        parameters: {
+            query?: {
+                branchId?: string;
+                status?: string;
+                fromUtc?: string;
+                toUtc?: string;
+                take?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+        };
+    };
+    GetBusinessAppointmentRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentRequestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+        };
+    };
+    ApproveBusinessAppointmentRequest: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                appointmentRequestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestDecisionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+        };
+    };
+    DeclineBusinessAppointmentRequest: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                appointmentRequestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestDecisionResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+        };
+    };
+    CreateBusinessAppointmentRequestAbuseReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentRequestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessAbuseReportRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAbuseReportResponse"];
+                };
+            };
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAbuseReportResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentRequestErrorResponse"];
+                };
+            };
+        };
+    };
+    ListBusinessAppointments: {
+        parameters: {
+            query?: {
+                branchId?: string;
+                status?: string;
+                fromUtc?: string;
+                toUtc?: string;
+                take?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentListResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
+    GetBusinessAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
+    CancelBusinessAppointment: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessAppointmentCancelRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentOperationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
+    CompleteBusinessAppointment: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessAppointmentCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentOperationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
+    MarkBusinessAppointmentNoShow: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessAppointmentNoShowRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentOperationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
+    UpdateBusinessAppointmentNote: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessAppointmentNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentOperationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
+    RebookBusinessAppointment: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                appointmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessAppointmentRebookRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentOperationResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
     GetBusinessContext: {
         parameters: {
             query?: never;
@@ -2809,6 +3549,82 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    CreateBusinessResourceBlock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessResourceBlockRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceBlockResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
             };
         };
     };

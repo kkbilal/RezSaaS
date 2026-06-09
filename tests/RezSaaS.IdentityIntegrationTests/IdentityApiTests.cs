@@ -37,10 +37,50 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
         Assert.True(paths.TryGetProperty("/api/session/bootstrap", out _));
         Assert.True(paths.TryGetProperty("/api/session/step-up", out _));
         Assert.True(paths.TryGetProperty("/api/business/context", out _));
+        Assert.True(paths.TryGetProperty("/api/business/appointment-requests", out _));
+        Assert.True(paths.TryGetProperty("/api/business/appointment-requests/pending", out _));
+        Assert.True(paths.TryGetProperty("/api/business/appointment-requests/{appointmentRequestId}", out _));
         Assert.True(paths.TryGetProperty("/api/business/appointments", out _));
         Assert.True(paths.TryGetProperty("/api/business/appointments/{appointmentId}", out _));
         Assert.True(paths.TryGetProperty("/api/business/resources/{resourceId}/blocks", out _));
         Assert.True(paths.TryGetProperty("/api/customer/appointment-history", out _));
+
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/business/appointment-requests",
+            "get",
+            "200",
+            "#/components/schemas/BusinessAppointmentRequestListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/business/appointment-requests/pending",
+            "get",
+            "200",
+            "#/components/schemas/BusinessAppointmentRequestListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/business/appointment-requests/{appointmentRequestId}",
+            "get",
+            "200",
+            "#/components/schemas/BusinessAppointmentRequestResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/business/appointment-requests/{appointmentRequestId}/approve",
+            "post",
+            "200",
+            "#/components/schemas/BusinessAppointmentRequestDecisionResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/business/appointments",
+            "get",
+            "200",
+            "#/components/schemas/BusinessAppointmentListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/business/appointments/{appointmentId}",
+            "get",
+            "200",
+            "#/components/schemas/BusinessAppointmentResponse");
     }
 
     [Fact]
@@ -272,5 +312,30 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
     private static string CreateEmail()
     {
         return $"identity-test-{Guid.NewGuid():N}@example.test";
+    }
+
+    private static void AssertOpenApiJsonResponse(
+        JsonElement paths,
+        string path,
+        string method,
+        string statusCode,
+        string expectedSchemaReference)
+    {
+        JsonElement response = paths
+            .GetProperty(path)
+            .GetProperty(method)
+            .GetProperty("responses")
+            .GetProperty(statusCode);
+
+        Assert.True(
+            response.TryGetProperty("content", out JsonElement content),
+            $"{method.ToUpperInvariant()} {path} {statusCode} response must declare typed content.");
+        Assert.Equal(
+            expectedSchemaReference,
+            content
+                .GetProperty("application/json")
+                .GetProperty("schema")
+                .GetProperty("$ref")
+                .GetString());
     }
 }

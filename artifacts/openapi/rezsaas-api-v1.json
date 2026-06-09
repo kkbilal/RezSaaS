@@ -953,6 +953,7 @@
         "tags": [
           "Business Appointment Requests"
         ],
+        "operationId": "ListPendingBusinessAppointmentRequests",
         "parameters": [
           {
             "name": "branchId",
@@ -973,7 +974,40 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -983,6 +1017,7 @@
         "tags": [
           "Business Appointment Requests"
         ],
+        "operationId": "ListBusinessAppointmentRequests",
         "parameters": [
           {
             "name": "branchId",
@@ -1026,7 +1061,40 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1036,6 +1104,7 @@
         "tags": [
           "Business Appointment Requests"
         ],
+        "operationId": "GetBusinessAppointmentRequest",
         "parameters": [
           {
             "name": "appointmentRequestId",
@@ -1049,7 +1118,50 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1059,6 +1171,7 @@
         "tags": [
           "Business Appointment Requests"
         ],
+        "operationId": "ApproveBusinessAppointmentRequest",
         "parameters": [
           {
             "name": "appointmentRequestId",
@@ -1079,7 +1192,60 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestDecisionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1089,6 +1255,7 @@
         "tags": [
           "Business Appointment Requests"
         ],
+        "operationId": "DeclineBusinessAppointmentRequest",
         "parameters": [
           {
             "name": "appointmentRequestId",
@@ -1109,7 +1276,60 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestDecisionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1119,6 +1339,7 @@
         "tags": [
           "Business Appointment Requests"
         ],
+        "operationId": "CreateBusinessAppointmentRequestAbuseReport",
         "parameters": [
           {
             "name": "appointmentRequestId",
@@ -1142,7 +1363,70 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAbuseReportResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAbuseReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentRequestErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1152,6 +1436,7 @@
         "tags": [
           "Business Appointments"
         ],
+        "operationId": "ListBusinessAppointments",
         "parameters": [
           {
             "name": "branchId",
@@ -1195,7 +1480,40 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1205,6 +1523,7 @@
         "tags": [
           "Business Appointments"
         ],
+        "operationId": "GetBusinessAppointment",
         "parameters": [
           {
             "name": "appointmentId",
@@ -1218,7 +1537,50 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1228,6 +1590,7 @@
         "tags": [
           "Business Appointments"
         ],
+        "operationId": "CancelBusinessAppointment",
         "parameters": [
           {
             "name": "appointmentId",
@@ -1258,7 +1621,60 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1268,6 +1684,7 @@
         "tags": [
           "Business Appointments"
         ],
+        "operationId": "CompleteBusinessAppointment",
         "parameters": [
           {
             "name": "appointmentId",
@@ -1298,7 +1715,60 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1308,6 +1778,7 @@
         "tags": [
           "Business Appointments"
         ],
+        "operationId": "MarkBusinessAppointmentNoShow",
         "parameters": [
           {
             "name": "appointmentId",
@@ -1338,7 +1809,60 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1348,6 +1872,7 @@
         "tags": [
           "Business Appointments"
         ],
+        "operationId": "UpdateBusinessAppointmentNote",
         "parameters": [
           {
             "name": "appointmentId",
@@ -1378,7 +1903,60 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1388,6 +1966,7 @@
         "tags": [
           "Business Appointments"
         ],
+        "operationId": "RebookBusinessAppointment",
         "parameters": [
           {
             "name": "appointmentId",
@@ -1418,7 +1997,60 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentOperationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1451,6 +2083,7 @@
         "tags": [
           "Business Resources"
         ],
+        "operationId": "CreateBusinessResourceBlock",
         "parameters": [
           {
             "name": "resourceId",
@@ -1473,8 +2106,61 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessResourceBlockResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessAppointmentErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -2470,6 +3156,24 @@
         },
         "additionalProperties": false
       },
+      "BusinessAbuseReportResponse": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "BusinessAppointmentCancelRequest": {
         "type": "object",
         "properties": {
@@ -2490,6 +3194,55 @@
         },
         "additionalProperties": false
       },
+      "BusinessAppointmentErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentLineResponse": {
+        "type": "object",
+        "properties": {
+          "serviceVariantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceNameSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentListResponse": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessAppointmentResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BusinessAppointmentNoShowRequest": {
         "type": "object",
         "properties": {
@@ -2504,6 +3257,25 @@
         "type": "object",
         "properties": {
           "note": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentOperationResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relatedAppointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "status": {
             "type": "string",
             "nullable": true
           }
@@ -2538,6 +3310,275 @@
         },
         "additionalProperties": false
       },
+      "BusinessAppointmentRequestCustomerResponse": {
+        "type": "object",
+        "properties": {
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "maskedEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "maskedPhone": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentRequestDecisionResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "affectedRequests": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentRequestErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentRequestLineResponse": {
+        "type": "object",
+        "properties": {
+          "serviceVariantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serviceNameSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "priceAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentRequestListResponse": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessAppointmentRequestResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentRequestResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customerUserAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/BusinessAppointmentRequestCustomerResponse"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "branchTimeZoneId": {
+            "type": "string",
+            "nullable": true
+          },
+          "staffMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "staffMemberDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resourceDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "requestedStartUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestedEndUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessAppointmentRequestLineResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessAppointmentResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "appointmentRequestId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "customer": {
+            "$ref": "#/components/schemas/BusinessAppointmentRequestCustomerResponse"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "branchTimeZoneId": {
+            "type": "string",
+            "nullable": true
+          },
+          "staffMemberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "staffMemberDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resourceDisplayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "startUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "businessNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "completedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completionNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "noShowAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "noShowReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "rebookedFromAppointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "rebookedToAppointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "rebookedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "rebookReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusinessAppointmentLineResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "BusinessContextResponse": {
         "type": "object",
         "properties": {
@@ -2554,6 +3595,36 @@
       "BusinessResourceBlockRequest": {
         "type": "object",
         "properties": {
+          "startUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusinessResourceBlockResponse": {
+        "type": "object",
+        "properties": {
+          "resourceBlockId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "startUtc": {
             "type": "string",
             "format": "date-time"

@@ -32,7 +32,13 @@ public static class BusinessAppointmentRequestEndpointExtensions
                         cancellationToken);
 
                 return ToHttpResult(result);
-            });
+            })
+            .WithName("ListPendingBusinessAppointmentRequests")
+            .Produces<BusinessAppointmentRequestListResponse>()
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         appointmentRequests.MapGet(
             "/",
@@ -57,7 +63,13 @@ public static class BusinessAppointmentRequestEndpointExtensions
                         cancellationToken);
 
                 return ToHttpResult(result);
-            });
+            })
+            .WithName("ListBusinessAppointmentRequests")
+            .Produces<BusinessAppointmentRequestListResponse>()
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         appointmentRequests.MapGet(
             "/{appointmentRequestId:guid}",
@@ -79,7 +91,14 @@ public static class BusinessAppointmentRequestEndpointExtensions
                 }
 
                 return ToErrorResult(result.Outcome, result.ErrorCode);
-            });
+            })
+            .WithName("GetBusinessAppointmentRequest")
+            .Produces<BusinessAppointmentRequestResponse>()
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         appointmentRequests.MapPost(
             "/{appointmentRequestId:guid}/approve",
@@ -98,7 +117,15 @@ public static class BusinessAppointmentRequestEndpointExtensions
                         cancellationToken);
 
                 return ToHttpResult(result);
-            });
+            })
+            .WithName("ApproveBusinessAppointmentRequest")
+            .Produces<BusinessAppointmentRequestDecisionResponse>()
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         appointmentRequests.MapPost(
             "/{appointmentRequestId:guid}/decline",
@@ -117,7 +144,15 @@ public static class BusinessAppointmentRequestEndpointExtensions
                         cancellationToken);
 
                 return ToHttpResult(result);
-            });
+            })
+            .WithName("DeclineBusinessAppointmentRequest")
+            .Produces<BusinessAppointmentRequestDecisionResponse>()
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         appointmentRequests.MapPost(
             "/{appointmentRequestId:guid}/abuse-reports",
@@ -147,7 +182,16 @@ public static class BusinessAppointmentRequestEndpointExtensions
                 return result.Outcome == BusinessAbuseReportOutcome.Success
                     ? Results.Ok(result.Report)
                     : ToErrorResult(result.Outcome, result.ErrorCode);
-            });
+            })
+            .WithName("CreateBusinessAppointmentRequestAbuseReport")
+            .Produces<BusinessAbuseReportResponse>()
+            .Produces<BusinessAbuseReportResponse>(StatusCodes.Status201Created)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status429TooManyRequests)
+            .Produces<BusinessAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         return endpoints;
     }

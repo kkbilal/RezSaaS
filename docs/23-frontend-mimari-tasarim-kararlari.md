@@ -1,6 +1,6 @@
 # Frontend Mimari ve Tasarım Kararları
 
-Son güncelleme: 2026-06-04
+Son güncelleme: 2026-06-09
 
 ## Amaç
 
@@ -11,6 +11,19 @@ Frontend yalnızca mevcut endpoint'lere ekran ekleyen bir katman değildir. Publ
 keşif, müşteri rezervasyon akışı, işletme operasyonu ve platform control-plane
 yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak aynı
 ürün dili ve tasarım sistemi içinde kalmalıdır.
+
+## 2026-06-09 Uygulama Durumu
+
+- `src/Apps/RezSaaS.Web` altında Next.js 16, React 19.2, Tailwind 4 ve
+  OpenAPI-driven `openapi-fetch` client ile ilk web uygulaması başlatıldı.
+- İlk görsel yön; RezSaaS domain odaklı `rezsaas-merkez` referansı ile
+  `viktor-oddy-studio` modern studio hissi birleştirilerek business panel
+  prototipine uygulandı.
+- `/panel` route'u `GET /api/session/bootstrap`, `GET /api/business/context`
+  ve `GET /api/business/appointment-requests` üzerinden canlı tenant + inbox
+  verisiyle çalışır; preview appointment data kaldırılmıştır.
+- Business appointment/request OpenAPI response content tipleri tamamlandı ve
+  generated TypeScript client artık inbox kontratını typed olarak taşır.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
@@ -140,6 +153,9 @@ Kurallar:
   `localStorage`, `sessionStorage`, URL veya client log'una yazılmaz.
 - Frontend route guard yalnızca yönlendirme ve UX sağlar; backend authz nihai
   otoritedir.
+- Authenticated route'larda backend ulaşılamazsa private veri render edilmez;
+  route, kullanıcıya oturum kapısının geçici kullanılamadığını söyleyen güvenli
+  hata durumuna düşer.
 - Business API çağrılarında `X-RezSaaS-Tenant`, yalnızca backend'in authenticated
   kullanıcı için döndürdüğü aktif tenant seçeneklerinden merkezi API client
   tarafından eklenir. Kullanıcının serbest metinle tenant GUID girmesi engellenir.
@@ -203,6 +219,9 @@ Zorunlu tasarım davranışları:
 - Figma-to-code çıktısı production kodu olarak körlemesine kabul edilmez. Domain
   davranışı, responsive yapı, erişilebilirlik ve component sınırı code review'dan
   geçer.
+- AI üretimli veya indirilen UI prototipleri referans olarak kullanılabilir;
+  ancak bozuk encoding, sahte veri, emoji/dekorasyon fazlalığı, stok görsel ve
+  domain-dışı etkileşimler production koda doğrudan taşınmaz.
 - Storybook, implement edilmiş tasarım sisteminin yaşayan kataloğudur.
 - Browser MCP, önemli frontend değişikliklerinden sonra local uygulamayı gerçek
   viewport'larda incelemek için kullanılır; otomatik testlerin yerine geçmez.

@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --rs-bg: #f6f1ea;
+  --rs-bg-deep: #ece0d2;
+  --rs-surface: #fffaf3;
+  --rs-surface-strong: #ffffff;
+  --rs-surface-muted: #eee5da;
+  --rs-border: rgb(5 26 36 / 0.1);
+  --rs-border-strong: rgb(5 26 36 / 0.2);
+  --rs-ink: #051a24;
+  --rs-ink-soft: #0d2a36;
+  --rs-muted: #68747a;
+  --rs-muted-strong: #40515a;
+  --rs-accent: #d46a4c;
+  --rs-accent-strong: #b95439;
+  --rs-accent-soft: rgb(212 106 76 / 0.12);
+  --rs-success: #2f7a4e;
+  --rs-success-soft: rgb(47 122 78 / 0.12);
+  --rs-warning: #b75f00;
+  --rs-warning-border: rgb(183 95 0 / 0.22);
+  --rs-warning-soft: rgb(217 119 6 / 0.12);
+  --rs-danger: #af3f3f;
+  --rs-danger-strong: #8f3030;
+  --rs-danger-soft: rgb(175 63 63 / 0.12);
+  --rs-neutral-soft: rgb(5 26 36 / 0.06);
+  --rs-focus: #051a24;
+  --rs-shadow-card: 0 24px 80px rgb(5 26 36 / 0.08);
+  --rs-shadow-soft: 0 4px 30px rgb(5 26 36 / 0.08);
+  --rs-shadow-button: 0 1px 2px rgb(5 26 36 / 0.1), 0 8px 28px rgb(5 26 36 / 0.18), inset 0 2px 8px rgb(255 255 255 / 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--rs-bg);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 10% -10%, rgb(255 255 255 / 0.95), transparent 30rem),
+    radial-gradient(circle at 88% 4%, rgb(212 106 76 / 0.16), transparent 32rem),
+    linear-gradient(180deg, var(--rs-bg), var(--rs-bg-deep));
+  color: var(--rs-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--rs-ink);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(5 26 36 / 0.18);
+  border-radius: 999px;
+}
+
+.studio-grid {
+  background-image:
+    linear-gradient(rgb(5 26 36 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(5 26 36 / 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .fade-up {
+    animation: none;
+  }
+}
