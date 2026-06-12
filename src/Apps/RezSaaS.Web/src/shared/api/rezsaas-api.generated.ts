@@ -1485,7 +1485,52 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestListResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
                 };
             };
         };
@@ -1509,6 +1554,74 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestCreateResponse"];
+                    };
+                };
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestCreateResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1546,7 +1659,52 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
                 };
             };
         };
@@ -1586,7 +1744,52 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentRequestErrorResponse"];
+                    };
                 };
             };
         };
@@ -1616,6 +1819,15 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicBusinessProfileResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1659,6 +1871,24 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["PublicSlotSearchResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicSlotSearchValidationResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -1698,7 +1928,9 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["PublicBusinessSummaryView"][];
+                    };
                 };
             };
         };
@@ -1730,6 +1962,15 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicBusinessProfileView"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2521,6 +2762,167 @@ export interface components {
             staffMemberId?: string | null;
             /** Format: date-time */
             startUtc?: string;
+        };
+        PublicAppointmentRequestCreateResponse: {
+            /** Format: uuid */
+            appointmentRequestId?: string;
+            /** Format: date-time */
+            expiresAtUtc?: string;
+            status?: string | null;
+        };
+        PublicAppointmentRequestErrorResponse: {
+            errorCode?: string | null;
+        };
+        PublicAppointmentRequestLineResponse: {
+            /** Format: uuid */
+            serviceVariantId?: string;
+            serviceNameSnapshot?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: double */
+            priceAmount?: number;
+            currencyCode?: string | null;
+        };
+        PublicAppointmentRequestListResponse: {
+            requests?: components["schemas"]["PublicAppointmentRequestResponse"][] | null;
+        };
+        PublicAppointmentRequestResponse: {
+            /** Format: uuid */
+            id?: string;
+            businessSlug?: string | null;
+            branchSlug?: string | null;
+            branchDisplayName?: string | null;
+            /** Format: uuid */
+            staffMemberId?: string;
+            /** Format: date-time */
+            requestedStartUtc?: string;
+            /** Format: date-time */
+            requestedEndUtc?: string;
+            /** Format: date-time */
+            expiresAtUtc?: string;
+            status?: string | null;
+            lines?: components["schemas"]["PublicAppointmentRequestLineResponse"][] | null;
+        };
+        PublicBranchWorkingHoursProfileResponse: {
+            dayOfWeek?: string | null;
+            /** Format: time */
+            opensAt?: string;
+            /** Format: time */
+            closesAt?: string;
+            isClosed?: boolean;
+        };
+        PublicBusinessBranchProfileResponse: {
+            slug?: string | null;
+            displayName?: string | null;
+            timeZoneId?: string | null;
+            city?: string | null;
+            district?: string | null;
+            addressLine?: string | null;
+            staffMembers?: components["schemas"]["PublicStaffMemberProfileResponse"][] | null;
+            workingHours?: components["schemas"]["PublicBranchWorkingHoursProfileResponse"][] | null;
+        };
+        PublicBusinessBranchView: {
+            slug?: string | null;
+            displayName?: string | null;
+            timeZoneId?: string | null;
+            city?: string | null;
+            district?: string | null;
+            addressLine?: string | null;
+        };
+        PublicBusinessGalleryImageProfileResponse: {
+            imageUrl?: string | null;
+            altText?: string | null;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        PublicBusinessProfileMetadataResponse: {
+            publicRules?: string | null;
+            seoTitle?: string | null;
+            seoDescription?: string | null;
+            staffDisplayPolicy?: string | null;
+            /** Format: double */
+            ratingAverage?: number;
+            /** Format: int32 */
+            reviewCount?: number;
+            galleryImages?: components["schemas"]["PublicBusinessGalleryImageProfileResponse"][] | null;
+        };
+        PublicBusinessProfileResponse: {
+            slug?: string | null;
+            displayName?: string | null;
+            categoryKey?: string | null;
+            description?: string | null;
+            metadata?: components["schemas"]["PublicBusinessProfileMetadataResponse"];
+            branches?: components["schemas"]["PublicBusinessBranchProfileResponse"][] | null;
+            services?: components["schemas"]["PublicServiceProfileResponse"][] | null;
+        };
+        PublicBusinessProfileView: {
+            slug?: string | null;
+            displayName?: string | null;
+            categoryKey?: string | null;
+            description?: string | null;
+            branches?: components["schemas"]["PublicBusinessBranchView"][] | null;
+        };
+        PublicBusinessSummaryView: {
+            slug?: string | null;
+            displayName?: string | null;
+            categoryKey?: string | null;
+            city?: string | null;
+            district?: string | null;
+        };
+        PublicServiceProfileResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            categoryKey?: string | null;
+            variants?: components["schemas"]["PublicServiceVariantProfileResponse"][] | null;
+        };
+        PublicServiceVariantProfileResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: double */
+            priceAmount?: number;
+            currencyCode?: string | null;
+            /** Format: uuid */
+            requiredResourceTypeId?: string | null;
+        };
+        PublicSlotResponse: {
+            /** Format: date-time */
+            startUtc?: string;
+            /** Format: date-time */
+            endUtc?: string;
+            /** Format: date-time */
+            localStart?: string;
+            /** Format: date-time */
+            localEnd?: string;
+            staffCandidates?: components["schemas"]["PublicSlotStaffResponse"][] | null;
+        };
+        PublicSlotSearchResponse: {
+            businessSlug?: string | null;
+            branchSlug?: string | null;
+            branchTimeZoneId?: string | null;
+            /** Format: date */
+            date?: string;
+            /** Format: int32 */
+            durationMinutes?: number;
+            serviceVariantIds?: string[] | null;
+            slots?: components["schemas"]["PublicSlotResponse"][] | null;
+        };
+        PublicSlotSearchValidationResponse: {
+            errors?: string[] | null;
+        };
+        PublicSlotStaffResponse: {
+            /** Format: uuid */
+            id?: string;
+            displayName?: string | null;
+        };
+        PublicStaffMemberProfileResponse: {
+            /** Format: uuid */
+            id?: string;
+            displayName?: string | null;
+            skillIds?: string[] | null;
         };
         RefreshRequest: {
             refreshToken: string | null;

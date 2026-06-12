@@ -40,7 +40,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       router.replace(returnTo);
       router.refresh();
     } catch {
-      setError("API'ye ulaşılamadı. Backend veya Next proxy ayarını kontrol et.");
+      setError("Giriş şu anda tamamlanamadı. Lütfen kısa süre sonra tekrar dene.");
     } finally {
       setIsSubmitting(false);
     }

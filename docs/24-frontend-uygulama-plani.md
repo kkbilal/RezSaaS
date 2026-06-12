@@ -1,6 +1,6 @@
 # Frontend Uygulama Planı
 
-Son güncelleme: 2026-06-09
+Son güncelleme: 2026-06-13
 
 Bu plan frontend geliştirmesini küçük, doğrulanabilir dikey dilimlere böler.
 Frontend fazları mevcut ürün/backend `Phase 0-5` numaralarıyla karışmaması için
@@ -45,8 +45,8 @@ Teslimatlar:
 2026-06-09 notu:
 
 - `src/Apps/RezSaaS.Web` Next.js/Tailwind/OpenAPI client iskeleti oluştu.
-- `/` ve `/panel` route'ları ile ilk business panel görsel yönü uygulanmaya
-  başlandı.
+- `/` route'u ürün landing sayfasına, `/giris` tek login kapısına ve `/panel`
+  authenticated işletme yüzeyine dönüştü.
 - Global `pnpm` bu geliştirme makinesinde PATH'te olmadığı için yerel
   doğrulamalar şimdilik `node_modules/.bin/*` komutları üzerinden koşuluyor.
 
@@ -98,7 +98,7 @@ Kapanış kriterleri:
 
 ## F2 - Public Keşif ve İşletme Profili
 
-Durum: tasarım/prototip başladı; canlı veri bağlantısı bekliyor.
+Durum: discovery/profile dikey dilimi başladı.
 
 Amaç: anonim kullanıcının güven veren, hızlı ve paylaşılabilir bir işletme
 keşif deneyimi yaşaması.
@@ -119,6 +119,20 @@ Backend bağımlılıkları:
 - Zengin discovery summary ve facet/taksonomi endpoint'i
 - Galeri görsel domain/optimization allow-list kararı
 
+2026-06-13 notu:
+
+- Ana sayfa; ürün değeri, onaylı rezervasyon akışı, işletme paneli vaadi ve
+  paket fiyat aralıklarını gösteren canlı ürün landing sayfasına çevrildi.
+- Landing navigasyonu yalnızca tek `Giriş yap` kapısını öne çıkarır; ayrı rol
+  login ekranı yoktur.
+- Public OpenAPI response content metadata tamamlandı ve generated frontend
+  tipleri yenilendi.
+- `/kesfet` route'u query parametreli public arama formu ve gerçek discovery
+  response kartlarıyla çalışır.
+- `/isletme/{businessSlug}` route'u profil metadata, galeri, hizmet varyantları,
+  şubeler, çalışma saatleri ve staff display policy bilgilerini gerçek public
+  profile response üzerinden SSR gösterir.
+
 Kapanış kriterleri:
 
 - İşletme profili JS kapalı veya yavaş bağlantıda temel içeriği gösterebilir.
@@ -129,7 +143,7 @@ Kapanış kriterleri:
 
 ## F3 - Auth, Rezervasyon ve Müşteri Self-service
 
-Durum: başlanmadı.
+Durum: booking başlangıç paneli başladı.
 
 Amaç: kullanıcıyı slot seçiminden işletme onayı bekleyen gerçek talebe kadar
 kesintisiz taşımak.
@@ -151,6 +165,23 @@ Backend bağımlılıkları:
 - Optional staff/internal resource create kontratı
 - Global customer request + confirmed appointment read model'i
 - Tutarlı session/bootstrap ve error envelope
+
+2026-06-13 notu:
+
+- Public appointment request create/list/detail/cancel response metadata
+  OpenAPI'ye eklendi ve generated frontend tipleri yenilendi.
+- `/isletme/{businessSlug}` profilinde booking başlangıç paneli eklendi:
+  kullanıcı multi-service varyant, şube, tarih ve opsiyonel personel tercihiyle
+  gerçek `/slots` endpoint'inden uygun saatleri arar.
+- Seçilen slot, auth gerekirse yalnızca PII içermeyen ve kısa TTL'li
+  `sessionStorage` draft olarak saklanır; kullanıcı tek `/giris` ekranından
+  profile geri döner.
+- `Talep gönder` authenticated durumda public appointment request create
+  endpoint'ine `Idempotency-Key` ile gider ve başarı mesajı `PendingApproval`
+  kesin randevu gibi göstermeden verilir.
+- `/hesabim/talepler` authenticated customer route'u eklendi; global appointment
+  history read model'iyle talep/randevu geçmişini gösterir ve yalnız
+  `PendingApproval` talepler için idempotent müşteri iptali sunar.
 
 Kapanış kriterleri:
 
@@ -237,9 +268,9 @@ Kapanış kriterleri:
 
 ## F6 - İşletme Operasyon Derinliği
 
-Durum: appointment calendar/detail, note, cancel, complete, no-show, rebook ve
-resource block backend API'leri hazır; ayar CRUD'larının bir kısmı sonraki
-dilimlerde açılacak.
+Durum: başladı. Appointment calendar/detail, note, cancel, complete, no-show,
+rebook ve resource block backend API'leri hazır; ayar CRUD'larının bir kısmı
+sonraki dilimlerde açılacak.
 
 Amaç: request onay kutusundan gerçek salon operasyon paneline geçmek.
 
@@ -255,8 +286,25 @@ Planlanan teslimatlar:
 - Public profil metadata, galeri ve slot ayarı yönetimi
 - Verified review operasyonu
 
-Tamamlanan appointment/resource operasyonları tenant header, branch-scope authz,
-audit, idempotency ve conflict kontrolüyle kullanılmalıdır.
+2026-06-13 notu:
+
+- `/panel` içinde `GET /api/business/appointments` ile kesinleşmiş randevu
+  listesi açıldı.
+- Confirmed randevular için cancel, complete, no-show ve business note
+  aksiyonları tenant header + `Idempotency-Key` ile generated client üzerinden
+  bağlandı.
+- Cancel/no-show/rebook/resource block reason modal üzerinden zorunlu alınır;
+  complete yalnız randevu bitişinden sonra, no-show yalnız randevu
+  başlangıcından sonra UI'da açılır.
+- Rebook ve resource block aksiyonları aynı appointment schedule akışına eklendi.
+  Rebook mevcut staff/resource ile yeni UTC aralığına taşır; resource block
+  seçili iç kaynağı kullanıcıya GUID göstermeden operasyonel olarak kapatır.
+- Ayar yönetimi, gelişmiş branch-timezone date picker ve resource/staff CRUD
+  sonraki F6 dilimleridir.
+
+Tamamlanan appointment operasyonları tenant header, branch-scope authz, audit,
+idempotency ve conflict kontrolüyle; resource block operasyonları tenant header,
+branch-scope authz, audit ve conflict kontrolüyle kullanılmalıdır.
 
 ## F7 - Lansman Sertleşmesi
 
@@ -293,7 +341,7 @@ Kapanış kriterleri:
 5. Tamamlandı: Business appointment/request read model OpenAPI response tipleri
    ve canlı appointment inbox bağlantısı.
 6. Storybook ve temel design-system component'lerini kur.
-7. Public işletme profili dikey dilimini gerçek API ile tamamla.
+7. Devam ediyor: Public işletme profili dikey dilimi gerçek API ile uygulanıyor.
 8. Slot seçimi ve booking draft prototipini tamamla.
 9. Auth dönüşü + idempotent request create ile customer journey'yi kapat.
 10. Customer self-service ve abuse appeal yüzeyini tamamla.

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getBusinessAppointments } from "@/features/business/api/get-business-appointments";
 import {
   getBusinessAppointmentInbox,
   getPrimaryBusinessTenant
@@ -24,8 +25,8 @@ export default async function PanelPage() {
       <PrivateRouteState
         actionHref={routes.auth.login}
         actionLabel="Giriş ekranına git"
-        description={`${sessionState.reason} Session doğrulanmadan işletme paneli render edilmez.`}
-        title="Oturum kapısı kullanılamıyor"
+        description={`${sessionState.reason} Lütfen yeniden giriş yapmayı dene.`}
+        title="Oturum doğrulanamadı"
       />
     );
   }
@@ -41,8 +42,8 @@ export default async function PanelPage() {
       <PrivateRouteState
         actionHref={routes.public.home}
         actionLabel="Ana sayfaya dön"
-        description={`${context.reason} Tenant context doğrulanmadan işletme paneli açılmaz.`}
-        title="İşletme bağlamı doğrulanamadı"
+        description={`${context.reason} Hesabına bağlı işletme yetkileri doğrulanmadan panel açılmaz.`}
+        title="İşletme yetkileri doğrulanamadı"
       />
     );
   }
@@ -54,16 +55,20 @@ export default async function PanelPage() {
       <PrivateRouteState
         actionHref={routes.public.home}
         actionLabel="Ana sayfaya dön"
-        description="Bu kullanıcı için aktif BusinessOwner veya BranchManager bağlamı dönmedi. Kullanıcıya serbest tenant GUID seçtirilmez."
+        description="Bu hesap için aktif işletme yetkisi görünmüyor. Yetki tanımlandıktan sonra panel açılır."
         title="Aktif işletme üyeliği yok"
       />
     );
   }
 
-  const inbox = await getBusinessAppointmentInbox(tenant);
+  const [inbox, appointmentSchedule] = await Promise.all([
+    getBusinessAppointmentInbox(tenant),
+    getBusinessAppointments(tenant)
+  ]);
 
   return (
     <BusinessPanel
+      appointmentSchedule={appointmentSchedule}
       context={context}
       inbox={inbox}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}

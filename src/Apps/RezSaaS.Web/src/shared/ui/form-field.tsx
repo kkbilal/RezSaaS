@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/shared/lib/cn";
 
 type FormFieldProps = {
@@ -22,7 +22,7 @@ export function FormField({ children, error, hint, label }: FormFieldProps) {
 export function TextInput({
   className,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+}: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={cn(

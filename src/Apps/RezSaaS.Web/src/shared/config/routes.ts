@@ -8,7 +8,13 @@ export const routes = {
   business: {
     panel: "/panel"
   },
+  customer: {
+    requests: "/hesabim/talepler"
+  },
   public: {
+    businessProfile: (businessSlug: string) =>
+      `/isletme/${encodeURIComponent(businessSlug)}`,
+    discover: "/kesfet",
     home: "/"
   }
 } as const;

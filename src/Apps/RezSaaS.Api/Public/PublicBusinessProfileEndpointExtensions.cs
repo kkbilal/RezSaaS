@@ -13,19 +13,21 @@ public static class PublicBusinessProfileEndpointExtensions
             .RequireRateLimiting(OrganizationRateLimitPolicyNames.PublicDiscovery);
 
         publicBusinesses.MapGet(
-            "/{slug}/profile",
-            async (
-                string slug,
-                PublicBusinessProfileComposer composer,
-                CancellationToken cancellationToken) =>
-            {
-                PublicBusinessProfileResponse? profile =
-                    await composer.GetProfileAsync(slug, cancellationToken);
+                "/{slug}/profile",
+                async (
+                    string slug,
+                    PublicBusinessProfileComposer composer,
+                    CancellationToken cancellationToken) =>
+                {
+                    PublicBusinessProfileResponse? profile =
+                        await composer.GetProfileAsync(slug, cancellationToken);
 
-                return profile is null
-                    ? Results.NotFound()
-                    : Results.Ok(profile);
-            });
+                    return profile is null
+                        ? Results.NotFound()
+                        : Results.Ok(profile);
+                })
+            .Produces<PublicBusinessProfileResponse>()
+            .Produces(StatusCodes.Status404NotFound);
 
         return endpoints;
     }

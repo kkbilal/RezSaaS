@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <AuthShell
-      description="Platform-global kullanıcı hesabı açılır; tenant rolü global Identity rolüne dönüştürülmez."
+      description="Yeni hesap oluştur; işletme veya platform yetkileri ayrıca tanımlandığında ilgili ekranlar açılır."
       footer={
         <>
           Zaten hesabın var mı?{" "}

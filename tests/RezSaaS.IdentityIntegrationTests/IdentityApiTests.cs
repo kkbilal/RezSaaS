@@ -44,6 +44,13 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
         Assert.True(paths.TryGetProperty("/api/business/appointments/{appointmentId}", out _));
         Assert.True(paths.TryGetProperty("/api/business/resources/{resourceId}/blocks", out _));
         Assert.True(paths.TryGetProperty("/api/customer/appointment-history", out _));
+        Assert.True(paths.TryGetProperty("/api/public/businesses", out _));
+        Assert.True(paths.TryGetProperty("/api/public/businesses/{slug}", out _));
+        Assert.True(paths.TryGetProperty("/api/public/businesses/{slug}/profile", out _));
+        Assert.True(paths.TryGetProperty("/api/public/businesses/{slug}/slots", out _));
+        Assert.True(paths.TryGetProperty("/api/public/businesses/{slug}/appointment-requests", out _));
+        Assert.True(paths.TryGetProperty("/api/public/businesses/{slug}/appointment-requests/{appointmentRequestId}", out _));
+        Assert.True(paths.TryGetProperty("/api/public/businesses/{slug}/appointment-requests/{appointmentRequestId}/cancel", out _));
 
         AssertOpenApiJsonResponse(
             paths,
@@ -81,6 +88,54 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
             "get",
             "200",
             "#/components/schemas/BusinessAppointmentResponse");
+        AssertOpenApiJsonArrayResponse(
+            paths,
+            "/api/public/businesses",
+            "get",
+            "200",
+            "#/components/schemas/PublicBusinessSummaryView");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/public/businesses/{slug}",
+            "get",
+            "200",
+            "#/components/schemas/PublicBusinessProfileView");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/public/businesses/{slug}/profile",
+            "get",
+            "200",
+            "#/components/schemas/PublicBusinessProfileResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/public/businesses/{slug}/slots",
+            "get",
+            "200",
+            "#/components/schemas/PublicSlotSearchResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/public/businesses/{slug}/appointment-requests",
+            "post",
+            "201",
+            "#/components/schemas/PublicAppointmentRequestCreateResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/public/businesses/{slug}/appointment-requests",
+            "get",
+            "200",
+            "#/components/schemas/PublicAppointmentRequestListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/public/businesses/{slug}/appointment-requests/{appointmentRequestId}",
+            "get",
+            "200",
+            "#/components/schemas/PublicAppointmentRequestResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/public/businesses/{slug}/appointment-requests/{appointmentRequestId}/cancel",
+            "post",
+            "200",
+            "#/components/schemas/PublicAppointmentRequestResponse");
     }
 
     [Fact]
@@ -335,6 +390,35 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
             content
                 .GetProperty("application/json")
                 .GetProperty("schema")
+                .GetProperty("$ref")
+                .GetString());
+    }
+
+    private static void AssertOpenApiJsonArrayResponse(
+        JsonElement paths,
+        string path,
+        string method,
+        string statusCode,
+        string expectedItemSchemaReference)
+    {
+        JsonElement response = paths
+            .GetProperty(path)
+            .GetProperty(method)
+            .GetProperty("responses")
+            .GetProperty(statusCode);
+
+        Assert.True(
+            response.TryGetProperty("content", out JsonElement content),
+            $"{method.ToUpperInvariant()} {path} {statusCode} response must declare typed content.");
+
+        JsonElement schema = content
+            .GetProperty("application/json")
+            .GetProperty("schema");
+        Assert.Equal("array", schema.GetProperty("type").GetString());
+        Assert.Equal(
+            expectedItemSchemaReference,
+            schema
+                .GetProperty("items")
                 .GetProperty("$ref")
                 .GetString());
     }

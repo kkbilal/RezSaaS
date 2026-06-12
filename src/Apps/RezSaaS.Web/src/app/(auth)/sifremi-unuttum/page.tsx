@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function ForgotPasswordPage() {
   return (
     <AuthShell
-      description="Hesap varlığı sızdırmadan şifre sıfırlama isteği oluşturur."
+      description="E-posta adresini yaz; uygunsa şifre sıfırlama yönergeleri gönderilir."
       footer={
         <Link
           className="font-medium text-[var(--rs-ink)] underline underline-offset-4"

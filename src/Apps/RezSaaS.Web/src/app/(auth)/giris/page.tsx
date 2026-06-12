@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <AuthShell
-      description="Cookie tabanlı oturum açılır; bearer/access token browser storage içine yazılmaz."
+      description="Tek hesapla giriş yap; yetkili olduğun işletme ve panel alanları girişten sonra açılır."
       footer={
         <>
           Hesabın yok mu?{" "}

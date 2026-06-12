@@ -30,7 +30,7 @@ export default async function ResetPasswordPage({
 
   return (
     <AuthShell
-      description="Identity reset kodu ile yeni parola belirlenir."
+      description="Sana iletilen kodla yeni parolanı belirle."
       footer={
         <Link
           className="font-medium text-[var(--rs-ink)] underline underline-offset-4"

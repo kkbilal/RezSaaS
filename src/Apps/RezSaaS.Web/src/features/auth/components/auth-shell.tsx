@@ -19,15 +19,15 @@ export function AuthShell({ children, description, footer, title }: AuthShellPro
             className="inline-flex rounded-full border border-[var(--rs-border)] bg-white/70 px-4 py-2 text-sm text-[var(--rs-muted)] shadow-[var(--rs-shadow-soft)] transition hover:text-[var(--rs-ink)]"
             href={routes.public.home}
           >
-            RezSaaS Web
+            RezSaaS
           </Link>
           <div className="space-y-5">
             <h1 className="text-5xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-7xl">
-              Cookie tabanlı güvenli oturum.
+              Tek giriş, doğru panel.
             </h1>
             <p className="max-w-xl text-lg leading-8 text-[var(--rs-muted-strong)]">
-              Browser storage içine bearer token yazmadan, backend session/bootstrap
-              kontratıyla işletme paneline geçiş yapılır.
+              Hesabına giriş yap; müşteri, işletme veya platform yetkilerine göre
+              göreceğin ekranlar otomatik belirlenir.
             </p>
           </div>
         </section>

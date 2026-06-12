@@ -33,7 +33,7 @@ export async function getSessionState(): Promise<SessionState> {
     if (!response.ok) {
       return {
         kind: "unavailable",
-        reason: `Session bootstrap ${response.status} döndü.`
+        reason: "Oturum şu anda doğrulanamadı."
       };
     }
 
@@ -50,7 +50,7 @@ export async function getSessionState(): Promise<SessionState> {
   } catch {
     return {
       kind: "unavailable",
-      reason: "Backend session kapısına ulaşılamadı."
+      reason: "Oturum şu anda doğrulanamadı."
     };
   }
 }

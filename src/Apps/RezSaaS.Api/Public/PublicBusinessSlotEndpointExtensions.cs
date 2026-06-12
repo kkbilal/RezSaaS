@@ -13,36 +13,39 @@ public static class PublicBusinessSlotEndpointExtensions
             .RequireRateLimiting(OrganizationRateLimitPolicyNames.PublicDiscovery);
 
         publicBusinesses.MapGet(
-            "/{slug}/slots",
-            async (
-                string slug,
-                string? branchSlug,
-                string? serviceVariantIds,
-                DateOnly? date,
-                Guid? staffMemberId,
-                PublicSlotSearchComposer composer,
-                CancellationToken cancellationToken) =>
-            {
-                if (!TryCreateRequest(
-                    branchSlug,
-                    serviceVariantIds,
-                    date,
-                    staffMemberId,
-                    out PublicSlotSearchRequest? request,
-                    out PublicSlotSearchValidationResponse? validationResponse))
+                "/{slug}/slots",
+                async (
+                    string slug,
+                    string? branchSlug,
+                    string? serviceVariantIds,
+                    DateOnly? date,
+                    Guid? staffMemberId,
+                    PublicSlotSearchComposer composer,
+                    CancellationToken cancellationToken) =>
                 {
-                    return Results.BadRequest(validationResponse);
-                }
+                    if (!TryCreateRequest(
+                        branchSlug,
+                        serviceVariantIds,
+                        date,
+                        staffMemberId,
+                        out PublicSlotSearchRequest? request,
+                        out PublicSlotSearchValidationResponse? validationResponse))
+                    {
+                        return Results.BadRequest(validationResponse);
+                    }
 
-                PublicSlotSearchResponse? response = await composer.SearchAsync(
-                    slug,
-                    request!,
-                    cancellationToken);
+                    PublicSlotSearchResponse? response = await composer.SearchAsync(
+                        slug,
+                        request!,
+                        cancellationToken);
 
-                return response is null
-                    ? Results.NotFound()
-                    : Results.Ok(response);
-            });
+                    return response is null
+                        ? Results.NotFound()
+                        : Results.Ok(response);
+                })
+            .Produces<PublicSlotSearchResponse>()
+            .Produces<PublicSlotSearchValidationResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
 
         return endpoints;
     }

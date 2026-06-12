@@ -31,7 +31,7 @@ export function ForgotPasswordForm() {
 
       setMessage("Eğer hesap uygunsa şifre sıfırlama yönergesi gönderildi.");
     } catch {
-      setError("API'ye ulaşılamadı. Backend veya Next proxy ayarını kontrol et.");
+      setError("Şifre sıfırlama şu anda başlatılamadı. Lütfen kısa süre sonra tekrar dene.");
     } finally {
       setIsSubmitting(false);
     }

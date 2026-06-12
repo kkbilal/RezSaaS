@@ -34,7 +34,7 @@ export async function getBusinessAppointmentInbox(
   if (!tenant.tenantId) {
     return {
       kind: "unavailable",
-      reason: "Backend business context tenant id döndürmedi.",
+      reason: "İşletme bilgisi doğrulanamadı.",
       requests: []
     };
   }
@@ -55,7 +55,7 @@ export async function getBusinessAppointmentInbox(
     if (!response.ok) {
       return {
         kind: "unavailable",
-        reason: `Appointment inbox API ${response.status} döndü.`,
+        reason: "Rezervasyon talepleri şu anda alınamadı.",
         requests: []
       };
     }
@@ -68,7 +68,7 @@ export async function getBusinessAppointmentInbox(
   } catch {
     return {
       kind: "unavailable",
-      reason: "Appointment inbox API bağlantısı kurulamadı.",
+      reason: "Rezervasyon talepleri şu anda yüklenemedi.",
       requests: []
     };
   }

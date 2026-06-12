@@ -43,42 +43,45 @@ public sealed class OrganizationModule : ModuleBase
             .RequireRateLimiting(OrganizationRateLimitPolicyNames.PublicDiscovery);
 
         publicBusinesses.MapGet(
-            string.Empty,
-            async (
-                string? searchText,
-                string? categoryKey,
-                string? city,
-                string? district,
-                int? take,
-                PublicBusinessDirectoryService directoryService,
-                CancellationToken cancellationToken) =>
-            {
-                IReadOnlyCollection<PublicBusinessSummaryView> businesses =
-                    await directoryService.SearchAsync(
-                        new PublicBusinessSearchQuery(
-                            searchText,
-                            categoryKey,
-                            city,
-                            district,
-                            take),
-                        cancellationToken);
+                string.Empty,
+                async (
+                    string? searchText,
+                    string? categoryKey,
+                    string? city,
+                    string? district,
+                    int? take,
+                    PublicBusinessDirectoryService directoryService,
+                    CancellationToken cancellationToken) =>
+                {
+                    IReadOnlyCollection<PublicBusinessSummaryView> businesses =
+                        await directoryService.SearchAsync(
+                            new PublicBusinessSearchQuery(
+                                searchText,
+                                categoryKey,
+                                city,
+                                district,
+                                take),
+                            cancellationToken);
 
-                return Results.Ok(businesses);
-            });
+                    return Results.Ok(businesses);
+                })
+            .Produces<IReadOnlyCollection<PublicBusinessSummaryView>>();
 
         publicBusinesses.MapGet(
-            "/{slug}",
-            async (
-                string slug,
-                PublicBusinessDirectoryService directoryService,
-                CancellationToken cancellationToken) =>
-            {
-                PublicBusinessProfileView? business =
-                    await directoryService.GetBySlugAsync(slug, cancellationToken);
+                "/{slug}",
+                async (
+                    string slug,
+                    PublicBusinessDirectoryService directoryService,
+                    CancellationToken cancellationToken) =>
+                {
+                    PublicBusinessProfileView? business =
+                        await directoryService.GetBySlugAsync(slug, cancellationToken);
 
-                return business is null
-                    ? Results.NotFound()
-                    : Results.Ok(business);
-            });
+                    return business is null
+                        ? Results.NotFound()
+                        : Results.Ok(business);
+                })
+            .Produces<PublicBusinessProfileView>()
+            .Produces(StatusCodes.Status404NotFound);
     }
 }

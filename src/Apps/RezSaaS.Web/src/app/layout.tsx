@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  description: "RezSaaS işletme operasyon paneli.",
+  description:
+    "RezSaaS; salon, spa, klinik ve stüdyo ekipleri için onaylı rezervasyon ve operasyon platformu.",
   title: {
-    default: "RezSaaS Panel",
+    default: "RezSaaS",
     template: "%s | RezSaaS"
   }
 };

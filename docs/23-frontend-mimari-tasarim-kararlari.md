@@ -1,6 +1,6 @@
 # Frontend Mimari ve Tasarım Kararları
 
-Son güncelleme: 2026-06-09
+Son güncelleme: 2026-06-13
 
 ## Amaç
 
@@ -24,18 +24,45 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   verisiyle çalışır; preview appointment data kaldırılmıştır.
 - Business appointment/request OpenAPI response content tipleri tamamlandı ve
   generated TypeScript client artık inbox kontratını typed olarak taşır.
+- 2026-06-13: `/` route'u geliştirici/prototip açılışı yerine ürün landing
+  sayfasına çevrildi; özellikler, işleyiş, paket fiyat aralıkları ve tek
+  `Giriş yap` kapısı gösterilir. `/giris` rol bazlı ayrışmayan tek giriş
+  ekranıdır; görülecek panel kullanıcı yetkileriyle belirlenir.
+- 2026-06-13: Public discovery/profile response content metadata OpenAPI'ye
+  eklendi; generated TypeScript client artık `/api/public/businesses`,
+  `/api/public/businesses/{slug}/profile` ve slot response tiplerini taşır.
+  `/kesfet` ve `/isletme/{businessSlug}` route'ları gerçek public API
+  kontratıyla SSR olarak uygulanmaya başladı.
+- 2026-06-13: Public appointment request create/list/detail/cancel response
+  metadata OpenAPI'ye eklendi. İşletme profilinde hizmet, şube, tarih ve
+  opsiyonel personel tercihiyle gerçek slot arayan booking paneli başladı;
+  seçilen draft yalnızca `sessionStorage` içinde kısa TTL ile, PII/token
+  taşımadan saklanır ve auth gerekiyorsa tek `/giris` kapısına döner.
+- 2026-06-13: `/hesabim/talepler` private customer route'u eklendi. Route,
+  `GET /api/customer/appointment-history` üzerinden kendi talep/randevu geçmişini
+  okur; yalnız `PendingApproval` talepler public cancel endpoint'i ve
+  `Idempotency-Key` ile iptal edilebilir.
+- 2026-06-13: `/panel` işletme operasyon yüzeyi `GET /api/business/appointments`
+  ile kesinleşmiş randevu listesini okumaya başladı. Confirmed randevular için
+  cancel, complete, no-show ve business note aksiyonları generated client,
+  tenant header ve `Idempotency-Key` ile bağlandı; complete/no-show butonları
+  backend zaman kurallarıyla uyumlu şekilde gelecekteki randevularda kapalıdır.
+- 2026-06-13: `/panel` appointment schedule içine rebook ve resource block
+  aksiyonları eklendi. Rebook mevcut staff/resource ile yeni UTC aralığına
+  taşır ve backend conflict kontrolüne bırakılır; resource block kullanıcıya
+  internal GUID göstermeden seçili iç kaynağı operasyonel olarak kapatır.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
 | Backend alanı | Mevcut durum | Frontend karşılığı | Eksik veya riskli nokta |
 | --- | --- | --- | --- |
 | Phase 1 Identity/Auth | Register, login, refresh, confirmation, reset ve manage endpoint'leri mevcut | Auth ekranları ve hesap güvenliği | Session/rol/tenant bootstrap kontratı ve gerçek MFA step-up oturumu tamamlanmalı |
-| Phase 2 public keşif | İşletme arama, profil, hizmet, branch, staff, çalışma saati ve galeri mevcut | Keşif listesi ve `/isletme/{businessSlug}` profili | Arama kartı için görsel, puan, başlangıç fiyatı ve facet/taksonomi verisi yetersiz |
+| Phase 2 public keşif | İşletme arama, profil, hizmet, branch, staff, çalışma saati ve galeri mevcut | `/kesfet` ve `/isletme/{businessSlug}` SSR route'ları | Zengin facet/taksonomi ve görsel optimization allow-list sonraki iyileştirme |
 | Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı | Frontend resource seçtirmez; optional staff tercihi backend kontratına bağlıdır |
-| Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel ve global customer history mevcut | Müşteri talep geçmişi | Cursor pagination ileride iyileştirilecek |
+| Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel ve global customer history mevcut | `/hesabim/talepler` müşteri geçmişi ve pending cancel | Cursor pagination ileride iyileştirilecek |
 | Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | İşletme talep kutusu | Liste pagination/search contract'ı ileride iyileştirilecek |
 | Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | Platform operasyon paneli | UI açılışı F5 içinde güvenli route ve step-up UX ile yapılmalı |
-| Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | İşletme operasyon paneli | Organization/Catalog/Resources/Availability tam CRUD ayar ekranları sonraki dilimlerdir |
+| Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | `/panel` içinde appointment schedule, rebook, resource block ve temel operasyon aksiyonları | Organization/Catalog/Resources/Availability ayar ekranları ve daha zengin calendar UX sonraki dilimlerdir |
 | Reviews, Analytics, Payments | Backend fazları bekleniyor | Yorum, rapor ve ödeme ekranları | API olmadan sahte dashboard veya form üretilmez |
 
 ## Repo ve Deploy Kararı
@@ -90,7 +117,7 @@ sınırlarını korur.
 | Yüzey | Başlangıç route'ları | Render/erişim yaklaşımı |
 | --- | --- | --- |
 | Public | `/`, `/kesfet`, `/isletme/{businessSlug}` | Indexlenebilir SSR/RSC, paylaşılabilir URL |
-| Auth | `/giris`, `/kayit`, `/sifremi-unuttum`, `/sifre-sifirla`, `/eposta-dogrula` | Public ama `noindex`; auth dönüş route'u güvenli allow-list ile korunur |
+| Auth | `/giris`, `/kayit`, `/sifremi-unuttum`, `/sifre-sifirla`, `/eposta-dogrula` | Public ama `noindex`; `/giris` tek login kapısıdır, auth dönüş route'u güvenli allow-list ile korunur |
 | Customer | `/hesabim/talepler`, `/hesabim/guvenlik`, `/hesabim/itirazlar` | Authenticated, private ve `no-store` |
 | Business | `/panel/talepler`, sonraki fazlarda `/panel/takvim`, `/panel/ayarlar` | Tenant membership ve branch scope kontrollü |
 | Platform | `/platform/tenantlar`, `/platform/abuse`, `/platform/itirazlar` | Yalnızca `PlatformAdminWithStepUp` |

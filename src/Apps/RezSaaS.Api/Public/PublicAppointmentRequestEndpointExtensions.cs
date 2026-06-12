@@ -16,86 +16,112 @@ public static class PublicAppointmentRequestEndpointExtensions
             .RequireRateLimiting(BookingRateLimitPolicyNames.AppointmentRequests);
 
         publicBusinesses.MapPost(
-            "/{slug}/appointment-requests",
-            async (
-                string slug,
-                PublicAppointmentRequestCreateRequest request,
-                [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-                ClaimsPrincipal user,
-                PublicAppointmentRequestComposer composer,
-                CancellationToken cancellationToken) =>
-            {
-                PublicAppointmentRequestCreateResult result =
-                    await composer.CreateAsync(
-                        slug,
-                        request,
-                        idempotencyKey,
-                        user,
-                        cancellationToken);
+                "/{slug}/appointment-requests",
+                async (
+                    string slug,
+                    PublicAppointmentRequestCreateRequest request,
+                    [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+                    ClaimsPrincipal user,
+                    PublicAppointmentRequestComposer composer,
+                    CancellationToken cancellationToken) =>
+                {
+                    PublicAppointmentRequestCreateResult result =
+                        await composer.CreateAsync(
+                            slug,
+                            request,
+                            idempotencyKey,
+                            user,
+                            cancellationToken);
 
-                return ToHttpResult(slug, result);
-            });
-
-        publicBusinesses.MapGet(
-            "/{slug}/appointment-requests",
-            async (
-                string slug,
-                string? status,
-                int? take,
-                ClaimsPrincipal user,
-                PublicAppointmentRequestComposer composer,
-                CancellationToken cancellationToken) =>
-            {
-                PublicAppointmentRequestAccessResult result =
-                    await composer.GetOwnAsync(
-                        slug,
-                        status,
-                        take,
-                        user,
-                        cancellationToken);
-
-                return ToHttpResult(result, listResult: true);
-            });
+                    return ToHttpResult(slug, result);
+                })
+            .Produces<PublicAppointmentRequestCreateResponse>(StatusCodes.Status201Created)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces(StatusCodes.Status429TooManyRequests);
 
         publicBusinesses.MapGet(
-            "/{slug}/appointment-requests/{appointmentRequestId:guid}",
-            async (
-                string slug,
-                Guid appointmentRequestId,
-                ClaimsPrincipal user,
-                PublicAppointmentRequestComposer composer,
-                CancellationToken cancellationToken) =>
-            {
-                PublicAppointmentRequestAccessResult result =
-                    await composer.GetOwnByIdAsync(
-                        slug,
-                        appointmentRequestId,
-                        user,
-                        cancellationToken);
+                "/{slug}/appointment-requests",
+                async (
+                    string slug,
+                    string? status,
+                    int? take,
+                    ClaimsPrincipal user,
+                    PublicAppointmentRequestComposer composer,
+                    CancellationToken cancellationToken) =>
+                {
+                    PublicAppointmentRequestAccessResult result =
+                        await composer.GetOwnAsync(
+                            slug,
+                            status,
+                            take,
+                            user,
+                            cancellationToken);
 
-                return ToHttpResult(result, listResult: false);
-            });
+                    return ToHttpResult(result, listResult: true);
+                })
+            .Produces<PublicAppointmentRequestListResponse>()
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
+
+        publicBusinesses.MapGet(
+                "/{slug}/appointment-requests/{appointmentRequestId:guid}",
+                async (
+                    string slug,
+                    Guid appointmentRequestId,
+                    ClaimsPrincipal user,
+                    PublicAppointmentRequestComposer composer,
+                    CancellationToken cancellationToken) =>
+                {
+                    PublicAppointmentRequestAccessResult result =
+                        await composer.GetOwnByIdAsync(
+                            slug,
+                            appointmentRequestId,
+                            user,
+                            cancellationToken);
+
+                    return ToHttpResult(result, listResult: false);
+                })
+            .Produces<PublicAppointmentRequestResponse>()
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         publicBusinesses.MapPost(
-            "/{slug}/appointment-requests/{appointmentRequestId:guid}/cancel",
-            async (
-                string slug,
-                Guid appointmentRequestId,
-                [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-                ClaimsPrincipal user,
-                PublicAppointmentRequestComposer composer,
-                CancellationToken cancellationToken) =>
-            {
-                PublicAppointmentRequestAccessResult result =
-                    await composer.CancelOwnAsync(
-                        slug,
-                        appointmentRequestId,
-                        idempotencyKey,
-                        user,
-                        cancellationToken);
+                "/{slug}/appointment-requests/{appointmentRequestId:guid}/cancel",
+                async (
+                    string slug,
+                    Guid appointmentRequestId,
+                    [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+                    ClaimsPrincipal user,
+                    PublicAppointmentRequestComposer composer,
+                    CancellationToken cancellationToken) =>
+                {
+                    PublicAppointmentRequestAccessResult result =
+                        await composer.CancelOwnAsync(
+                            slug,
+                            appointmentRequestId,
+                            idempotencyKey,
+                            user,
+                            cancellationToken);
 
-                return ToHttpResult(result, listResult: false);
-            });
+                    return ToHttpResult(result, listResult: false);
+                })
+            .Produces<PublicAppointmentRequestResponse>()
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
         return endpoints;
     }

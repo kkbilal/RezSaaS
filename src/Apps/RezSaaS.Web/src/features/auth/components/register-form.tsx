@@ -31,9 +31,9 @@ export function RegisterForm() {
         return;
       }
 
-      setMessage("Kayıt alındı. Production ortamında e-posta doğrulaması gerekir.");
+      setMessage("Kayıt alındı. Gerekirse e-posta doğrulama adımlarını takip edebilirsin.");
     } catch {
-      setError("API'ye ulaşılamadı. Backend veya Next proxy ayarını kontrol et.");
+      setError("Kayıt şu anda tamamlanamadı. Lütfen kısa süre sonra tekrar dene.");
     } finally {
       setIsSubmitting(false);
     }
@@ -52,7 +52,7 @@ export function RegisterForm() {
         />
       </FormField>
 
-      <FormField hint="Backend Identity politikası nihai otoritedir." label="Parola">
+      <FormField hint="En az 12 karakterli güçlü bir parola belirle." label="Parola">
         <TextInput
           autoComplete="new-password"
           minLength={12}

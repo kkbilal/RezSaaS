@@ -36,7 +36,7 @@ export async function getBusinessContext(): Promise<BusinessContextState> {
     if (!response.ok) {
       return {
         kind: "unavailable",
-        reason: `Backend ${response.status} döndü.`,
+        reason: "İşletme yetkileri şu anda doğrulanamadı.",
         tenants: []
       };
     }
@@ -48,7 +48,7 @@ export async function getBusinessContext(): Promise<BusinessContextState> {
   } catch {
     return {
       kind: "unavailable",
-      reason: "Backend bağlantısı kurulamadı.",
+      reason: "İşletme yetkileri şu anda doğrulanamadı.",
       tenants: []
     };
   }

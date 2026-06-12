@@ -43,7 +43,7 @@ export function ResetPasswordForm({
 
       setMessage("Parola güncellendi. Şimdi giriş yapabilirsin.");
     } catch {
-      setError("API'ye ulaşılamadı. Backend veya Next proxy ayarını kontrol et.");
+      setError("Parola şu anda güncellenemedi. Lütfen kısa süre sonra tekrar dene.");
     } finally {
       setIsSubmitting(false);
     }

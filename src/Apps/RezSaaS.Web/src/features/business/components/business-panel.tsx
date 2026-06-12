@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { BusinessAppointmentScheduleState } from "@/features/business/api/get-business-appointments";
 import type {
   BusinessAppointmentInboxState,
   BusinessAppointmentRequest
@@ -10,6 +11,7 @@ import type {
   BusinessContextState,
   BusinessTenantContext
 } from "@/features/business/api/get-business-context";
+import { BusinessAppointmentSchedule } from "@/features/business/components/business-appointment-schedule";
 import { createTenantApiClient } from "@/shared/api/client";
 import { formatBranchDateTime } from "@/shared/lib/date-time";
 import { Button } from "@/shared/ui/button";
@@ -28,6 +30,7 @@ type AppointmentFilter = "all" | AppointmentRequestStatus;
 type AppointmentDecision = "approve" | "decline";
 
 type BusinessPanelProps = {
+  appointmentSchedule: BusinessAppointmentScheduleState;
   context: BusinessContextState;
   inbox: BusinessAppointmentInboxState;
   sessionEmail: string;
@@ -35,21 +38,22 @@ type BusinessPanelProps = {
 
 function contextStatusCopy(context: BusinessContextState) {
   if (context.kind === "ready" && context.tenants.length > 0) {
-    return "Backend doğrulamalı aktif bağlam";
+    return "Yetkili işletme hesabı";
   }
 
   if (context.kind === "ready") {
-    return "Oturum var, işletme üyeliği görünmüyor";
+    return "İşletme yetkisi görünmüyor";
   }
 
   if (context.kind === "unauthenticated") {
-    return "Oturum bekleniyor";
+    return "Giriş bekleniyor";
   }
 
   return context.reason;
 }
 
 export function BusinessPanel({
+  appointmentSchedule,
   context,
   inbox,
   sessionEmail
@@ -139,7 +143,7 @@ export function BusinessPanel({
     const appointmentRequestId = request.id;
 
     if (!tenantId || !appointmentRequestId) {
-      showToast("İşlem için doğrulanmış tenant ve talep kimliği gerekiyor.");
+      showToast("İşlem için yetkili işletme ve talep bilgisi doğrulanmalı.");
       return;
     }
 
@@ -190,12 +194,12 @@ export function BusinessPanel({
       setConflictCandidate(null);
       showToast(
         decision === "approve"
-          ? "Talep canlı API üzerinden onaylandı; liste yenileniyor."
-          : "Talep canlı API üzerinden reddedildi."
+          ? "Talep onaylandı; liste güncelleniyor."
+          : "Talep reddedildi."
       );
       router.refresh();
     } catch {
-      showToast("Backend bağlantısı kurulamadı; işlem uygulanmadı.");
+      showToast("İşlem şu anda tamamlanamadı. Lütfen tekrar dene.");
     } finally {
       setActingRequestId(null);
     }
@@ -265,10 +269,9 @@ export function BusinessPanel({
 
             {inbox.kind === "unavailable" ? (
               <Card className="border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] p-5 shadow-none">
-                <CardTitle>Canlı inbox okunamadı</CardTitle>
+                <CardTitle>Talepler yüklenemedi</CardTitle>
                 <CardDescription className="mt-2 text-[var(--rs-warning)]">
-                  {inbox.reason} Preview data kullanılmaz; backend kontratı veya
-                  oturum düzelene kadar liste boş kalır.
+                  {inbox.reason} Lütfen kısa süre sonra tekrar dene.
                 </CardDescription>
               </Card>
             ) : null}
@@ -276,11 +279,10 @@ export function BusinessPanel({
             <div className="grid gap-4">
               {visibleRequests.length === 0 ? (
                 <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
-                  <CardTitle>Bu filtrede canlı talep yok</CardTitle>
+                  <CardTitle>Bu filtrede talep yok</CardTitle>
                   <CardDescription className="mx-auto mt-2 max-w-md">
-                    Liste artık `/api/business/appointment-requests` typed
-                    response kontratından beslenir. Aramayı veya durum filtresini
-                    değiştirebilirsin.
+                    Aramayı veya durum filtresini değiştirerek diğer talepleri
+                    inceleyebilirsin.
                   </CardDescription>
                 </Card>
               ) : (
@@ -296,6 +298,12 @@ export function BusinessPanel({
                 ))
               )}
             </div>
+
+            <BusinessAppointmentSchedule
+              onToast={showToast}
+              schedule={appointmentSchedule}
+              tenantId={tenantId}
+            />
           </section>
         </div>
       </div>
@@ -340,7 +348,7 @@ function PanelHeader({
               {contextStatusCopy(context)}
             </span>
             <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-              Cookie auth ve backend tenant context
+              Güvenli işletme seçimi
             </span>
             <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
               {sessionEmail}
@@ -352,7 +360,7 @@ function PanelHeader({
               {tenantName}
             </p>
             <h1 className="max-w-4xl text-5xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-7xl">
-              Rezervasyon kararlarını canlı veriye bağlayan operasyon paneli.
+              Rezervasyon kararlarını netleştiren operasyon paneli.
             </h1>
           </div>
         </div>
@@ -366,7 +374,7 @@ function PanelHeader({
               {pendingCount}
             </p>
             <p className="mt-1 text-xs text-white/60">
-              {inbox.kind === "ready" ? "Canlı API" : "API bekleniyor"}
+              {inbox.kind === "ready" ? "Güncel liste" : "Liste yükleniyor"}
             </p>
           </div>
           <div className="rounded-[1.75rem] border border-[var(--rs-border)] bg-white p-5 shadow-[var(--rs-shadow-soft)]">
@@ -377,7 +385,7 @@ function PanelHeader({
               24s
             </p>
             <p className="mt-1 text-xs text-[var(--rs-muted)]">
-              PendingApproval TTL üst sınırı
+              Yanıt üst sınırı
             </p>
           </div>
         </div>
@@ -398,23 +406,19 @@ function TenantContextCard({
       <CardHeader>
         <CardTitle>İşletme bağlamı</CardTitle>
         <CardDescription>
-          Kullanıcıya serbest tenant GUID seçtirilmez; header merkezi API client
-          tarafından doğrulanmış context ile eklenir.
+          Panel yalnızca hesabına bağlı işletme ve şube yetkileriyle açılır.
         </CardDescription>
       </CardHeader>
 
       <div className="mt-6 space-y-4">
         <div className="rounded-[1.5rem] bg-[var(--rs-surface-muted)] p-4">
           <p className="text-xs uppercase tracking-[0.2em] text-[var(--rs-muted)]">
-            Aktif tenant
+            Aktif işletme
           </p>
           <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-[var(--rs-ink)]">
             {tenant?.tenantDisplayName ??
               tenant?.tenantSlug ??
-              "Backend context bekleniyor"}
-          </p>
-          <p className="mt-1 break-all font-mono text-xs text-[var(--rs-muted)]">
-            {tenant?.tenantId ?? "tenant id UI'da serbest seçim alanı değildir"}
+              "İşletme bilgisi bekleniyor"}
           </p>
         </div>
 
@@ -422,7 +426,7 @@ function TenantContextCard({
           <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
             <p className="text-xs text-[var(--rs-muted)]">Rol</p>
             <p className="mt-2 font-medium text-[var(--rs-ink)]">
-              {tenant?.role ?? "Bilinmiyor"}
+              {getRoleLabel(tenant?.role)}
             </p>
           </div>
           <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
@@ -439,8 +443,8 @@ function TenantContextCard({
 
         {context.kind !== "ready" ? (
           <p className="rounded-2xl border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] p-4 text-sm leading-6 text-[var(--rs-warning)]">
-            {contextStatusCopy(context)}. Panel gerçek tenant verisi gelmeden
-            operasyon aksiyonu açmaz.
+            {contextStatusCopy(context)}. İşletme bilgisi doğrulanmadan operasyon
+            aksiyonu açılmaz.
           </p>
         ) : null}
       </div>
@@ -461,12 +465,12 @@ function OperatingRulesCard() {
 
       <div className="mt-6 space-y-3 text-sm leading-6">
         <RuleItem
-          label="PendingApproval slot bloklamaz"
+          label="Onay bekleyen talep slot bloklamaz"
           text="İşletme aynı slot için gelen taleplerden birini seçebilir."
         />
         <RuleItem
-          label="Masked PII"
-          text="E-posta ve telefon ham halde panel response veya log yüzeyine taşınmaz."
+          label="Maskeli müşteri bilgisi"
+          text="E-posta ve telefon yalnızca güvenli, maskelenmiş biçimde gösterilir."
         />
         <RuleItem
           label="Şube timezone'u korunur"
@@ -500,9 +504,8 @@ function DarkDecisionCard() {
         Çakışmayı gizleme, işletmeye anlaşılır karar olarak sun.
       </h2>
       <p className="mt-5 text-sm leading-6 text-white/68">
-        Onay aksiyonu idempotency key ile çalışır; backend transaction içinde
-        çakışmayı tekrar kontrol eder ve uygun olmayan talepleri Superseded
-        durumuna taşır.
+        Onay sırasında çakışma yeniden kontrol edilir; seçilen talep netleşirken
+        karşılanamayacak talepler işletmeye anlaşılır durumlarla gösterilir.
       </p>
     </section>
   );
@@ -534,7 +537,7 @@ function InboxToolbar({
             Gelen rezervasyon istekleri
           </h2>
           <p className="mt-1 text-sm text-[var(--rs-muted)]">
-            Canlı API response tipleriyle beslenen işletme inbox ekranı.
+            Onay bekleyen ve sonuçlanmış talepleri hizmet, personel veya müşteriyle ara.
           </p>
         </div>
 
@@ -693,8 +696,8 @@ function ConflictHint({ request }: { request: BusinessAppointmentRequest }) {
 
   return (
     <p className="rounded-2xl border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] px-4 py-3 text-sm leading-6 text-[var(--rs-warning)]">
-      Aynı şube saatinde başka PendingApproval talepler olabilir. UI sadece karar
-      öncesi uyarır; kesin çakışma kontrolü backend onay transaction içinde yapılır.
+      Aynı şube saatinde başka onay bekleyen talepler olabilir. Panel karar
+      öncesi uyarır; kesin çakışma kontrolü onay anında yeniden yapılır.
     </p>
   );
 }
@@ -731,9 +734,8 @@ function ConflictDialog({
           </h2>
           <p className="text-sm leading-7 text-[var(--rs-muted)]">
             {shortGuid(request.id)} talebini onaylamak, aynı şube saatinde
-            bekleyen diğer talepleri Superseded durumuna taşıyabilir. Backend
-            onay anında staff/resource çakışmasını transaction içinde tekrar
-            kontrol eder.
+            bekleyen diğer talepleri karşılanamaz duruma taşıyabilir. Onay anında
+            personel ve kaynak çakışması yeniden kontrol edilir.
           </p>
         </div>
 
@@ -769,6 +771,22 @@ function getPanelTenant(
   }
 
   return context.kind === "ready" ? context.tenants[0] ?? null : null;
+}
+
+function getRoleLabel(role?: string | null) {
+  if (role === "BusinessOwner") {
+    return "İşletme sahibi";
+  }
+
+  if (role === "BranchManager") {
+    return "Şube yöneticisi";
+  }
+
+  if (role === "Staff") {
+    return "Personel";
+  }
+
+  return role ?? "Bilinmiyor";
 }
 
 function getRequestStatus(request: BusinessAppointmentRequest) {
@@ -881,16 +899,16 @@ function getDecisionErrorCopy(status: number) {
   }
 
   if (status === 403) {
-    return "Bu tenant veya şube için karar yetkin yok.";
+    return "Bu işletme veya şube için karar yetkin yok.";
   }
 
   if (status === 404) {
-    return "Talep bulunamadı veya tenant dışı kaynak gizlendi.";
+    return "Talep bulunamadı veya bu hesapla görüntülenemiyor.";
   }
 
   if (status === 409) {
-    return "Backend çakışma veya idempotency ihlali nedeniyle işlemi reddetti.";
+    return "Bu talep artık aynı şekilde sonuçlandırılamıyor. Liste yenileniyor.";
   }
 
-  return `Backend ${status} döndü; işlem uygulanmadı.`;
+  return "İşlem uygulanamadı. Lütfen listeyi yenileyip tekrar dene.";
 }
