@@ -6,6 +6,7 @@ import type { PublicBusinessProfile } from "@/features/public-discovery/api/publ
 import { apiClient } from "@/shared/api/client";
 import type { ApiSchema } from "@/shared/api/types";
 import { routes, withReturnTo } from "@/shared/config/routes";
+import { createWebIdempotencyKey } from "@/shared/lib/idempotency";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
@@ -622,11 +623,7 @@ function clearBookingDraft() {
 }
 
 function createIdempotencyKey() {
-  const randomPart =
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-
-  return `web-public-booking-${randomPart}`;
+  return createWebIdempotencyKey("public-booking");
 }
 
 function getTodayInBranchTimeZone(timeZoneId?: string | null) {

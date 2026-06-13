@@ -49,6 +49,7 @@ public sealed class BusinessContextComposer
             TenantMembershipRole.BusinessOwner =>
             [
                 BusinessCapabilityNames.ManageAppointmentRequests,
+                BusinessCapabilityNames.ManageBusinessSettings,
                 BusinessCapabilityNames.ReportAppointmentRequestAbuse,
             ],
             TenantMembershipRole.BranchManager =>

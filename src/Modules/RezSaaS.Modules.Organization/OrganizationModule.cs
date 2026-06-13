@@ -33,6 +33,7 @@ public sealed class OrganizationModule : ModuleBase
             .ValidateOnStart();
         services.AddScoped<PublicBusinessDirectoryService>();
         services.AddScoped<BusinessEntityLabelQueryService>();
+        services.AddScoped<BusinessProfileSettingsService>();
     }
 
     public override void MapEndpoints(IEndpointRouteBuilder endpoints)

@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CustomerAppointmentHistoryItem } from "@/features/customer/api/get-appointment-history";
 import { apiClient } from "@/shared/api/client";
 import { routes } from "@/shared/config/routes";
 import { formatBranchDateTime } from "@/shared/lib/date-time";
+import {
+  clearIntentIdempotencyKey,
+  getOrCreateIntentIdempotencyKey,
+  type IdempotencyKeyCache
+} from "@/shared/lib/idempotency";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -29,6 +34,7 @@ export function CustomerRequestsPage({
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>(
     {}
   );
+  const cancelIdempotencyKeys = useRef<IdempotencyKeyCache>({});
 
   const visibleItems = useMemo(() => {
     return items
@@ -68,6 +74,11 @@ export function CustomerRequestsPage({
     }
 
     setActingId(appointmentRequestId);
+    const idempotencyKey = getOrCreateIntentIdempotencyKey(
+      cancelIdempotencyKeys.current,
+      appointmentRequestId,
+      "customer-cancel"
+    );
 
     try {
       const result = await apiClient.POST(
@@ -75,7 +86,7 @@ export function CustomerRequestsPage({
         {
           params: {
             header: {
-              "Idempotency-Key": createIdempotencyKey()
+              "Idempotency-Key": idempotencyKey
             },
             path: {
               appointmentRequestId,
@@ -94,6 +105,10 @@ export function CustomerRequestsPage({
         ...current,
         [appointmentRequestId]: result.data?.status ?? "CancelledByCustomer"
       }));
+      clearIntentIdempotencyKey(
+        cancelIdempotencyKeys.current,
+        appointmentRequestId
+      );
       showToast("Onay bekleyen talep iptal edildi.");
       router.refresh();
     } catch {
@@ -374,14 +389,6 @@ function formatItemDateTime(value?: string, branchTimeZoneId?: string | null) {
   }
 
   return formatBranchDateTime(value, branchTimeZoneId);
-}
-
-function createIdempotencyKey() {
-  const randomPart =
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-
-  return `web-customer-cancel-${randomPart}`;
 }
 
 function getCancelErrorCopy(status: number) {

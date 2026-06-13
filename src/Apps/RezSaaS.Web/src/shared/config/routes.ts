@@ -46,3 +46,11 @@ export function normalizeReturnTo(
 export function withReturnTo(path: string, returnTo: string) {
   return `${path}?returnTo=${encodeURIComponent(returnTo)}`;
 }
+
+export function withTenant(path: string, tenantId?: string | null) {
+  if (!tenantId) {
+    return path;
+  }
+
+  return `${path}?tenantId=${encodeURIComponent(tenantId)}`;
+}

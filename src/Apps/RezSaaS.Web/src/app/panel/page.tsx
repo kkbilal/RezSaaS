@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getBusinessAppointments } from "@/features/business/api/get-business-appointments";
-import {
-  getBusinessAppointmentInbox,
-  getPrimaryBusinessTenant
-} from "@/features/business/api/get-appointment-inbox";
+import { getBusinessAppointmentInbox } from "@/features/business/api/get-appointment-inbox";
 import { getBusinessContext } from "@/features/business/api/get-business-context";
 import { BusinessPanel } from "@/features/business/components/business-panel";
+import {
+  firstSearchParam,
+  selectBusinessTenant
+} from "@/features/business/lib/business-tenant-selection";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
@@ -17,7 +18,11 @@ export const metadata: Metadata = {
   title: "İşletme Paneli"
 };
 
-export default async function PanelPage() {
+type PanelPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function PanelPage({ searchParams }: PanelPageProps) {
   const sessionState = await requireSession(routes.business.panel);
 
   if (sessionState.kind === "unavailable") {
@@ -48,7 +53,10 @@ export default async function PanelPage() {
     );
   }
 
-  const tenant = getPrimaryBusinessTenant(context);
+  const tenant = selectBusinessTenant(
+    context,
+    firstSearchParam((await searchParams).tenantId)
+  );
 
   if (!tenant) {
     return (

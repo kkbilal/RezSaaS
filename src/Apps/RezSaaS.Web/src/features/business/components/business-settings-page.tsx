@@ -1,7 +1,16 @@
 import Link from "next/link";
-import type { BusinessSettingsOverview } from "@/features/business/api/get-business-settings-overview";
+import type { BusinessTenantContext } from "@/features/business/api/get-business-context";
+import type {
+  BusinessProfileSettings,
+  BusinessProfileSettingsState,
+  BusinessSettingsOverview
+} from "@/features/business/api/get-business-settings-overview";
+import {
+  BusinessProfileSettingsForm,
+  type BusinessProfileSettingsDraft
+} from "@/features/business/components/business-profile-settings-form";
 import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
-import { routes } from "@/shared/config/routes";
+import { routes, withTenant } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -9,6 +18,7 @@ import { StatusBadge } from "@/shared/ui/status-badge";
 type BusinessSettingsPageProps = {
   overview: BusinessSettingsOverview;
   sessionEmail: string;
+  tenantOptions: BusinessTenantContext[];
 };
 
 const dayLabels: Record<string, string> = {
@@ -23,7 +33,8 @@ const dayLabels: Record<string, string> = {
 
 export function BusinessSettingsPage({
   overview,
-  sessionEmail
+  sessionEmail,
+  tenantOptions
 }: BusinessSettingsPageProps) {
   const { profile, tenant } = overview;
   const branches = profile.branches ?? [];
@@ -41,6 +52,9 @@ export function BusinessSettingsPage({
     0
   );
   const galleryCount = profile.metadata?.galleryImages?.length ?? 0;
+  const canManageSettings = (tenant.capabilities ?? []).includes(
+    "business.settings.manage"
+  );
 
   return (
     <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
@@ -48,6 +62,7 @@ export function BusinessSettingsPage({
         <SettingsHeader
           profileSlug={profile.slug ?? tenant.tenantSlug}
           sessionEmail={sessionEmail}
+          tenantId={tenant.tenantId}
         />
 
         <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
@@ -60,10 +75,9 @@ export function BusinessSettingsPage({
                 Yayındaki salon vitrininin canlı yönetim snapshot&apos;ı.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-[var(--rs-muted-strong)]">
-                Bu F6 dilimi sahte ayar formu açmaz. Şube, personel, hizmet ve
-                çalışma saati bilgilerini gerçek public profil kontratından okur;
-                düzenleme aksiyonları backend CRUD endpointleri tamamlanınca
-                açılır.
+                Bu F6 dilimi public profil metnini gerçek business settings API
+                ile kaydeder. Şube, personel, hizmet ve çalışma saati
+                düzenlemeleri ise ilgili CRUD endpointleri tamamlanmadan açılmaz.
               </p>
             </div>
 
@@ -78,6 +92,11 @@ export function BusinessSettingsPage({
 
         <div className="grid gap-6 xl:grid-cols-[24rem_1fr]">
           <aside className="space-y-6">
+            <TenantSwitcherCard
+              activeTenantId={tenant.tenantId}
+              routePath={routes.business.settings}
+              tenants={tenantOptions}
+            />
             <TenantScopeCard overview={overview} />
             <CapabilityMapCard />
           </aside>
@@ -88,6 +107,17 @@ export function BusinessSettingsPage({
               profile={profile}
               workingHoursCount={workingHoursCount}
             />
+            {overview.profileSettings.kind === "ready" ? (
+              <BusinessProfileSettingsForm
+                canManage={canManageSettings}
+                initial={createBusinessProfileSettingsDraft(
+                  overview.profileSettings.profile
+                )}
+                tenantId={tenant.tenantId}
+              />
+            ) : (
+              <ProfileSettingsStateCard state={overview.profileSettings} />
+            )}
             <div className="grid gap-6 xl:grid-cols-2">
               <BranchSnapshotCard branches={branches} />
               <ServiceSnapshotCard services={services} />
@@ -101,10 +131,12 @@ export function BusinessSettingsPage({
 
 function SettingsHeader({
   profileSlug,
-  sessionEmail
+  sessionEmail,
+  tenantId
 }: {
   profileSlug?: string | null;
   sessionEmail: string;
+  tenantId?: string | null;
 }) {
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -119,7 +151,9 @@ function SettingsHeader({
           {sessionEmail}
         </span>
         <Button asChild variant="secondary">
-          <Link href={routes.business.panel}>Operasyon paneli</Link>
+          <Link href={withTenant(routes.business.panel, tenantId)}>
+            Operasyon paneli
+          </Link>
         </Button>
         {profileSlug ? (
           <Button asChild variant="ghost">
@@ -130,6 +164,56 @@ function SettingsHeader({
         ) : null}
       </div>
     </header>
+  );
+}
+
+function TenantSwitcherCard({
+  activeTenantId,
+  routePath,
+  tenants
+}: {
+  activeTenantId?: string | null;
+  routePath: string;
+  tenants: BusinessTenantContext[];
+}) {
+  if (tenants.length <= 1) {
+    return null;
+  }
+
+  return (
+    <Card className="p-6">
+      <CardHeader>
+        <CardTitle>İşletme seçimi</CardTitle>
+        <CardDescription>
+          Yalnızca hesabına bağlı işletmeler arasında geçiş yapılır.
+        </CardDescription>
+      </CardHeader>
+
+      <div className="mt-5 space-y-2">
+        {tenants.map((tenant) => {
+          const isActive = tenant.tenantId === activeTenantId;
+
+          return (
+            <Link
+              className={
+                isActive
+                  ? "block rounded-2xl border border-[var(--rs-border-strong)] bg-white px-4 py-3 text-sm font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
+                  : "block rounded-2xl border border-[var(--rs-border)] bg-white/62 px-4 py-3 text-sm text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+              }
+              href={withTenant(routePath, tenant.tenantId)}
+              key={tenant.tenantId ?? tenant.membershipId}
+            >
+              <span className="block">
+                {tenant.tenantDisplayName ?? tenant.tenantSlug ?? "İşletme"}
+              </span>
+              <span className="mt-1 block text-xs opacity-70">
+                {getRoleLabel(tenant.role)}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
@@ -213,8 +297,14 @@ function CapabilityMapCard() {
     },
     {
       description:
-        "Personel, hizmet, şube ve çalışma saati CRUD endpointleri henüz OpenAPI'de yok.",
-      label: "Yönetim formları",
+        "Public profil metni BusinessOwner için gerçek settings API ile kaydedilir.",
+      label: "Profil ayarı",
+      status: "Healthy"
+    },
+    {
+      description:
+        "Personel, hizmet, şube, çalışma saati ve galeri mutation endpointleri ayrı dilimde bekliyor.",
+      label: "Operasyon formları",
       status: "Degraded"
     },
     {
@@ -252,6 +342,46 @@ function CapabilityMapCard() {
       </div>
     </Card>
   );
+}
+
+function ProfileSettingsStateCard({
+  state
+}: {
+  state: Exclude<BusinessProfileSettingsState, { kind: "ready" }>;
+}) {
+  return (
+    <Card className="p-5">
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>Public profil formu kapalı</CardTitle>
+            <CardDescription className="mt-2">{state.reason}</CardDescription>
+          </div>
+          <StatusBadge
+            status={state.kind === "unsupported" ? "Degraded" : "PendingReview"}
+          />
+        </div>
+      </CardHeader>
+      <p className="mt-5 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4 text-sm leading-6 text-[var(--rs-muted)]">
+        Backend yetki ve tenant scope doğrulanmadan mutation formu açılmaz. Şube,
+        personel, hizmet, çalışma saati ve galeri ayarları için hâlâ ayrı endpoint
+        kontratları gereklidir.
+      </p>
+    </Card>
+  );
+}
+
+function createBusinessProfileSettingsDraft(
+  settings: BusinessProfileSettings
+): BusinessProfileSettingsDraft {
+  return {
+    description: settings.description ?? "",
+    displayName: settings.displayName ?? "",
+    publicRules: settings.publicRules ?? "",
+    seoDescription: settings.seoDescription ?? "",
+    seoTitle: settings.seoTitle ?? "",
+    staffDisplayPolicy: settings.staffDisplayPolicy ?? "ShowNames"
+  };
 }
 
 function ProfileReadinessCard({
@@ -298,7 +428,7 @@ function ProfileReadinessCard({
         label="Açıklama"
         value={
           profile.description ||
-          "Public açıklama henüz yok. Düzenleme endpointi açılana kadar bu alan yalnızca okunur."
+          "Public açıklama henüz yok. BusinessOwner profil ayar formundan bu metni güncelleyebilir."
         }
       />
       <TextBlock
@@ -512,11 +642,11 @@ function getRoleLabel(role?: string | null) {
 }
 
 function getStaffPolicyCopy(policy?: string | null) {
-  if (policy === "DisplayNames") {
+  if (policy === "ShowNames" || policy === "DisplayNames") {
     return "Personel isimleri gösterilir";
   }
 
-  if (policy === "Anonymous") {
+  if (policy === "HideNames" || policy === "Anonymous") {
     return "Personel bilgisi işletme onayında netleşir";
   }
 

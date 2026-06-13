@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getPrimaryBusinessTenant } from "@/features/business/api/get-appointment-inbox";
 import { getBusinessContext } from "@/features/business/api/get-business-context";
 import { getBusinessSettingsOverview } from "@/features/business/api/get-business-settings-overview";
 import { BusinessSettingsPage } from "@/features/business/components/business-settings-page";
+import {
+  firstSearchParam,
+  selectBusinessTenant
+} from "@/features/business/lib/business-tenant-selection";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
@@ -17,7 +20,13 @@ export const metadata: Metadata = {
   title: "İşletme Ayarları"
 };
 
-export default async function BusinessSettingsRoute() {
+type BusinessSettingsRouteProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function BusinessSettingsRoute({
+  searchParams
+}: BusinessSettingsRouteProps) {
   const sessionState = await requireSession(routes.business.settings);
 
   if (sessionState.kind === "unavailable") {
@@ -48,7 +57,10 @@ export default async function BusinessSettingsRoute() {
     );
   }
 
-  const tenant = getPrimaryBusinessTenant(context);
+  const tenant = selectBusinessTenant(
+    context,
+    firstSearchParam((await searchParams).tenantId)
+  );
 
   if (!tenant) {
     return (
@@ -83,6 +95,7 @@ export default async function BusinessSettingsRoute() {
     <BusinessSettingsPage
       overview={overviewState.overview}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}
+      tenantOptions={context.tenants}
     />
   );
 }

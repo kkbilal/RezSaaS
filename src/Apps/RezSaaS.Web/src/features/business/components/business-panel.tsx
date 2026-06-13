@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { BusinessAppointmentScheduleState } from "@/features/business/api/get-business-appointments";
 import type {
   BusinessAppointmentInboxState,
@@ -14,8 +14,13 @@ import type {
 } from "@/features/business/api/get-business-context";
 import { BusinessAppointmentSchedule } from "@/features/business/components/business-appointment-schedule";
 import { createTenantApiClient } from "@/shared/api/client";
-import { routes } from "@/shared/config/routes";
+import { routes, withTenant } from "@/shared/config/routes";
 import { formatBranchDateTime } from "@/shared/lib/date-time";
+import {
+  clearIntentIdempotencyKey,
+  getOrCreateIntentIdempotencyKey,
+  type IdempotencyKeyCache
+} from "@/shared/lib/idempotency";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -135,6 +140,7 @@ export function BusinessPanel({
   const [reportedRequestIds, setReportedRequestIds] = useState<Set<string>>(
     () => new Set()
   );
+  const decisionIdempotencyKeys = useRef<IdempotencyKeyCache>({});
 
   const requests = useMemo(
     () =>
@@ -287,7 +293,12 @@ export function BusinessPanel({
       return;
     }
 
-    const idempotencyKey = createIdempotencyKey(decision);
+    const intentId = `${decision}:${appointmentRequestId}`;
+    const idempotencyKey = getOrCreateIntentIdempotencyKey(
+      decisionIdempotencyKeys.current,
+      intentId,
+      `business-${decision}`
+    );
     const client = createTenantApiClient(tenantId);
     setActingRequestId(appointmentRequestId);
 
@@ -331,6 +342,7 @@ export function BusinessPanel({
         result.data?.status ??
         (decision === "approve" ? "Approved" : "Declined");
       applyDecisionResult(request, nextStatus);
+      clearIntentIdempotencyKey(decisionIdempotencyKeys.current, intentId);
       setConflictCandidate(null);
       showToast(
         decision === "approve"
@@ -387,6 +399,7 @@ export function BusinessPanel({
           inbox={inbox}
           pendingCount={pendingCount}
           sessionEmail={sessionEmail}
+          tenantId={tenant?.tenantId}
           tenantName={
             tenant?.tenantDisplayName ?? tenant?.tenantSlug ?? "RezSaaS Merkez"
           }
@@ -394,6 +407,10 @@ export function BusinessPanel({
 
         <div className="grid gap-6 xl:grid-cols-[25rem_1fr]">
           <aside className="space-y-6">
+            <BusinessTenantSwitcher
+              activeTenantId={tenant?.tenantId}
+              context={context}
+            />
             <TenantContextCard context={context} tenant={tenant} />
             <OperatingRulesCard />
             <DarkDecisionCard />
@@ -486,12 +503,14 @@ function PanelHeader({
   inbox,
   pendingCount,
   sessionEmail,
+  tenantId,
   tenantName
 }: {
   context: BusinessContextState;
   inbox: BusinessAppointmentInboxState;
   pendingCount: number;
   sessionEmail: string;
+  tenantId?: string | null;
   tenantName: string;
 }) {
   return (
@@ -509,7 +528,9 @@ function PanelHeader({
               {sessionEmail}
             </span>
             <Button asChild variant="secondary">
-              <Link href={routes.business.settings}>Ayar snapshot</Link>
+              <Link href={withTenant(routes.business.settings, tenantId)}>
+                Ayar snapshot
+              </Link>
             </Button>
           </div>
 
@@ -549,6 +570,54 @@ function PanelHeader({
         </div>
       </div>
     </header>
+  );
+}
+
+function BusinessTenantSwitcher({
+  activeTenantId,
+  context
+}: {
+  activeTenantId?: string | null;
+  context: BusinessContextState;
+}) {
+  if (context.kind !== "ready" || context.tenants.length <= 1) {
+    return null;
+  }
+
+  return (
+    <Card className="fade-up p-6">
+      <CardHeader>
+        <CardTitle>İşletme seçimi</CardTitle>
+        <CardDescription>
+          Tenant header yalnızca bu doğrulanmış üyeliklerden üretilir.
+        </CardDescription>
+      </CardHeader>
+
+      <div className="mt-5 space-y-2">
+        {context.tenants.map((tenant) => {
+          const isActive = tenant.tenantId === activeTenantId;
+
+          return (
+            <Link
+              className={
+                isActive
+                  ? "block rounded-2xl border border-[var(--rs-border-strong)] bg-white px-4 py-3 text-sm font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
+                  : "block rounded-2xl border border-[var(--rs-border)] bg-white/62 px-4 py-3 text-sm text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+              }
+              href={withTenant(routes.business.panel, tenant.tenantId)}
+              key={tenant.tenantId ?? tenant.membershipId}
+            >
+              <span className="block">
+                {tenant.tenantDisplayName ?? tenant.tenantSlug ?? "İşletme"}
+              </span>
+              <span className="mt-1 block text-xs opacity-70">
+                {getRoleLabel(tenant.role)}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
@@ -915,7 +984,11 @@ function ConflictDialog({
 }) {
   return (
     <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
-      <section className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]">
+      <section
+        aria-modal="true"
+        className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]"
+        role="dialog"
+      >
         <div className="space-y-4">
           <StatusBadge status="PendingApproval" />
           <h2 className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
@@ -971,11 +1044,13 @@ function AbuseReportDialog({
   return (
     <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
       <form
+        aria-modal="true"
         className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]"
         onSubmit={(event) => {
           event.preventDefault();
           onSubmit();
         }}
+        role="dialog"
       >
         <div className="space-y-4">
           <StatusBadge status={getRequestStatus(draft.request)} />
@@ -1186,14 +1261,6 @@ function getConflictKey(request: BusinessAppointmentRequest) {
     request.staffMemberId ?? "staff-auto",
     request.resourceId ?? "resource-auto"
   ].join(":");
-}
-
-function createIdempotencyKey(decision: AppointmentDecision) {
-  const randomPart =
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-
-  return `web-${decision}-${randomPart}`;
 }
 
 function getDecisionErrorCopy(status: number) {

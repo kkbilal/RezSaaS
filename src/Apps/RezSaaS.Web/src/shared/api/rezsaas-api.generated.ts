@@ -3056,6 +3056,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/business/settings/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetBusinessProfileSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UpdateBusinessProfileSettings"];
+        trace?: never;
+    };
     "/api/customer/abuse/overview": {
         parameters: {
             query?: never;
@@ -4529,6 +4545,26 @@ export interface components {
         BusinessContextResponse: {
             tenants?: components["schemas"]["BusinessTenantContextResponse"][] | null;
         };
+        BusinessProfileSettingsRequest: {
+            displayName?: string | null;
+            description?: string | null;
+            publicRules?: string | null;
+            seoTitle?: string | null;
+            seoDescription?: string | null;
+            staffDisplayPolicy?: string | null;
+        };
+        BusinessProfileSettingsResponse: {
+            /** Format: uuid */
+            businessId?: string;
+            slug?: string | null;
+            displayName?: string | null;
+            categoryKey?: string | null;
+            description?: string | null;
+            publicRules?: string | null;
+            seoTitle?: string | null;
+            seoDescription?: string | null;
+            staffDisplayPolicy?: string | null;
+        };
         BusinessResourceBlockRequest: {
             /** Format: date-time */
             startUtc?: string;
@@ -4548,6 +4584,9 @@ export interface components {
             /** Format: date-time */
             endUtc?: string;
             reason?: string | null;
+        };
+        BusinessSettingsErrorResponse: {
+            errorCode?: string | null;
         };
         BusinessTenantContextResponse: {
             /** Format: uuid */
@@ -5975,6 +6014,132 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                };
+            };
+        };
+    };
+    GetBusinessProfileSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessProfileSettingsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSettingsErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSettingsErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSettingsErrorResponse"];
+                };
+            };
+        };
+    };
+    UpdateBusinessProfileSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessProfileSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessProfileSettingsResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSettingsErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSettingsErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSettingsErrorResponse"];
                 };
             };
         };

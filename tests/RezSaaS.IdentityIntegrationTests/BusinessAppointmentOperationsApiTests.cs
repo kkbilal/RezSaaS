@@ -17,6 +17,83 @@ public sealed class BusinessAppointmentOperationsApiTests : IClassFixture<Identi
     }
 
     [Fact]
+    public async Task BusinessOwnerCanUpdatePublicProfileSettings()
+    {
+        PublicBusinessProfileSeed seed = await fixture.SeedPublicBusinessProfileAsync();
+        string ownerToken = await RegisterBusinessUserAsync(
+            seed,
+            TenantMembershipRole.BusinessOwner);
+
+        using HttpRequestMessage updateRequest = CreateBusinessRequest(
+            HttpMethod.Patch,
+            seed.TenantId,
+            ownerToken,
+            "/api/business/settings/profile",
+            new
+            {
+                displayName = "Atlas Hair Studio",
+                description = "Kadikoy'de guncellenmis salon aciklamasi.",
+                publicRules = "Randevu saatinden 5 dakika once salonda olunuz.",
+                seoTitle = "Atlas Hair Studio",
+                seoDescription = "Kadikoy'de modern sac bakimi.",
+                staffDisplayPolicy = "HideNames",
+            });
+
+        HttpResponseMessage updateResponse = await fixture.Client.SendAsync(updateRequest);
+
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+
+        using JsonDocument updateBody =
+            JsonDocument.Parse(await updateResponse.Content.ReadAsStringAsync());
+        Assert.Equal("Atlas Hair Studio", updateBody.RootElement.GetProperty("displayName").GetString());
+        Assert.Equal("HideNames", updateBody.RootElement.GetProperty("staffDisplayPolicy").GetString());
+
+        HttpResponseMessage profileResponse = await fixture.Client.GetAsync(
+            $"/api/public/businesses/{seed.Slug}/profile");
+
+        Assert.Equal(HttpStatusCode.OK, profileResponse.StatusCode);
+
+        using JsonDocument profileBody =
+            JsonDocument.Parse(await profileResponse.Content.ReadAsStringAsync());
+        Assert.Equal("Atlas Hair Studio", profileBody.RootElement.GetProperty("displayName").GetString());
+        Assert.Equal(
+            "Randevu saatinden 5 dakika once salonda olunuz.",
+            profileBody.RootElement.GetProperty("metadata").GetProperty("publicRules").GetString());
+        Assert.Equal(
+            "HideNames",
+            profileBody.RootElement.GetProperty("metadata").GetProperty("staffDisplayPolicy").GetString());
+    }
+
+    [Fact]
+    public async Task BranchManagerCannotUpdateTenantWideProfileSettings()
+    {
+        PublicBusinessProfileSeed seed = await fixture.SeedPublicBusinessProfileAsync();
+        string managerToken = await RegisterBusinessUserAsync(
+            seed,
+            TenantMembershipRole.BranchManager,
+            seed.BranchId);
+
+        using HttpRequestMessage updateRequest = CreateBusinessRequest(
+            HttpMethod.Patch,
+            seed.TenantId,
+            managerToken,
+            "/api/business/settings/profile",
+            new
+            {
+                displayName = "Unauthorized Update",
+                description = "Branch manager should not update tenant-wide profile.",
+                publicRules = "No rule.",
+                seoTitle = "Unauthorized",
+                seoDescription = "Unauthorized",
+                staffDisplayPolicy = "ShowNames",
+            });
+
+        HttpResponseMessage updateResponse = await fixture.Client.SendAsync(updateRequest);
+
+        Assert.Equal(HttpStatusCode.Forbidden, updateResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task BusinessCalendarListsAppointmentsAndUpdatesInternalNote()
     {
         PublicBusinessProfileSeed seed = await fixture.SeedPublicBusinessProfileAsync();
@@ -192,6 +269,14 @@ public sealed class BusinessAppointmentOperationsApiTests : IClassFixture<Identi
 
     private async Task<string> RegisterOwnerAsync(PublicBusinessProfileSeed seed)
     {
+        return await RegisterBusinessUserAsync(seed, TenantMembershipRole.BusinessOwner);
+    }
+
+    private async Task<string> RegisterBusinessUserAsync(
+        PublicBusinessProfileSeed seed,
+        TenantMembershipRole role,
+        Guid? branchId = null)
+    {
         string email = $"business-ops-owner-{Guid.NewGuid():N}@example.test";
         const string password = "RezSaaS!Auth1234";
         string token = await RegisterAndLoginWithBearerTokenAsync(email, password);
@@ -199,7 +284,8 @@ public sealed class BusinessAppointmentOperationsApiTests : IClassFixture<Identi
         await fixture.GrantTenantMembershipAsync(
             seed.TenantId,
             userAccountId,
-            TenantMembershipRole.BusinessOwner);
+            role,
+            branchId);
 
         return token;
     }

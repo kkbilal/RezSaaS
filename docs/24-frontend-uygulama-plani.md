@@ -1,6 +1,6 @@
 # Frontend Uygulama Planı
 
-Son güncelleme: 2026-06-13
+Son güncelleme: 2026-06-14
 
 Bu plan frontend geliştirmesini küçük, doğrulanabilir dikey dilimlere böler.
 Frontend fazları mevcut ürün/backend `Phase 0-5` numaralarıyla karışmaması için
@@ -240,6 +240,12 @@ Backend bağımlılıkları:
 - Raporlama onay/ret kararından ayrı tutulur; tek başına strike veya sanction
   üretmez ve backend'in tenant+branch authz, idempotency ve günlük limit
   kontrollerine bırakılır.
+- 2026-06-14: `/panel` query tabanlı doğrulanmış tenant seçimine geçti. Seçim
+  yalnızca business context içinde dönen tenant membership listesiyle eşleşirse
+  aktif olur; panel ve ayar snapshot linkleri aktif tenant'ı korur.
+- Approve/decline idempotency key'leri request+decision niyeti boyunca sabitlendi;
+  başarısız istek veya retry aynı key'i kullanır, başarılı karar sonrası key
+  temizlenir.
 
 Kapanış kriterleri:
 
@@ -348,10 +354,20 @@ Planlanan teslimatlar:
 - Rebook ve resource block aksiyonları aynı appointment schedule akışına eklendi.
   Rebook mevcut staff/resource ile yeni UTC aralığına taşır; resource block
   seçili iç kaynağı kullanıcıya GUID göstermeden operasyonel olarak kapatır.
-- `/panel/ayarlar` salt-okunur işletme yönetim snapshot'ı olarak açıldı. Route,
+- `/panel/ayarlar` işletme yönetim snapshot'ı ve profil ayar formu olarak açıldı. Route,
   `GET /api/business/context` ile aktif tenant/membership bilgisini alır ve
   tenant slug üzerinden public profile read model'iyle şube, public personel,
   hizmet, varyant, çalışma saati, galeri ve profil metni durumunu gösterir.
+- Public profil metni, SEO metadata ve staff display policy formu
+  `PATCH /api/business/settings/profile` ile gerçek API'ye bağlandı. Form
+  yalnızca BusinessOwner capability'siyle açılır; BranchManager ve Staff için
+  read-only state gösterilir.
+- Rebook ve resource block formları kullanıcıya UTC alanı göstermek yerine şube
+  zamanı alanı gösterir; frontend bu değeri UTC'ye çevirerek mevcut backend
+  kontratına gönderir.
+- Appointment operasyon idempotency key'i dialog açıldığında üretilir ve aynı
+  dialog niyeti boyunca korunur. Customer pending cancel akışı da aynı
+  appointment request için retry'da aynı key'i kullanır.
 - Personel, hizmet, şube, çalışma saati ve galeri düzenleme formları bu dilimde
   açılmadı; ilgili Organization/Catalog/Availability/Resources CRUD endpointleri
   OpenAPI'ye girmeden sahte ayar teslim edilmeyecek.
@@ -419,6 +435,8 @@ Kapanış kriterleri:
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`
+- Node test runner ile saf helper testleri: idempotency ve branch-local zaman
+  dönüşümü
 - Storybook build ve a11y kontrolü
 - İlgili Playwright journey testi
 - Responsive ve Browser MCP/manual visual QA

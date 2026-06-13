@@ -71,6 +71,30 @@ public sealed class TenantBookingAuthorizationService
                 cancellationToken);
     }
 
+    public async Task<bool> CanManageBusinessSettingsAsync(
+        Guid tenantId,
+        Guid userAccountId,
+        CancellationToken cancellationToken = default)
+    {
+        if (tenantId == Guid.Empty || userAccountId == Guid.Empty)
+        {
+            return false;
+        }
+
+        if (!await IsActiveTenantAsync(tenantId, cancellationToken))
+        {
+            return false;
+        }
+
+        return await dbContext.Memberships
+            .AsNoTracking()
+            .AnyAsync(entity => entity.TenantId == tenantId
+                && entity.UserAccountId == userAccountId
+                && entity.Status == TenantMembershipStatus.Active
+                && entity.Role == TenantMembershipRole.BusinessOwner,
+                cancellationToken);
+    }
+
     private async Task<bool> IsActiveTenantAsync(
         Guid tenantId,
         CancellationToken cancellationToken)

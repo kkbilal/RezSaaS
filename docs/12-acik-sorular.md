@@ -5,7 +5,9 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 ## Ürün
 
 - İşletme sayfası URL yapısı Phase 2 başlangıcında `/isletme/{businessSlug}` olarak kararlaştırıldı; şehir/kategori içeren SEO landing sayfaları ayrı discovery sayfaları olarak değerlendirilecek.
-- Bir tenant ilk sürümde tam olarak bir `Business` mı içerir?
+- MVP'de tenant self-service ayar yüzeyi tenant başına tek aktif `Business`
+  varsayımıyla açıldı; çoklu aktif `Business` görülürse settings mutation `409`
+  döner. Multi-business destek ayrı ADR ve lifecycle contract ister.
 - İşletme talebi 24 saat içinde cevaplamazsa görünür bir yanıt süresi metriği veya yaptırım olacak mı?
 - Müşterinin aynı zaman aralığında farklı işletmelere kaç açık talep göndermesine izin verilecek?
 
@@ -44,7 +46,8 @@ Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-
 
 - İlk tenant oluşturma akışı self-service mi, platform onaylı bootstrap mı olacak?
 - Tenant slug değiştirilebilir mi; değiştirilirse eski URL için redirect/alias tutulacak mı?
-- Bir tenant içinde birden fazla `Business` desteklenecekse MVP sınırı hangi noktada açılacak?
+- Bir tenant içinde birden fazla `Business` desteklenecekse MVP sonrası hangi
+  onboarding, role scope, URL ve settings contract ile açılacak?
 - `BranchManager`/`Staff` tenant membership branch scope doğrulaması Organization branch lifecycle kaynağına hangi contract ile bağlanacak?
 - Tenant suspend/close sonrasında açık `PendingApproval` taleplerinin otomatik kapanma/expiry politikası hangi integration event veya maintenance job ile yürütülecek?
 

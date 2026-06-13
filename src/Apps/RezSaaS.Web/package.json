@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "generate:api": "openapi-typescript ../../../artifacts/openapi/rezsaas-api-v1.json --output src/shared/api/rezsaas-api.generated.ts",
     "start": "next start",
+    "test": "node --test --experimental-strip-types src/shared/lib/date-time.test.ts src/shared/lib/idempotency.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

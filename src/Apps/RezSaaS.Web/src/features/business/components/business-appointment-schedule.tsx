@@ -7,7 +7,12 @@ import type {
   BusinessAppointmentScheduleState
 } from "@/features/business/api/get-business-appointments";
 import { createTenantApiClient } from "@/shared/api/client";
-import { formatBranchDateTime } from "@/shared/lib/date-time";
+import {
+  formatBranchDateTime,
+  parseBranchDateTimeLocalValue,
+  toBranchDateTimeLocalValue
+} from "@/shared/lib/date-time";
+import { createWebIdempotencyKey } from "@/shared/lib/idempotency";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -24,6 +29,7 @@ type AppointmentOperation =
 type AppointmentOperationDraft = {
   appointment: BusinessAppointment;
   endUtcInput: string;
+  idempotencyKey: string;
   kind: AppointmentOperation;
   startUtcInput: string;
   text: string;
@@ -113,9 +119,16 @@ export function BusinessAppointmentSchedule({
 
     setOperationDraft({
       appointment,
-      endUtcInput: toUtcDateTimeLocalValue(appointment.endUtc),
+      endUtcInput: toBranchDateTimeLocalValue(
+        appointment.endUtc,
+        appointment.branchTimeZoneId
+      ),
+      idempotencyKey: createWebIdempotencyKey(`appointment-${kind}`),
       kind,
-      startUtcInput: toUtcDateTimeLocalValue(appointment.startUtc),
+      startUtcInput: toBranchDateTimeLocalValue(
+        appointment.startUtc,
+        appointment.branchTimeZoneId
+      ),
       text: kind === "note" ? appointment.businessNote ?? "" : ""
     });
   }
@@ -139,15 +152,19 @@ export function BusinessAppointmentSchedule({
     }
 
     const needsTimeRange = operationNeedsTimeRange(operationDraft.kind);
+    const branchTimeZoneId = operationDraft.appointment.branchTimeZoneId;
     const startUtc = needsTimeRange
-      ? parseUtcDateTimeLocalValue(operationDraft.startUtcInput)
+      ? parseBranchDateTimeLocalValue(
+          operationDraft.startUtcInput,
+          branchTimeZoneId
+        )
       : null;
     const endUtc = needsTimeRange
-      ? parseUtcDateTimeLocalValue(operationDraft.endUtcInput)
+      ? parseBranchDateTimeLocalValue(operationDraft.endUtcInput, branchTimeZoneId)
       : null;
 
     if (needsTimeRange && (!startUtc || !endUtc)) {
-      onToast("Başlangıç ve bitiş UTC zamanı geçerli olmalı.");
+      onToast("Başlangıç ve bitiş şube zamanı geçerli olmalı.");
       return;
     }
 
@@ -162,7 +179,7 @@ export function BusinessAppointmentSchedule({
     }
 
     const client = createTenantApiClient(tenantId);
-    const idempotencyKey = createAppointmentOperationKey(operationDraft.kind);
+    const idempotencyKey = operationDraft.idempotencyKey;
 
     setActingAppointmentId(appointmentId);
 
@@ -641,7 +658,11 @@ function AppointmentOperationDialog({
 
   return (
     <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
-      <section className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]">
+      <section
+        aria-modal="true"
+        className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]"
+        role="dialog"
+      >
         <div className="space-y-4">
           <StatusBadge status={getAppointmentStatus(draft.appointment)} />
           <h2 className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
@@ -656,7 +677,7 @@ function AppointmentOperationDialog({
         {showTimeRange ? (
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <label className="block text-sm font-medium text-[var(--rs-ink)]">
-              Başlangıç UTC
+              Başlangıç şube zamanı
               <input
                 className="mt-3 min-h-11 w-full rounded-full border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
                 onChange={(event) =>
@@ -667,7 +688,7 @@ function AppointmentOperationDialog({
               />
             </label>
             <label className="block text-sm font-medium text-[var(--rs-ink)]">
-              Bitiş UTC
+              Bitiş şube zamanı
               <input
                 className="mt-3 min-h-11 w-full rounded-full border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
                 onChange={(event) =>
@@ -902,7 +923,7 @@ function getOperationDetails(kind: AppointmentOperation) {
   if (kind === "rebook") {
     return {
       helper:
-        "Yeni zaman UTC olarak gönderilir; şube saati önizlemesini kontrol et. Staff/resource değiştirilmez, backend aynı personel ve iç kaynak için çakışmayı tekrar doğrular.",
+        "Yeni zamanı şube saatine göre gir. Frontend UTC'ye çevirir; backend aynı personel ve iç kaynak için çakışmayı tekrar doğrular.",
       maxLength: 500,
       placeholder: "Örn. Müşteri talebiyle yeni saate alındı",
       submitLabel: "Yeniden planla",
@@ -914,7 +935,7 @@ function getOperationDetails(kind: AppointmentOperation) {
   if (kind === "resource-block") {
     return {
       helper:
-        "Bu işlem seçili iç kaynağı belirtilen UTC aralıkta kullanılamaz yapar. Public slot hesaplama bu bloğu kapasite engeli olarak görür.",
+        "Bu işlem seçili iç kaynağı belirtilen şube saati aralığında kullanılamaz yapar. Public slot hesaplama bu bloğu kapasite engeli olarak görür.",
       maxLength: 500,
       placeholder: "Örn. Bakım / arıza / oda kullanılamıyor",
       submitLabel: "Kaynağı blokla",
@@ -994,61 +1015,19 @@ function getOperationErrorCopy(status: number, kind: AppointmentOperation) {
   return "Randevu işlemi tamamlanamadı. Lütfen tekrar dene.";
 }
 
-function createAppointmentOperationKey(kind: AppointmentOperation) {
-  const randomPart =
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-
-  return `web-appointment-${kind}-${randomPart}`;
-}
-
-function toUtcDateTimeLocalValue(value?: string | null) {
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  const year = date.getUTCFullYear();
-  const month = padDatePart(date.getUTCMonth() + 1);
-  const day = padDatePart(date.getUTCDate());
-  const hour = padDatePart(date.getUTCHours());
-  const minute = padDatePart(date.getUTCMinutes());
-
-  return `${year}-${month}-${day}T${hour}:${minute}`;
-}
-
-function parseUtcDateTimeLocalValue(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
-
-  if (!match) {
-    return null;
-  }
-
-  const [, rawYear, rawMonth, rawDay, rawHour, rawMinute] = match;
-  const utcMilliseconds = Date.UTC(
-    Number(rawYear),
-    Number(rawMonth) - 1,
-    Number(rawDay),
-    Number(rawHour),
-    Number(rawMinute)
-  );
-  const date = new Date(utcMilliseconds);
-
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
 function formatDraftBranchPreview(draft: AppointmentOperationDraft) {
   const branchTimeZoneId = draft.appointment.branchTimeZoneId;
-  const startUtc = parseUtcDateTimeLocalValue(draft.startUtcInput);
-  const endUtc = parseUtcDateTimeLocalValue(draft.endUtcInput);
+  const startUtc = parseBranchDateTimeLocalValue(
+    draft.startUtcInput,
+    branchTimeZoneId
+  );
+  const endUtc = parseBranchDateTimeLocalValue(
+    draft.endUtcInput,
+    branchTimeZoneId
+  );
 
   if (!startUtc || !endUtc) {
-    return "Geçerli UTC zaman gir.";
+    return "Geçerli şube zamanı gir.";
   }
 
   if (!branchTimeZoneId) {
@@ -1059,8 +1038,4 @@ function formatDraftBranchPreview(draft: AppointmentOperationDraft) {
     endUtc,
     branchTimeZoneId
   )}`;
-}
-
-function padDatePart(value: number) {
-  return value.toString().padStart(2, "0");
 }

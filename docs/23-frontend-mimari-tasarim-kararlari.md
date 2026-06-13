@@ -1,6 +1,6 @@
 # Frontend Mimari ve Tasarım Kararları
 
-Son güncelleme: 2026-06-13
+Son güncelleme: 2026-06-14
 
 ## Amaç
 
@@ -72,11 +72,27 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   eklendi. Route, admin appeal ve account closure case list/detail endpoint'lerini
   generated OpenAPI tipleriyle okur; accept/reject/approve/execute mutationları
   reason ve high-risk confirmation UX'i tamamlanmadan açılmaz.
-- 2026-06-13: `/panel/ayarlar` salt-okunur işletme yönetim snapshot'ı olarak
-  eklendi. Route, authenticated business context ve tenant slug üzerinden public
-  profile read model'ini okur; şube, personel, hizmet, çalışma saati ve galeri
-  durumunu gösterir. Organization/Catalog/Availability CRUD endpointleri
-  OpenAPI'de oluşmadan düzenleme formu yayınlanmaz.
+- 2026-06-13: `/panel/ayarlar` işletme yönetim snapshot'ı olarak eklendi. Route,
+  authenticated business context ve tenant slug üzerinden public profile read
+  model'ini okur; şube, personel, hizmet, çalışma saati ve galeri durumunu
+  gösterir. Organization/Catalog/Availability CRUD endpointleri OpenAPI'de
+  oluşmadan şube/personel/hizmet/çalışma saati düzenleme formu yayınlanmaz.
+- 2026-06-14: Business panel ve ayar snapshot'ı query tabanlı, doğrulanmış tenant
+  seçimine geçti. `tenantId` yalnızca `GET /api/business/context` içinde dönen
+  membership seçenekleriyle eşleşirse kullanılır; serbest tenant GUID girişi
+  header'a taşınmaz.
+- 2026-06-14: Business approve/decline, customer cancel ve appointment operasyon
+  idempotency key üretimi aynı kullanıcı niyeti boyunca sabitlendi. Başarılı
+  komut tamamlanınca key temizlenir; hata veya retry halinde aynı intent key'i
+  tekrar kullanılır.
+- 2026-06-14: Rebook ve resource block formları UTC input yerine branch-local
+  `datetime-local` deneyimine geçti; frontend şube saatini UTC'ye çevirerek
+  backend kontratına gönderir. Dönüşüm helper'ları Node test runner ile
+  kapsanmaya başladı.
+- 2026-06-14: `/panel/ayarlar` içindeki public profil metni, SEO metadata ve
+  staff display policy formu `PATCH /api/business/settings/profile` kontratına
+  bağlandı. Form yalnızca `business.settings.manage` capability taşıyan
+  `BusinessOwner` için açılır; `BranchManager` salt-okunur snapshot görür.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
@@ -88,7 +104,7 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
 | Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel, global customer history ve customer abuse overview/appeal mevcut | `/hesabim/talepler` müşteri geçmişi, pending cancel ve `/hesabim/itirazlar` | Cursor pagination ve detay route'ları ileride iyileştirilecek |
 | Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | `/panel` talep kutusu, approve/decline ve abuse report | Liste pagination/search contract'ı ileride iyileştirilecek |
 | Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | `/platform/abuse`, `/platform/tenantlar` ve `/platform/itirazlar` salt-okunur overview yüzeyleri, step-up gate | Yüksek riskli tenant/membership/appeal/closure mutation UI'ları sonraki F5 dilimlerinde açılmalı |
-| Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | `/panel` içinde appointment schedule, rebook, resource block, temel operasyon aksiyonları ve `/panel/ayarlar` salt-okunur ayar snapshot'ı | Organization/Catalog/Resources/Availability mutation ekranları ve daha zengin calendar UX sonraki dilimlerdir |
+| Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook, resource block ve business profile settings API'leri mevcut | `/panel` içinde appointment schedule, stable idempotency, tenant switcher, branch-local rebook/resource block, temel operasyon aksiyonları ve `/panel/ayarlar` public profil formu | Branch/staff/service/resource/availability mutation ekranları, cursor pagination ve daha zengin calendar UX sonraki dilimlerdir |
 | Reviews, Analytics, Payments | Backend fazları bekleniyor | Yorum, rapor ve ödeme ekranları | API olmadan sahte dashboard veya form üretilmez |
 
 ## Repo ve Deploy Kararı
@@ -165,7 +181,7 @@ runbook/operasyon yüzeyi olarak kalır ve public web navigasyonundan erişileme
 | Form | React Hook Form + Zod; backend validation nihai otoritedir |
 | Component laboratuvarı | Storybook |
 | Mock | MSW; gerçek API kontratından kopuk elle yazılmış response şekilleri kullanılmaz |
-| Unit/component test | Vitest + React Testing Library |
+| Unit/component test | Node test runner ile saf helper başlangıcı; component test için Vitest + React Testing Library hedefi |
 | E2E | Playwright |
 | A11y | Storybook a11y + `@axe-core/playwright` + manuel klavye/screen reader kontrolü |
 
