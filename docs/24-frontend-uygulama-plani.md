@@ -252,7 +252,7 @@ Kapanış kriterleri:
 
 ## F5 - Platform Control-plane
 
-Durum: başlanmadı.
+Durum: başladı.
 
 Amaç: yüksek riskli platform operasyonlarını sıradan dashboard aksiyonlarına
 indirgemeden güvenli ve denetlenebilir bir UI üretmek.
@@ -274,6 +274,21 @@ Kurallar:
 - `InternalReason`, actor kimliği ve raw abuse details customer yüzeyine taşınmaz.
 - Frontend backend'in iki farklı admin, risk, appeal window veya membership
   kontrollerini taklit ederek bypass etmeye çalışmaz.
+
+2026-06-13 notu:
+
+- `/platform/abuse` salt-okunur control-plane başlangıcı açıldı. Route,
+  authenticated `PlatformAdmin` ve geçerli step-up oturumu olmadan admin
+  endpoint'lerini çağırmaz; backend `PlatformAdminWithStepUp` kapısı nihai
+  otorite olarak kalır.
+- Geçerli step-up yoksa kullanıcı yalnız `POST /api/session/step-up` formunu
+  görür; parola/MFA/recovery bilgisi browser storage'a yazılmaz.
+- Ekran gerçek `GET /api/admin/abuse/events`,
+  `/api/admin/abuse/reports`, `/api/admin/abuse/appeals`,
+  `/api/admin/abuse/closure-cases` ve
+  `/api/admin/operations/reconciliation` response'larını generated OpenAPI tipiyle
+  okur. Strike/sanction/appeal review/closure mutation butonları bu dilimde
+  açılmadı.
 
 Kapanış kriterleri:
 
@@ -362,7 +377,7 @@ Kapanış kriterleri:
 8. Slot seçimi ve booking draft prototipini tamamla.
 9. Auth dönüşü + idempotent request create ile customer journey'yi kapat.
 10. Customer self-service ve abuse appeal yüzeyini tamamla.
-11. MFA hazır olduğunda platform control-plane'i dilim dilim aç.
+11. Devam ediyor: MFA/step-up kapısıyla platform control-plane'i dilim dilim aç.
 
 ## Bilinçli Olarak Ertelenenler
 

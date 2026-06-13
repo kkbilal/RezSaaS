@@ -12,6 +12,11 @@ export const routes = {
     appeals: "/hesabim/itirazlar",
     requests: "/hesabim/talepler"
   },
+  platform: {
+    abuse: "/platform/abuse",
+    appeals: "/platform/itirazlar",
+    tenants: "/platform/tenantlar"
+  },
   public: {
     businessProfile: (businessSlug: string) =>
       `/isletme/${encodeURIComponent(businessSlug)}`,
