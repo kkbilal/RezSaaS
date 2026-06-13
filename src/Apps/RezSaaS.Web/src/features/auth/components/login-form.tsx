@@ -10,6 +10,8 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [twoFactorRecoveryCode, setTwoFactorRecoveryCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -22,7 +24,9 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       const { response } = await apiClient.POST("/api/auth/login", {
         body: {
           email,
-          password
+          password,
+          twoFactorCode: twoFactorCode || null,
+          twoFactorRecoveryCode: twoFactorRecoveryCode || null
         },
         params: {
           query: {
@@ -33,7 +37,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       });
 
       if (!response.ok) {
-        setError("Giriş başarısız. E-posta, parola veya hesap durumunu kontrol et.");
+        setError(getLoginErrorCopy(response.status));
         return;
       }
 
@@ -69,6 +73,31 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
         />
       </FormField>
 
+      <div className="grid gap-4 rounded-[1.5rem] border border-[var(--rs-border)] bg-white/65 p-4 sm:grid-cols-2">
+        <FormField
+          hint="MFA açık hesaplarda authenticator kodu gir."
+          label="MFA kodu"
+        >
+          <TextInput
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            onChange={(event) => setTwoFactorCode(event.target.value)}
+            value={twoFactorCode}
+          />
+        </FormField>
+
+        <FormField
+          hint="Authenticator yerine recovery code kullanılabilir."
+          label="Recovery code"
+        >
+          <TextInput
+            autoComplete="one-time-code"
+            onChange={(event) => setTwoFactorRecoveryCode(event.target.value)}
+            value={twoFactorRecoveryCode}
+          />
+        </FormField>
+      </div>
+
       {error ? <p className="text-sm leading-6 text-[var(--rs-danger)]">{error}</p> : null}
 
       <Button className="w-full" disabled={isSubmitting} type="submit">
@@ -76,4 +105,16 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
       </Button>
     </form>
   );
+}
+
+function getLoginErrorCopy(status: number) {
+  if (status === 401) {
+    return "Giriş başarısız. E-posta, parola veya MFA/recovery kodunu kontrol et.";
+  }
+
+  if (status === 429) {
+    return "Çok fazla giriş denemesi yapıldı. Lütfen kısa süre sonra tekrar dene.";
+  }
+
+  return "Giriş başarısız. Hesap durumunu ve bilgileri kontrol et.";
 }

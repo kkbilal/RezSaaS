@@ -33,3 +33,4 @@ build/
 
 # Local operational artifacts
 artifacts/backups/
+artifacts/local/

@@ -156,6 +156,20 @@ Visual Studio üzerinde repo kökündeki `RezSaaS.sln` dosyasını aç.
 - Local development `DevelopmentSink` e-posta modunu kullanır.
 - Sink doğrulama token veya linklerini loglamaz.
 - Production ortamında gerçek e-posta sağlayıcısı konfigüre edilmeden API fail-fast olur.
+- Platform admin ekranlarını local test etmek için `PlatformAdmin` hesabına MFA
+  açılmalıdır. Repo secret içermez; local recovery code dosyası ignored
+  `artifacts/local/` altında üretilir:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Enable-LocalPlatformAdminMfa.ps1
+```
+
+- Komut `admin.local@rezsaas.test` hesabında MFA'yı etkinleştirir, recovery
+  code listesini `artifacts/local/platform-admin-mfa-recovery-codes.txt`
+  dosyasına yazar ve bu dosya commit edilmez.
+- MFA açık platform admin ile login olurken `/giris` formunda parola yanında
+  recovery code veya authenticator kodu girilmelidir; platform ekranları ayrıca
+  `/api/session/step-up` üzerinden tekrar MFA step-up ister.
 
 ## Docker Desktop Notu
 
