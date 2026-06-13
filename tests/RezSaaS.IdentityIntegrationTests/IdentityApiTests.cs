@@ -43,6 +43,9 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
         Assert.True(paths.TryGetProperty("/api/business/appointments", out _));
         Assert.True(paths.TryGetProperty("/api/business/appointments/{appointmentId}", out _));
         Assert.True(paths.TryGetProperty("/api/business/resources/{resourceId}/blocks", out _));
+        Assert.True(paths.TryGetProperty("/api/customer/abuse/overview", out _));
+        Assert.True(paths.TryGetProperty("/api/customer/abuse/appeals/{appealId}", out _));
+        Assert.True(paths.TryGetProperty("/api/customer/abuse/appeals", out _));
         Assert.True(paths.TryGetProperty("/api/customer/appointment-history", out _));
         Assert.True(paths.TryGetProperty("/api/public/businesses", out _));
         Assert.True(paths.TryGetProperty("/api/public/businesses/{slug}", out _));
@@ -88,6 +91,24 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
             "get",
             "200",
             "#/components/schemas/BusinessAppointmentResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/customer/abuse/overview",
+            "get",
+            "200",
+            "#/components/schemas/CustomerAbuseOverviewResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/customer/abuse/appeals/{appealId}",
+            "get",
+            "200",
+            "#/components/schemas/CustomerAbuseAppealResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/customer/abuse/appeals",
+            "post",
+            "201",
+            "#/components/schemas/CustomerAbuseAppealResponse");
         AssertOpenApiJsonArrayResponse(
             paths,
             "/api/public/businesses",
@@ -136,6 +157,126 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
             "post",
             "200",
             "#/components/schemas/PublicAppointmentRequestResponse");
+    }
+
+    [Fact]
+    public async Task SwaggerDocumentIncludesAdminControlPlaneTypedResponses()
+    {
+        HttpResponseMessage response = await fixture.Client.GetAsync("/swagger/v1/swagger.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        JsonElement paths = body.RootElement.GetProperty("paths");
+
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/bootstrap/platform-admin",
+            "post",
+            "200",
+            "#/components/schemas/PlatformAdminBootstrapHttpResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/tenants",
+            "post",
+            "201",
+            "#/components/schemas/AdminTenantProvisioningResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/tenants",
+            "get",
+            "200",
+            "#/components/schemas/AdminTenantListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/tenants/{tenantId}",
+            "get",
+            "200",
+            "#/components/schemas/AdminTenantDetailResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/tenants/{tenantId}/memberships",
+            "get",
+            "200",
+            "#/components/schemas/AdminTenantMembershipListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/tenants/{tenantId}/memberships",
+            "post",
+            "201",
+            "#/components/schemas/AdminTenantMembershipResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/events",
+            "get",
+            "200",
+            "#/components/schemas/AdminAbuseEventListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/reports",
+            "get",
+            "200",
+            "#/components/schemas/AdminAbuseReportListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/reports/{reportId}/confirm",
+            "post",
+            "200",
+            "#/components/schemas/AdminAbuseReportReviewResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/users/{userAccountId}",
+            "get",
+            "200",
+            "#/components/schemas/AdminUserAbuseOverviewResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/users/{userAccountId}/sanctions",
+            "post",
+            "201",
+            "#/components/schemas/AdminUserSanctionResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/users/{userAccountId}/strikes/{strikeId}/revoke",
+            "post",
+            "200",
+            "#/components/schemas/AdminUserStrikeResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/appeals",
+            "get",
+            "200",
+            "#/components/schemas/AdminAbuseAppealListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/appeals/{appealId}",
+            "get",
+            "200",
+            "#/components/schemas/AdminAbuseAppealResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/closure-cases",
+            "get",
+            "200",
+            "#/components/schemas/AdminAccountClosureCaseListResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/closure-cases/{closureCaseId}",
+            "get",
+            "200",
+            "#/components/schemas/AdminAccountClosureCaseResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/abuse/users/{userAccountId}/closure-cases",
+            "post",
+            "201",
+            "#/components/schemas/AdminAccountClosureCaseResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/operations/reconciliation",
+            "get",
+            "200",
+            "#/components/schemas/AdminOperationsReconciliationResponse");
     }
 
     [Fact]

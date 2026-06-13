@@ -14,7 +14,11 @@ public static class AdminOperationsEndpointExtensions
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
             .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
 
-        operations.MapGet("/reconciliation", GetReconciliationAsync);
+        operations.MapGet("/reconciliation", GetReconciliationAsync)
+            .Produces<AdminOperationsReconciliationResponse>()
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status429TooManyRequests);
 
         return endpoints;
     }

@@ -2,30 +2,44 @@ import { cn } from "@/shared/lib/cn";
 
 const statusCopy: Record<string, string> = {
   Approved: "Onaylandı",
+  Accepted: "Kabul edildi",
   Cancelled: "İptal edildi",
+  CancelledByAppeal: "İtirazla kapandı",
   CancelledByCustomer: "Müşteri iptal etti",
   Completed: "Tamamlandı",
   Confirmed: "Onaylandı",
   Declined: "Reddedildi",
+  Executed: "Tamamlandı",
+  Executing: "İşleniyor",
   Expired: "Süresi doldu",
   NoShow: "Gelmedi",
   PendingApproval: "Onay bekliyor",
+  PendingReview: "İncelemede",
   Rebooked: "Yeniden planlandı",
+  Rejected: "Reddedildi",
   Superseded: "Başka talep seçildi"
 };
 
 const statusStyles: Record<string, string> = {
   Approved: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
+  Accepted: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
   Cancelled: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
+  CancelledByAppeal: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
   CancelledByCustomer: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
   Completed: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
   Confirmed: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
   Declined: "bg-[var(--rs-danger-soft)] text-[var(--rs-danger)]",
+  Executed: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
+  Executing:
+    "border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] text-[var(--rs-warning)]",
   Expired: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
   NoShow: "bg-[var(--rs-danger-soft)] text-[var(--rs-danger)]",
   PendingApproval:
     "border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] text-[var(--rs-warning)] shadow-[0_0_24px_rgb(217_119_6_/_0.12)]",
+  PendingReview:
+    "border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] text-[var(--rs-warning)]",
   Rebooked: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
+  Rejected: "bg-[var(--rs-danger-soft)] text-[var(--rs-danger)]",
   Superseded: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)] line-through"
 };
 

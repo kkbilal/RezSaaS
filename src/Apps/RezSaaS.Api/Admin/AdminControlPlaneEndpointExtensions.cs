@@ -18,67 +18,92 @@ public static class AdminControlPlaneEndpointExtensions
                 "/bootstrap/platform-admin",
                 BootstrapPlatformAdminAsync)
             .AllowAnonymous()
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Bootstrap);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Bootstrap)
+            .Produces<PlatformAdminBootstrapHttpResponse>()
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces(StatusCodes.Status429TooManyRequests)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
 
         admin.MapPost(
                 "/tenants",
                 CreateTenantAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantProvisioningResponse>(StatusCodes.Status201Created)
+            .ProducesAdminErrors();
 
         admin.MapGet(
                 "/tenants",
                 GetTenantsAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantListResponse>()
+            .ProducesAdminErrors();
 
         admin.MapGet(
                 "/tenants/{tenantId:guid}",
                 GetTenantByIdAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantDetailResponse>()
+            .ProducesAdminErrors();
 
         admin.MapPost(
                 "/tenants/{tenantId:guid}/suspend",
                 SuspendTenantAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantDetailResponse>()
+            .ProducesAdminErrors();
 
         admin.MapPost(
                 "/tenants/{tenantId:guid}/reactivate",
                 ReactivateTenantAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantDetailResponse>()
+            .ProducesAdminErrors();
 
         admin.MapPost(
                 "/tenants/{tenantId:guid}/close",
                 CloseTenantAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantDetailResponse>()
+            .ProducesAdminErrors();
 
         admin.MapGet(
                 "/tenants/{tenantId:guid}/memberships",
                 GetTenantMembershipsAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantMembershipListResponse>()
+            .ProducesAdminErrors();
 
         admin.MapPost(
                 "/tenants/{tenantId:guid}/memberships",
                 AddTenantMembershipAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantMembershipResponse>(StatusCodes.Status201Created)
+            .ProducesAdminErrors();
 
         admin.MapPost(
                 "/tenants/{tenantId:guid}/memberships/{membershipId:guid}/suspend",
                 SuspendTenantMembershipAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantMembershipResponse>()
+            .ProducesAdminErrors();
 
         admin.MapPost(
                 "/tenants/{tenantId:guid}/memberships/{membershipId:guid}/revoke",
                 RevokeTenantMembershipAsync)
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
-            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
+            .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations)
+            .Produces<AdminTenantMembershipResponse>()
+            .ProducesAdminErrors();
 
         return endpoints;
     }
@@ -344,5 +369,18 @@ public static class AdminControlPlaneEndpointExtensions
             AdminTenantProvisioningOutcome.Conflict => Results.Conflict(error),
             _ => Results.UnprocessableEntity(error),
         };
+    }
+
+    private static RouteHandlerBuilder ProducesAdminErrors(
+        this RouteHandlerBuilder builder)
+    {
+        return builder
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces(StatusCodes.Status429TooManyRequests);
     }
 }

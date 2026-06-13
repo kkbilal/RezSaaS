@@ -51,6 +51,10 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   aksiyonları eklendi. Rebook mevcut staff/resource ile yeni UTC aralığına
   taşır ve backend conflict kontrolüne bırakılır; resource block kullanıcıya
   internal GUID göstermeden seçili iç kaynağı operasyonel olarak kapatır.
+- 2026-06-13: Customer abuse overview/appeal endpoint metadata OpenAPI'ye
+  eklendi ve `/hesabim/itirazlar` private route'u açıldı. Ekran yalnızca
+  müşteri-safe sanction/strike/closure/appeal alanlarını gösterir; internal
+  reason, admin actor veya platform inceleme detayı taşınmaz.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
@@ -59,7 +63,7 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
 | Phase 1 Identity/Auth | Register, login, refresh, confirmation, reset ve manage endpoint'leri mevcut | Auth ekranları ve hesap güvenliği | Session/rol/tenant bootstrap kontratı ve gerçek MFA step-up oturumu tamamlanmalı |
 | Phase 2 public keşif | İşletme arama, profil, hizmet, branch, staff, çalışma saati ve galeri mevcut | `/kesfet` ve `/isletme/{businessSlug}` SSR route'ları | Zengin facet/taksonomi ve görsel optimization allow-list sonraki iyileştirme |
 | Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı | Frontend resource seçtirmez; optional staff tercihi backend kontratına bağlıdır |
-| Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel ve global customer history mevcut | `/hesabim/talepler` müşteri geçmişi ve pending cancel | Cursor pagination ileride iyileştirilecek |
+| Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel, global customer history ve customer abuse overview/appeal mevcut | `/hesabim/talepler` müşteri geçmişi, pending cancel ve `/hesabim/itirazlar` | Cursor pagination ve detay route'ları ileride iyileştirilecek |
 | Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | İşletme talep kutusu | Liste pagination/search contract'ı ileride iyileştirilecek |
 | Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | Platform operasyon paneli | UI açılışı F5 içinde güvenli route ve step-up UX ile yapılmalı |
 | Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | `/panel` içinde appointment schedule, rebook, resource block ve temel operasyon aksiyonları | Organization/Catalog/Resources/Availability ayar ekranları ve daha zengin calendar UX sonraki dilimlerdir |

@@ -122,6 +122,9 @@ export function CustomerRequestsPage({
             <Button asChild variant="ghost">
               <Link href={routes.public.discover}>Keşfet</Link>
             </Button>
+            <Button asChild variant="ghost">
+              <Link href={routes.customer.appeals}>İtirazlarım</Link>
+            </Button>
             <Button asChild>
               <Link href={routes.business.panel}>Panel</Link>
             </Button>

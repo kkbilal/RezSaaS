@@ -17,18 +17,34 @@ public static class AdminAbuseControlPlaneEndpointExtensions
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
             .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
 
-        abuse.MapGet("/events", GetEventsAsync);
-        abuse.MapGet("/reports", GetReportsAsync);
-        abuse.MapGet("/users/{userAccountId:guid}", GetUserOverviewAsync);
-        abuse.MapPost("/reports/{reportId:guid}/confirm", ConfirmReportAsync);
-        abuse.MapPost("/reports/{reportId:guid}/dismiss", DismissReportAsync);
-        abuse.MapPost("/users/{userAccountId:guid}/sanctions", ApplySanctionAsync);
+        abuse.MapGet("/events", GetEventsAsync)
+            .Produces<AdminAbuseEventListResponse>()
+            .ProducesAdminErrors();
+        abuse.MapGet("/reports", GetReportsAsync)
+            .Produces<AdminAbuseReportListResponse>()
+            .ProducesAdminErrors();
+        abuse.MapGet("/users/{userAccountId:guid}", GetUserOverviewAsync)
+            .Produces<AdminUserAbuseOverviewResponse>()
+            .ProducesAdminErrors();
+        abuse.MapPost("/reports/{reportId:guid}/confirm", ConfirmReportAsync)
+            .Produces<AdminAbuseReportReviewResponse>()
+            .ProducesAdminErrors();
+        abuse.MapPost("/reports/{reportId:guid}/dismiss", DismissReportAsync)
+            .Produces<AdminAbuseReportReviewResponse>()
+            .ProducesAdminErrors();
+        abuse.MapPost("/users/{userAccountId:guid}/sanctions", ApplySanctionAsync)
+            .Produces<AdminUserSanctionResponse>(StatusCodes.Status201Created)
+            .ProducesAdminErrors();
         abuse.MapPost(
-            "/users/{userAccountId:guid}/sanctions/{sanctionId:guid}/revoke",
-            RevokeSanctionAsync);
+                "/users/{userAccountId:guid}/sanctions/{sanctionId:guid}/revoke",
+                RevokeSanctionAsync)
+            .Produces<AdminUserSanctionResponse>()
+            .ProducesAdminErrors();
         abuse.MapPost(
-            "/users/{userAccountId:guid}/strikes/{strikeId:guid}/revoke",
-            RevokeStrikeAsync);
+                "/users/{userAccountId:guid}/strikes/{strikeId:guid}/revoke",
+                RevokeStrikeAsync)
+            .Produces<AdminUserStrikeResponse>()
+            .ProducesAdminErrors();
 
         return endpoints;
     }
@@ -228,5 +244,18 @@ public static class AdminAbuseControlPlaneEndpointExtensions
             AdminAbuseOutcome.Conflict => Results.Conflict(error),
             _ => Results.UnprocessableEntity(error),
         };
+    }
+
+    private static RouteHandlerBuilder ProducesAdminErrors(
+        this RouteHandlerBuilder builder)
+    {
+        return builder
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces(StatusCodes.Status429TooManyRequests);
     }
 }

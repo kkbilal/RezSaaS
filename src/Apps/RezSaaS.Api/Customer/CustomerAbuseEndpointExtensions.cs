@@ -15,9 +15,21 @@ public static class CustomerAbuseEndpointExtensions
             .RequireAuthorization()
             .RequireRateLimiting(CustomerAbuseRateLimitPolicyNames.Actions);
 
-        customerAbuse.MapGet("/overview", GetOverviewAsync);
-        customerAbuse.MapGet("/appeals/{appealId:guid}", GetAppealAsync);
-        customerAbuse.MapPost("/appeals", CreateAppealAsync);
+        customerAbuse.MapGet("/overview", GetOverviewAsync)
+            .WithName("GetCustomerAbuseOverview")
+            .Produces<CustomerAbuseOverviewResponse>()
+            .ProducesCustomerAbuseErrors();
+
+        customerAbuse.MapGet("/appeals/{appealId:guid}", GetAppealAsync)
+            .WithName("GetCustomerAbuseAppeal")
+            .Produces<CustomerAbuseAppealResponse>()
+            .ProducesCustomerAbuseErrors();
+
+        customerAbuse.MapPost("/appeals", CreateAppealAsync)
+            .WithName("CreateCustomerAbuseAppeal")
+            .Produces<CustomerAbuseAppealResponse>(StatusCodes.Status200OK)
+            .Produces<CustomerAbuseAppealResponse>(StatusCodes.Status201Created)
+            .ProducesCustomerAbuseErrors();
 
         return endpoints;
     }
@@ -87,5 +99,18 @@ public static class CustomerAbuseEndpointExtensions
             CustomerAbuseOutcome.Conflict => Results.Conflict(error),
             _ => Results.UnprocessableEntity(error),
         };
+    }
+
+    private static RouteHandlerBuilder ProducesCustomerAbuseErrors(
+        this RouteHandlerBuilder builder)
+    {
+        return builder
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces(StatusCodes.Status429TooManyRequests);
     }
 }

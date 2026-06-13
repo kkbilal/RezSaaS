@@ -9,6 +9,7 @@ export const routes = {
     panel: "/panel"
   },
   customer: {
+    appeals: "/hesabim/itirazlar",
     requests: "/hesabim/talepler"
   },
   public: {

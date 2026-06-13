@@ -46,7 +46,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseEventListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -91,7 +147,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseReportListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -122,7 +234,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserAbuseOverviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -155,7 +323,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseReportReviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -188,7 +412,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseReportReviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -220,8 +500,64 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserSanctionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -263,7 +599,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserSanctionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -305,7 +697,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserStrikeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -342,7 +790,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseAppealListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -365,7 +869,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseAppealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -402,7 +962,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountClosureCaseListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -425,7 +1041,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountClosureCaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -458,7 +1130,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseAppealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -491,7 +1219,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAbuseAppealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -524,7 +1308,73 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountClosureCaseResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountClosureCaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -557,7 +1407,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountClosureCaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -590,7 +1496,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountClosureCaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -613,7 +1575,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAccountClosureCaseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -635,7 +1653,40 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformAdminBootstrapHttpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "description": "Service Unavailable"
           }
         }
       }
@@ -656,8 +1707,64 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantProvisioningResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -691,7 +1798,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -714,7 +1877,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -747,7 +1966,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -780,7 +2055,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -813,7 +2144,63 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -836,7 +2223,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantMembershipListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       },
@@ -866,8 +2309,64 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK"
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantMembershipResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -899,7 +2398,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantMembershipResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -931,7 +2486,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTenantMembershipResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -943,7 +2554,23 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOperationsReconciliationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -2170,9 +3797,66 @@
         "tags": [
           "Customer Abuse Appeals"
         ],
+        "operationId": "GetCustomerAbuseOverview",
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAbuseOverviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -2182,6 +3866,7 @@
         "tags": [
           "Customer Abuse Appeals"
         ],
+        "operationId": "GetCustomerAbuseAppeal",
         "parameters": [
           {
             "name": "appealId",
@@ -2195,7 +3880,63 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAbuseAppealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -2205,6 +3946,7 @@
         "tags": [
           "Customer Abuse Appeals"
         ],
+        "operationId": "CreateCustomerAbuseAppeal",
         "requestBody": {
           "content": {
             "application/json": {
@@ -2217,7 +3959,73 @@
         },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAbuseAppealResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerAbuseAppealResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminControlPlaneErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests"
           }
         }
       }
@@ -2305,16 +4113,6 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicAppointmentRequestCreateResponse"
-                }
-              }
-            }
-          },
           "201": {
             "description": "Created",
             "content": {
@@ -3278,6 +5076,231 @@
         },
         "additionalProperties": false
       },
+      "AdminAbuseAppealListResponse": {
+        "type": "object",
+        "properties": {
+          "appeals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAbuseAppealResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminAbuseAppealResponse": {
+        "type": "object",
+        "properties": {
+          "appealId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetType": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statement": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewedByUserAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "reviewReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminAbuseEventListResponse": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAbuseEventResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminAbuseEventResponse": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "nullable": true
+          },
+          "severity": {
+            "type": "string",
+            "nullable": true
+          },
+          "detailsJson": {
+            "type": "string",
+            "nullable": true
+          },
+          "occurredAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminAbuseReportListResponse": {
+        "type": "object",
+        "properties": {
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminBusinessAbuseReportResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminAbuseReportReviewResponse": {
+        "type": "object",
+        "properties": {
+          "report": {
+            "$ref": "#/components/schemas/AdminBusinessAbuseReportResponse"
+          },
+          "strike": {
+            "$ref": "#/components/schemas/AdminUserStrikeResponse"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminAccountClosureCaseListResponse": {
+        "type": "object",
+        "properties": {
+          "closureCases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAccountClosureCaseResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminAccountClosureCaseResponse": {
+        "type": "object",
+        "properties": {
+          "closureCaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proposedByUserAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "internalReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerNotice": {
+            "type": "string",
+            "nullable": true
+          },
+          "proposedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerNoticeDeliveredAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "eligibleForExecutionAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedByUserAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "decisionReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "decidedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "executionStartedByUserAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "executionStartedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "executedByUserAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "executedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AdminAccountClosureProposalRequest": {
         "type": "object",
         "properties": {
@@ -3316,6 +5339,150 @@
           "endsAtUtc": {
             "type": "string",
             "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminBusinessAbuseReportResponse": {
+        "type": "object",
+        "properties": {
+          "reportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "appointmentRequestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reportedUserAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reportedByUserAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reviewedByUserAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "reviewReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminControlPlaneErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminOperationsReconciliationResponse": {
+        "type": "object",
+        "properties": {
+          "evaluatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "failedNotificationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "staleProcessingNotificationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "callbackPendingNotificationCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "notificationOverdueClosureCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "executionStalledClosureCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failedNotificationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "staleProcessingNotificationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "callbackPendingNotificationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "notificationOverdueClosureCaseIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "executionStalledClosureCaseIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
             "nullable": true
           }
         },
@@ -3361,11 +5528,107 @@
         },
         "additionalProperties": false
       },
+      "AdminTenantDetailResponse": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "suspendedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "closedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminTenantMembershipResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AdminTenantLifecycleChangeRequest": {
         "type": "object",
         "properties": {
           "reason": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminTenantListItemResponse": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "suspendedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "closedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "activeMembershipCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminTenantListResponse": {
+        "type": "object",
+        "properties": {
+          "tenants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminTenantListItemResponse"
+            },
             "nullable": true
           }
         },
@@ -3390,6 +5653,54 @@
         },
         "additionalProperties": false
       },
+      "AdminTenantMembershipListResponse": {
+        "type": "object",
+        "properties": {
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminTenantMembershipResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminTenantMembershipResponse": {
+        "type": "object",
+        "properties": {
+          "membershipId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "branchId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "AdminTenantProvisioningRequest": {
         "type": "object",
         "properties": {
@@ -3404,6 +5715,186 @@
           "ownerUserAccountId": {
             "type": "string",
             "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminTenantProvisioningResponse": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
+          },
+          "ownerUserAccountId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminUserAbuseOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminAbuseEventResponse"
+            },
+            "nullable": true
+          },
+          "sanctions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserSanctionResponse"
+            },
+            "nullable": true
+          },
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminBusinessAbuseReportResponse"
+            },
+            "nullable": true
+          },
+          "strikes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserStrikeResponse"
+            },
+            "nullable": true
+          },
+          "risk": {
+            "$ref": "#/components/schemas/AdminUserRiskResponse"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminUserRiskResponse": {
+        "type": "object",
+        "properties": {
+          "activeStrikeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "level": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminUserSanctionResponse": {
+        "type": "object",
+        "properties": {
+          "sanctionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "startsAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revokedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revokedByUserAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "revocationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdminUserStrikeResponse": {
+        "type": "object",
+        "properties": {
+          "strikeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceAbuseReportId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "issuedByUserAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "issuedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revokedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revokedByUserAccountId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "revocationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -3947,6 +6438,117 @@
         },
         "additionalProperties": false
       },
+      "CustomerAbuseAppealResponse": {
+        "type": "object",
+        "properties": {
+          "appealId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetType": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statement": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CustomerAbuseOverviewResponse": {
+        "type": "object",
+        "properties": {
+          "sanctions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerSanctionResponse"
+            },
+            "nullable": true
+          },
+          "strikes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerStrikeResponse"
+            },
+            "nullable": true
+          },
+          "appeals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerAbuseAppealResponse"
+            },
+            "nullable": true
+          },
+          "closureCases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerAccountClosureCaseResponse"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CustomerAccountClosureCaseResponse": {
+        "type": "object",
+        "properties": {
+          "closureCaseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "customerNotice": {
+            "type": "string",
+            "nullable": true
+          },
+          "proposedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "customerNoticeDeliveredAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "eligibleForExecutionAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "decidedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "executedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CustomerAppointmentHistoryErrorResponse": {
         "type": "object",
         "properties": {
@@ -4086,6 +6688,64 @@
         },
         "additionalProperties": false
       },
+      "CustomerSanctionResponse": {
+        "type": "object",
+        "properties": {
+          "sanctionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "startsAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "revokedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CustomerStrikeResponse": {
+        "type": "object",
+        "properties": {
+          "strikeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "issuedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revokedAtUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ForgotPasswordRequest": {
         "required": [
           "email"
@@ -4209,6 +6869,16 @@
             "nullable": true
           },
           "bootstrapToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlatformAdminBootstrapHttpResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
             "type": "string",
             "nullable": true
           }

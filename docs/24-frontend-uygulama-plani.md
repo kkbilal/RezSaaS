@@ -182,6 +182,10 @@ Backend bağımlılıkları:
 - `/hesabim/talepler` authenticated customer route'u eklendi; global appointment
   history read model'iyle talep/randevu geçmişini gösterir ve yalnız
   `PendingApproval` talepler için idempotent müşteri iptali sunar.
+- Customer abuse overview/appeal response metadata OpenAPI'ye eklendi ve
+  `/hesabim/itirazlar` private route'u açıldı. Müşteri yalnızca kendi strike,
+  aktif sanction ve uygun closure case kayıtlarına itiraz başlatabilir; internal
+  reason, admin actor veya platform inceleme detayı UI'a taşınmaz.
 
 Kapanış kriterleri:
 
@@ -189,6 +193,8 @@ Kapanış kriterleri:
 - Aynı create/cancel kullanıcı niyetinin retry'ı çift işlem üretmez.
 - `PendingApproval`, `Approved`, `Declined`, `Expired`, `Superseded` ve
   `CancelledByCustomer` durumları doğru ve anlaşılır gösterilir.
+- Customer appeal create yalnız generated OpenAPI tipiyle çalışır ve güvenli
+  müşteri response alanları dışına çıkmaz.
 - Booking create ve cancel Playwright ile gerçek API üzerinde doğrulanır.
 
 ## F4 - İşletme Talep Kutusu

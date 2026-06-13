@@ -16,24 +16,45 @@ public static class AdminAbuseWorkflowEndpointExtensions
             .RequireAuthorization(AuthorizationPolicies.PlatformAdminWithStepUp)
             .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
 
-        workflow.MapGet("/appeals", GetAppealsAsync);
-        workflow.MapGet("/appeals/{appealId:guid}", GetAppealAsync);
-        workflow.MapGet("/closure-cases", GetClosureCasesAsync);
-        workflow.MapGet("/closure-cases/{closureCaseId:guid}", GetClosureCaseAsync);
-        workflow.MapPost("/appeals/{appealId:guid}/accept", AcceptAppealAsync);
-        workflow.MapPost("/appeals/{appealId:guid}/reject", RejectAppealAsync);
+        workflow.MapGet("/appeals", GetAppealsAsync)
+            .Produces<AdminAbuseAppealListResponse>()
+            .ProducesAdminErrors();
+        workflow.MapGet("/appeals/{appealId:guid}", GetAppealAsync)
+            .Produces<AdminAbuseAppealResponse>()
+            .ProducesAdminErrors();
+        workflow.MapGet("/closure-cases", GetClosureCasesAsync)
+            .Produces<AdminAccountClosureCaseListResponse>()
+            .ProducesAdminErrors();
+        workflow.MapGet("/closure-cases/{closureCaseId:guid}", GetClosureCaseAsync)
+            .Produces<AdminAccountClosureCaseResponse>()
+            .ProducesAdminErrors();
+        workflow.MapPost("/appeals/{appealId:guid}/accept", AcceptAppealAsync)
+            .Produces<AdminAbuseAppealResponse>()
+            .ProducesAdminErrors();
+        workflow.MapPost("/appeals/{appealId:guid}/reject", RejectAppealAsync)
+            .Produces<AdminAbuseAppealResponse>()
+            .ProducesAdminErrors();
         workflow.MapPost(
-            "/users/{userAccountId:guid}/closure-cases",
-            ProposeClosureAsync);
+                "/users/{userAccountId:guid}/closure-cases",
+                ProposeClosureAsync)
+            .Produces<AdminAccountClosureCaseResponse>()
+            .Produces<AdminAccountClosureCaseResponse>(StatusCodes.Status201Created)
+            .ProducesAdminErrors();
         workflow.MapPost(
-            "/closure-cases/{closureCaseId:guid}/approve",
-            ApproveClosureAsync);
+                "/closure-cases/{closureCaseId:guid}/approve",
+                ApproveClosureAsync)
+            .Produces<AdminAccountClosureCaseResponse>()
+            .ProducesAdminErrors();
         workflow.MapPost(
-            "/closure-cases/{closureCaseId:guid}/reject",
-            RejectClosureAsync);
+                "/closure-cases/{closureCaseId:guid}/reject",
+                RejectClosureAsync)
+            .Produces<AdminAccountClosureCaseResponse>()
+            .ProducesAdminErrors();
         workflow.MapPost(
-            "/closure-cases/{closureCaseId:guid}/execute",
-            ExecuteClosureAsync);
+                "/closure-cases/{closureCaseId:guid}/execute",
+                ExecuteClosureAsync)
+            .Produces<AdminAccountClosureCaseResponse>()
+            .ProducesAdminErrors();
 
         return endpoints;
     }
@@ -253,5 +274,18 @@ public static class AdminAbuseWorkflowEndpointExtensions
             AdminAbuseOutcome.Conflict => Results.Conflict(error),
             _ => Results.UnprocessableEntity(error),
         };
+    }
+
+    private static RouteHandlerBuilder ProducesAdminErrors(
+        this RouteHandlerBuilder builder)
+    {
+        return builder
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<AdminControlPlaneErrorResponse>(StatusCodes.Status422UnprocessableEntity)
+            .Produces(StatusCodes.Status429TooManyRequests);
     }
 }

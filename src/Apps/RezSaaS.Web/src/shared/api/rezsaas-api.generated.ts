@@ -30,6 +30,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseEventListResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -68,6 +127,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseReportListResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -102,6 +220,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminUserAbuseOverviewResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -146,6 +323,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseReportReviewResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -185,6 +421,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseReportReviewResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -219,8 +514,67 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description OK */
-                200: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminUserSanctionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -264,6 +618,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminUserSanctionResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -304,6 +717,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminUserStrikeResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -339,6 +811,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseAppealListResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -371,6 +902,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseAppealResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -411,6 +1001,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountClosureCaseListResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -443,6 +1092,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountClosureCaseResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -487,6 +1195,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseAppealResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -523,6 +1290,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAbuseAppealResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -565,6 +1391,74 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountClosureCaseResponse"];
+                    };
+                };
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountClosureCaseResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -601,6 +1495,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountClosureCaseResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -643,6 +1596,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountClosureCaseResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -675,6 +1687,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAccountClosureCaseResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -715,6 +1786,40 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["PlatformAdminBootstrapHttpResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -750,6 +1855,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantListResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -768,8 +1932,67 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description OK */
-                200: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantProvisioningResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -803,6 +2026,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -847,6 +2129,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -883,6 +2224,65 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -925,6 +2325,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantDetailResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -958,6 +2417,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantMembershipListResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -978,8 +2496,67 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description OK */
-                200: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantMembershipResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1019,6 +2596,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantMembershipResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -1055,6 +2691,65 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
+                    content: {
+                        "application/json": components["schemas"]["AdminTenantMembershipResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
                     content?: never;
                 };
             };
@@ -1083,6 +2778,29 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminOperationsReconciliationResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Too Many Requests */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1345,24 +3063,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["GetCustomerAbuseOverview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1378,26 +3079,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    appealId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["GetCustomerAbuseAppeal"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1415,28 +3097,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CustomerCreateAbuseAppealRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["CreateCustomerAbuseAppeal"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1552,15 +3213,6 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["PublicAppointmentRequestCreateResponse"];
-                    };
-                };
                 /** @description Created */
                 201: {
                     headers: {
@@ -2446,6 +4098,83 @@ export interface components {
             expiresIn: number;
             refreshToken: string | null;
         };
+        AdminAbuseAppealListResponse: {
+            appeals?: components["schemas"]["AdminAbuseAppealResponse"][] | null;
+        };
+        AdminAbuseAppealResponse: {
+            /** Format: uuid */
+            appealId?: string;
+            /** Format: uuid */
+            userAccountId?: string;
+            targetType?: string | null;
+            /** Format: uuid */
+            targetId?: string;
+            statement?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+            /** Format: date-time */
+            reviewedAtUtc?: string | null;
+            /** Format: uuid */
+            reviewedByUserAccountId?: string | null;
+            reviewReason?: string | null;
+        };
+        AdminAbuseEventListResponse: {
+            events?: components["schemas"]["AdminAbuseEventResponse"][] | null;
+        };
+        AdminAbuseEventResponse: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            tenantId?: string | null;
+            /** Format: uuid */
+            userAccountId?: string;
+            eventType?: string | null;
+            severity?: string | null;
+            detailsJson?: string | null;
+            /** Format: date-time */
+            occurredAtUtc?: string;
+        };
+        AdminAbuseReportListResponse: {
+            reports?: components["schemas"]["AdminBusinessAbuseReportResponse"][] | null;
+        };
+        AdminAbuseReportReviewResponse: {
+            report?: components["schemas"]["AdminBusinessAbuseReportResponse"];
+            strike?: components["schemas"]["AdminUserStrikeResponse"];
+        };
+        AdminAccountClosureCaseListResponse: {
+            closureCases?: components["schemas"]["AdminAccountClosureCaseResponse"][] | null;
+        };
+        AdminAccountClosureCaseResponse: {
+            /** Format: uuid */
+            closureCaseId?: string;
+            /** Format: uuid */
+            userAccountId?: string;
+            /** Format: uuid */
+            proposedByUserAccountId?: string;
+            internalReason?: string | null;
+            customerNotice?: string | null;
+            /** Format: date-time */
+            proposedAtUtc?: string;
+            /** Format: date-time */
+            customerNoticeDeliveredAtUtc?: string | null;
+            /** Format: date-time */
+            eligibleForExecutionAtUtc?: string | null;
+            status?: string | null;
+            /** Format: uuid */
+            reviewedByUserAccountId?: string | null;
+            decisionReason?: string | null;
+            /** Format: date-time */
+            decidedAtUtc?: string | null;
+            /** Format: uuid */
+            executionStartedByUserAccountId?: string | null;
+            /** Format: date-time */
+            executionStartedAtUtc?: string | null;
+            /** Format: uuid */
+            executedByUserAccountId?: string | null;
+            /** Format: date-time */
+            executedAtUtc?: string | null;
+        };
         AdminAccountClosureProposalRequest: {
             internalReason?: string | null;
             customerNotice?: string | null;
@@ -2459,6 +4188,53 @@ export interface components {
             /** Format: date-time */
             endsAtUtc?: string | null;
         };
+        AdminBusinessAbuseReportResponse: {
+            /** Format: uuid */
+            reportId?: string;
+            /** Format: uuid */
+            tenantId?: string;
+            /** Format: uuid */
+            branchId?: string;
+            /** Format: uuid */
+            appointmentRequestId?: string;
+            /** Format: uuid */
+            reportedUserAccountId?: string;
+            /** Format: uuid */
+            reportedByUserAccountId?: string;
+            reasonCode?: string | null;
+            note?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+            /** Format: date-time */
+            reviewedAtUtc?: string | null;
+            /** Format: uuid */
+            reviewedByUserAccountId?: string | null;
+            reviewReason?: string | null;
+        };
+        AdminControlPlaneErrorResponse: {
+            errorCode?: string | null;
+        };
+        AdminOperationsReconciliationResponse: {
+            /** Format: date-time */
+            evaluatedAtUtc?: string;
+            status?: string | null;
+            /** Format: int32 */
+            failedNotificationCount?: number;
+            /** Format: int32 */
+            staleProcessingNotificationCount?: number;
+            /** Format: int32 */
+            callbackPendingNotificationCount?: number;
+            /** Format: int32 */
+            notificationOverdueClosureCount?: number;
+            /** Format: int32 */
+            executionStalledClosureCount?: number;
+            failedNotificationIds?: string[] | null;
+            staleProcessingNotificationIds?: string[] | null;
+            callbackPendingNotificationIds?: string[] | null;
+            notificationOverdueClosureCaseIds?: string[] | null;
+            executionStalledClosureCaseIds?: string[] | null;
+        };
         AdminReviewAbuseAppealRequest: {
             reason?: string | null;
         };
@@ -2471,8 +4247,40 @@ export interface components {
         AdminRevokeUserStrikeRequest: {
             reason?: string | null;
         };
+        AdminTenantDetailResponse: {
+            /** Format: uuid */
+            tenantId?: string;
+            slug?: string | null;
+            displayName?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+            /** Format: date-time */
+            suspendedAtUtc?: string | null;
+            /** Format: date-time */
+            closedAtUtc?: string | null;
+            memberships?: components["schemas"]["AdminTenantMembershipResponse"][] | null;
+        };
         AdminTenantLifecycleChangeRequest: {
             reason?: string | null;
+        };
+        AdminTenantListItemResponse: {
+            /** Format: uuid */
+            tenantId?: string;
+            slug?: string | null;
+            displayName?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+            /** Format: date-time */
+            suspendedAtUtc?: string | null;
+            /** Format: date-time */
+            closedAtUtc?: string | null;
+            /** Format: int32 */
+            activeMembershipCount?: number;
+        };
+        AdminTenantListResponse: {
+            tenants?: components["schemas"]["AdminTenantListItemResponse"][] | null;
         };
         AdminTenantMembershipCreateRequest: {
             /** Format: uuid */
@@ -2481,11 +4289,91 @@ export interface components {
             /** Format: uuid */
             branchId?: string | null;
         };
+        AdminTenantMembershipListResponse: {
+            memberships?: components["schemas"]["AdminTenantMembershipResponse"][] | null;
+        };
+        AdminTenantMembershipResponse: {
+            /** Format: uuid */
+            membershipId?: string;
+            /** Format: uuid */
+            tenantId?: string;
+            /** Format: uuid */
+            userAccountId?: string;
+            role?: string | null;
+            status?: string | null;
+            /** Format: uuid */
+            branchId?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
         AdminTenantProvisioningRequest: {
             slug?: string | null;
             displayName?: string | null;
             /** Format: uuid */
             ownerUserAccountId?: string;
+        };
+        AdminTenantProvisioningResponse: {
+            /** Format: uuid */
+            tenantId?: string;
+            slug?: string | null;
+            displayName?: string | null;
+            /** Format: uuid */
+            ownerUserAccountId?: string;
+        };
+        AdminUserAbuseOverviewResponse: {
+            /** Format: uuid */
+            userAccountId?: string;
+            events?: components["schemas"]["AdminAbuseEventResponse"][] | null;
+            sanctions?: components["schemas"]["AdminUserSanctionResponse"][] | null;
+            reports?: components["schemas"]["AdminBusinessAbuseReportResponse"][] | null;
+            strikes?: components["schemas"]["AdminUserStrikeResponse"][] | null;
+            risk?: components["schemas"]["AdminUserRiskResponse"];
+        };
+        AdminUserRiskResponse: {
+            /** Format: int32 */
+            activeStrikeCount?: number;
+            level?: string | null;
+        };
+        AdminUserSanctionResponse: {
+            /** Format: uuid */
+            sanctionId?: string;
+            /** Format: uuid */
+            userAccountId?: string;
+            type?: string | null;
+            reason?: string | null;
+            /** Format: date-time */
+            startsAtUtc?: string;
+            /** Format: date-time */
+            endsAtUtc?: string | null;
+            /** Format: date-time */
+            revokedAtUtc?: string | null;
+            /** Format: uuid */
+            revokedByUserAccountId?: string | null;
+            revocationReason?: string | null;
+            isActive?: boolean;
+        };
+        AdminUserStrikeResponse: {
+            /** Format: uuid */
+            strikeId?: string;
+            /** Format: uuid */
+            userAccountId?: string;
+            /** Format: uuid */
+            tenantId?: string;
+            /** Format: uuid */
+            sourceAbuseReportId?: string;
+            reasonCode?: string | null;
+            /** Format: uuid */
+            issuedByUserAccountId?: string;
+            /** Format: date-time */
+            issuedAtUtc?: string;
+            /** Format: date-time */
+            expiresAtUtc?: string;
+            /** Format: date-time */
+            revokedAtUtc?: string | null;
+            /** Format: uuid */
+            revokedByUserAccountId?: string | null;
+            revocationReason?: string | null;
+            isActive?: boolean;
         };
         BusinessAbuseReportRequest: {
             reasonCode?: string | null;
@@ -2674,6 +4562,41 @@ export interface components {
             isTenantWide?: boolean;
             capabilities?: string[] | null;
         };
+        CustomerAbuseAppealResponse: {
+            /** Format: uuid */
+            appealId?: string;
+            targetType?: string | null;
+            /** Format: uuid */
+            targetId?: string;
+            statement?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+            /** Format: date-time */
+            reviewedAtUtc?: string | null;
+        };
+        CustomerAbuseOverviewResponse: {
+            sanctions?: components["schemas"]["CustomerSanctionResponse"][] | null;
+            strikes?: components["schemas"]["CustomerStrikeResponse"][] | null;
+            appeals?: components["schemas"]["CustomerAbuseAppealResponse"][] | null;
+            closureCases?: components["schemas"]["CustomerAccountClosureCaseResponse"][] | null;
+        };
+        CustomerAccountClosureCaseResponse: {
+            /** Format: uuid */
+            closureCaseId?: string;
+            customerNotice?: string | null;
+            /** Format: date-time */
+            proposedAtUtc?: string;
+            /** Format: date-time */
+            customerNoticeDeliveredAtUtc?: string | null;
+            /** Format: date-time */
+            eligibleForExecutionAtUtc?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            decidedAtUtc?: string | null;
+            /** Format: date-time */
+            executedAtUtc?: string | null;
+        };
         CustomerAppointmentHistoryErrorResponse: {
             errorCode?: string | null;
         };
@@ -2719,6 +4642,29 @@ export interface components {
             targetId?: string;
             statement?: string | null;
         };
+        CustomerSanctionResponse: {
+            /** Format: uuid */
+            sanctionId?: string;
+            type?: string | null;
+            /** Format: date-time */
+            startsAtUtc?: string;
+            /** Format: date-time */
+            endsAtUtc?: string | null;
+            /** Format: date-time */
+            revokedAtUtc?: string | null;
+            isActive?: boolean;
+        };
+        CustomerStrikeResponse: {
+            /** Format: uuid */
+            strikeId?: string;
+            reasonCode?: string | null;
+            /** Format: date-time */
+            issuedAtUtc?: string;
+            /** Format: date-time */
+            expiresAtUtc?: string;
+            /** Format: date-time */
+            revokedAtUtc?: string | null;
+        };
         ForgotPasswordRequest: {
             email: string | null;
         };
@@ -2754,6 +4700,9 @@ export interface components {
             email?: string | null;
             password?: string | null;
             bootstrapToken?: string | null;
+        };
+        PlatformAdminBootstrapHttpResponse: {
+            status?: string | null;
         };
         PublicAppointmentRequestCreateRequest: {
             branchSlug?: string | null;
@@ -4027,6 +5976,252 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
                 };
+            };
+        };
+    };
+    GetCustomerAbuseOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAbuseOverviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetCustomerAbuseAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appealId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAbuseAppealResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateCustomerAbuseAppeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerCreateAbuseAppealRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAbuseAppealResponse"];
+                };
+            };
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerAbuseAppealResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminControlPlaneErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
