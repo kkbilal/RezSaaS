@@ -199,7 +199,7 @@ Kapanış kriterleri:
 
 ## F4 - İşletme Talep Kutusu
 
-Durum: başlanmadı.
+Durum: başladı.
 
 Amaç: işletme kullanıcısının onay bekleyen talepleri hızlı, güvenli ve branch
 scope'a uygun biçimde yönetmesi.
@@ -229,6 +229,17 @@ Backend bağımlılıkları:
 - `/api/business/appointment-requests` ve `/api/business/appointments` response
   content tipleri OpenAPI artifact'a işlendi; `/panel` artık request inbox
   satırlarını typed generated client ile canlı API'den okur.
+
+2026-06-13 notu:
+
+- `/panel` request kartlarından business abuse report akışı açıldı. İşletme
+  kullanıcıları belirli appointment request için reason code seçip 300 karakterlik
+  PII/secret uyarılı operasyon notuyla
+  `/api/business/appointment-requests/{appointmentRequestId}/abuse-reports`
+  endpoint'ine merkezi tenant client üzerinden rapor gönderir.
+- Raporlama onay/ret kararından ayrı tutulur; tek başına strike veya sanction
+  üretmez ve backend'in tenant+branch authz, idempotency ve günlük limit
+  kontrollerine bırakılır.
 
 Kapanış kriterleri:
 

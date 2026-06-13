@@ -28,6 +28,58 @@ type AppointmentRequestStatus =
 
 type AppointmentFilter = "all" | AppointmentRequestStatus;
 type AppointmentDecision = "approve" | "decline";
+type AbuseReportReasonCode =
+  | "SlotSpam"
+  | "RepeatedCancellation"
+  | "NoShowPattern"
+  | "SuspectedAutomation"
+  | "AbusiveBehavior"
+  | "Other";
+
+type AbuseReportDraft = {
+  note: string;
+  reasonCode: AbuseReportReasonCode;
+  request: BusinessAppointmentRequest;
+};
+
+const abuseReportNoteMaxLength = 300;
+
+const abuseReportReasonOptions: Array<{
+  description: string;
+  label: string;
+  value: AbuseReportReasonCode;
+}> = [
+  {
+    description: "Aynı işletme veya saat aralığına kısa sürede yoğun talep.",
+    label: "Slot spam",
+    value: "SlotSpam"
+  },
+  {
+    description: "Tekrarlayan iptal davranışı operasyonu bozuyor.",
+    label: "Tekrarlayan iptal",
+    value: "RepeatedCancellation"
+  },
+  {
+    description: "Gelmemeyi alışkanlık haline getiren müşteri sinyali.",
+    label: "No-show örüntüsü",
+    value: "NoShowPattern"
+  },
+  {
+    description: "Otomasyon, bot veya gerçek dışı kullanım şüphesi.",
+    label: "Otomasyon şüphesi",
+    value: "SuspectedAutomation"
+  },
+  {
+    description: "İşletme veya personele yönelik uygunsuz davranış.",
+    label: "Uygunsuz davranış",
+    value: "AbusiveBehavior"
+  },
+  {
+    description: "Listede olmayan ama platform incelemesi gerektiren durum.",
+    label: "Diğer",
+    value: "Other"
+  }
+];
 
 type BusinessPanelProps = {
   appointmentSchedule: BusinessAppointmentScheduleState;
@@ -72,8 +124,15 @@ export function BusinessPanel({
   const [search, setSearch] = useState("");
   const [conflictCandidate, setConflictCandidate] =
     useState<BusinessAppointmentRequest | null>(null);
+  const [reportDraft, setReportDraft] = useState<AbuseReportDraft | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [actingRequestId, setActingRequestId] = useState<string | null>(null);
+  const [reportingRequestId, setReportingRequestId] = useState<string | null>(
+    null
+  );
+  const [reportedRequestIds, setReportedRequestIds] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const requests = useMemo(
     () =>
@@ -134,6 +193,85 @@ export function BusinessPanel({
 
   async function declineRequest(request: BusinessAppointmentRequest) {
     await decideRequest(request, "decline");
+  }
+
+  function openAbuseReport(request: BusinessAppointmentRequest) {
+    if (!tenantId || !request.id) {
+      showToast("Rapor için yetkili işletme ve talep bilgisi doğrulanmalı.");
+      return;
+    }
+
+    if (reportedRequestIds.has(request.id)) {
+      showToast("Bu talep için rapor zaten gönderildi.");
+      return;
+    }
+
+    setReportDraft({
+      note: "",
+      reasonCode: "SlotSpam",
+      request
+    });
+  }
+
+  async function submitAbuseReport() {
+    if (!reportDraft) {
+      return;
+    }
+
+    const appointmentRequestId = reportDraft.request.id;
+    const note = reportDraft.note.trim();
+
+    if (!tenantId || !appointmentRequestId) {
+      showToast("Rapor için yetkili işletme ve talep bilgisi doğrulanmalı.");
+      return;
+    }
+
+    if (note.length > abuseReportNoteMaxLength) {
+      showToast("Rapor notu 300 karakteri aşamaz.");
+      return;
+    }
+
+    const client = createTenantApiClient(tenantId);
+    setReportingRequestId(appointmentRequestId);
+
+    try {
+      const result = await client.POST(
+        "/api/business/appointment-requests/{appointmentRequestId}/abuse-reports",
+        {
+          body: {
+            note: note.length > 0 ? note : null,
+            reasonCode: reportDraft.reasonCode
+          },
+          params: {
+            path: {
+              appointmentRequestId
+            }
+          }
+        }
+      );
+
+      if (!result.response.ok || !result.data) {
+        showToast(getAbuseReportErrorCopy(result.response.status));
+        return;
+      }
+
+      setReportedRequestIds((current) => {
+        const next = new Set(current);
+        next.add(appointmentRequestId);
+        return next;
+      });
+      setReportDraft(null);
+      showToast(
+        result.response.status === 201
+          ? "Abuse raporu platform inceleme kuyruğuna alındı."
+          : "Bu talep için mevcut abuse raporu tekrarlandı."
+      );
+      router.refresh();
+    } catch {
+      showToast("Abuse raporu şu anda gönderilemedi. Lütfen tekrar dene.");
+    } finally {
+      setReportingRequestId(null);
+    }
   }
 
   async function decideRequest(
@@ -289,10 +427,15 @@ export function BusinessPanel({
                 visibleRequests.map((request, index) => (
                   <AppointmentRequestCard
                     index={index}
+                    isReported={
+                      request.id ? reportedRequestIds.has(request.id) : false
+                    }
+                    isReporting={reportingRequestId === request.id}
                     isSubmitting={actingRequestId === request.id}
                     key={request.id ?? `${request.branchId}-${request.requestedStartUtc}`}
                     onApprove={() => void approveRequest(request)}
                     onDecline={() => void declineRequest(request)}
+                    onReport={() => openAbuseReport(request)}
                     request={request}
                   />
                 ))
@@ -314,6 +457,16 @@ export function BusinessPanel({
           onCancel={() => setConflictCandidate(null)}
           onConfirm={() => void approveRequest(conflictCandidate, true)}
           request={conflictCandidate}
+        />
+      ) : null}
+
+      {reportDraft ? (
+        <AbuseReportDialog
+          draft={reportDraft}
+          isSubmitting={reportingRequestId === reportDraft.request.id}
+          onCancel={() => setReportDraft(null)}
+          onDraftChange={setReportDraft}
+          onSubmit={() => void submitAbuseReport()}
         />
       ) : null}
 
@@ -573,19 +726,30 @@ function InboxToolbar({
 
 function AppointmentRequestCard({
   index,
+  isReported,
+  isReporting,
   isSubmitting,
   onApprove,
   onDecline,
+  onReport,
   request
 }: {
   index: number;
+  isReported: boolean;
+  isReporting: boolean;
   isSubmitting: boolean;
   onApprove: () => void;
   onDecline: () => void;
+  onReport: () => void;
   request: BusinessAppointmentRequest;
 }) {
   const status = getRequestStatus(request);
   const isPending = status === "PendingApproval";
+  const reportLabel = isReported
+    ? "Raporlandı"
+    : isReporting
+      ? "Gönderiliyor"
+      : "Spam/abuse bildir";
 
   return (
     <article
@@ -677,11 +841,31 @@ function AppointmentRequestCard({
               >
                 Reddet
               </Button>
+              <Button
+                className="flex-1 lg:w-full"
+                disabled={isSubmitting || isReporting || isReported}
+                onClick={onReport}
+                type="button"
+                variant="ghost"
+              >
+                {reportLabel}
+              </Button>
             </>
           ) : (
-            <Button className="lg:w-full" disabled type="button" variant="secondary">
-              Aksiyon kapalı
-            </Button>
+            <>
+              <Button className="lg:w-full" disabled type="button" variant="secondary">
+                Karar kapalı
+              </Button>
+              <Button
+                className="lg:w-full"
+                disabled={isReporting || isReported}
+                onClick={onReport}
+                type="button"
+                variant="ghost"
+              >
+                {reportLabel}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -758,6 +942,120 @@ function ConflictDialog({
           </Button>
         </div>
       </section>
+    </div>
+  );
+}
+
+function AbuseReportDialog({
+  draft,
+  isSubmitting,
+  onCancel,
+  onDraftChange,
+  onSubmit
+}: {
+  draft: AbuseReportDraft;
+  isSubmitting: boolean;
+  onCancel: () => void;
+  onDraftChange: (draft: AbuseReportDraft) => void;
+  onSubmit: () => void;
+}) {
+  const selectedReason = abuseReportReasonOptions.find(
+    (option) => option.value === draft.reasonCode
+  );
+
+  return (
+    <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
+      <form
+        className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit();
+        }}
+      >
+        <div className="space-y-4">
+          <StatusBadge status={getRequestStatus(draft.request)} />
+          <h2 className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
+            Abuse raporu oluştur
+          </h2>
+          <p className="text-sm leading-7 text-[var(--rs-muted)]">
+            Bu işlem müşteriye otomatik yaptırım uygulamaz; talep platform
+            inceleme kuyruğuna alınır. Rapor yalnızca bu appointment request
+            kapsamında oluşturulur.
+          </p>
+        </div>
+
+        <div className="mt-6 rounded-[1.5rem] bg-[var(--rs-surface-muted)] p-4 text-sm">
+          <p className="font-medium text-[var(--rs-ink)]">
+            {getServiceSummary(draft.request)}
+          </p>
+          <p className="mt-1 text-[var(--rs-muted)]">
+            {draft.request.branchDisplayName ?? "Şube adı yok"} ·{" "}
+            {formatRequestStart(draft.request)}
+          </p>
+        </div>
+
+        <div className="mt-6 grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
+            Rapor nedeni
+            <select
+              className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              onChange={(event) =>
+                onDraftChange({
+                  ...draft,
+                  reasonCode: event.target.value as AbuseReportReasonCode
+                })
+              }
+              value={draft.reasonCode}
+            >
+              {abuseReportReasonOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {selectedReason ? (
+            <p className="rounded-2xl border border-[var(--rs-border)] bg-white/70 px-4 py-3 text-sm leading-6 text-[var(--rs-muted)]">
+              {selectedReason.description}
+            </p>
+          ) : null}
+
+          <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
+            Operasyon notu
+            <textarea
+              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              maxLength={abuseReportNoteMaxLength}
+              onChange={(event) =>
+                onDraftChange({
+                  ...draft,
+                  note: event.target.value
+                })
+              }
+              placeholder="Kısa, somut ve PII/secret içermeyen not yaz."
+              value={draft.note}
+            />
+          </label>
+
+          <div className="flex flex-col gap-2 text-xs text-[var(--rs-muted)] sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Telefon, e-posta, token, ödeme bilgisi veya gizli iç not yazma.
+            </span>
+            <span>
+              {draft.note.length}/{abuseReportNoteMaxLength}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <Button disabled={isSubmitting} onClick={onCancel} type="button" variant="secondary">
+            Vazgeç
+          </Button>
+          <Button disabled={isSubmitting} type="submit" variant="danger">
+            {isSubmitting ? "Gönderiliyor" : "İncelemeye gönder"}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -911,4 +1209,28 @@ function getDecisionErrorCopy(status: number) {
   }
 
   return "İşlem uygulanamadı. Lütfen listeyi yenileyip tekrar dene.";
+}
+
+function getAbuseReportErrorCopy(status: number) {
+  if (status === 400) {
+    return "Rapor nedeni veya not formatı geçerli değil.";
+  }
+
+  if (status === 401) {
+    return "Oturum doğrulanamadı; tekrar giriş yapmak gerekebilir.";
+  }
+
+  if (status === 403) {
+    return "Bu işletme veya şube için abuse raporu oluşturma yetkin yok.";
+  }
+
+  if (status === 404) {
+    return "Talep bulunamadı veya bu hesapla raporlanamıyor.";
+  }
+
+  if (status === 429) {
+    return "Günlük rapor sınırına ulaşıldı. Platform spam koruması devrede.";
+  }
+
+  return "Abuse raporu oluşturulamadı. Lütfen kısa süre sonra tekrar dene.";
 }

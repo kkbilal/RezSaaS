@@ -55,6 +55,10 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   eklendi ve `/hesabim/itirazlar` private route'u açıldı. Ekran yalnızca
   müşteri-safe sanction/strike/closure/appeal alanlarını gösterir; internal
   reason, admin actor veya platform inceleme detayı taşınmaz.
+- 2026-06-13: `/panel` talep kartlarına business abuse report akışı eklendi.
+  Reason code ve 300 karakterlik PII/secret uyarılı not, merkezi tenant API
+  client üzerinden gerçek `/abuse-reports` endpoint'ine gönderilir; raporlama
+  onay/ret kararından ayrı ve platform incelemesine bağlı kalır.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
@@ -64,7 +68,7 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
 | Phase 2 public keşif | İşletme arama, profil, hizmet, branch, staff, çalışma saati ve galeri mevcut | `/kesfet` ve `/isletme/{businessSlug}` SSR route'ları | Zengin facet/taksonomi ve görsel optimization allow-list sonraki iyileştirme |
 | Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı | Frontend resource seçtirmez; optional staff tercihi backend kontratına bağlıdır |
 | Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel, global customer history ve customer abuse overview/appeal mevcut | `/hesabim/talepler` müşteri geçmişi, pending cancel ve `/hesabim/itirazlar` | Cursor pagination ve detay route'ları ileride iyileştirilecek |
-| Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | İşletme talep kutusu | Liste pagination/search contract'ı ileride iyileştirilecek |
+| Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | `/panel` talep kutusu, approve/decline ve abuse report | Liste pagination/search contract'ı ileride iyileştirilecek |
 | Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | Platform operasyon paneli | UI açılışı F5 içinde güvenli route ve step-up UX ile yapılmalı |
 | Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | `/panel` içinde appointment schedule, rebook, resource block ve temel operasyon aksiyonları | Organization/Catalog/Resources/Availability ayar ekranları ve daha zengin calendar UX sonraki dilimlerdir |
 | Reviews, Analytics, Payments | Backend fazları bekleniyor | Yorum, rapor ve ödeme ekranları | API olmadan sahte dashboard veya form üretilmez |
