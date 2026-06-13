@@ -348,8 +348,15 @@ Planlanan teslimatlar:
 - Rebook ve resource block aksiyonları aynı appointment schedule akışına eklendi.
   Rebook mevcut staff/resource ile yeni UTC aralığına taşır; resource block
   seçili iç kaynağı kullanıcıya GUID göstermeden operasyonel olarak kapatır.
-- Ayar yönetimi, gelişmiş branch-timezone date picker ve resource/staff CRUD
-  sonraki F6 dilimleridir.
+- `/panel/ayarlar` salt-okunur işletme yönetim snapshot'ı olarak açıldı. Route,
+  `GET /api/business/context` ile aktif tenant/membership bilgisini alır ve
+  tenant slug üzerinden public profile read model'iyle şube, public personel,
+  hizmet, varyant, çalışma saati, galeri ve profil metni durumunu gösterir.
+- Personel, hizmet, şube, çalışma saati ve galeri düzenleme formları bu dilimde
+  açılmadı; ilgili Organization/Catalog/Availability/Resources CRUD endpointleri
+  OpenAPI'ye girmeden sahte ayar teslim edilmeyecek.
+- Gelişmiş branch-timezone date picker ve resource/staff CRUD sonraki F6
+  dilimleridir.
 
 Tamamlanan appointment operasyonları tenant header, branch-scope authz, audit,
 idempotency ve conflict kontrolüyle; resource block operasyonları tenant header,
@@ -398,7 +405,7 @@ Kapanış kriterleri:
 
 ## Bilinçli Olarak Ertelenenler
 
-- Backend endpoint'i olmadan calendar, analytics veya settings ekranı
+- Backend endpoint'i olmadan calendar, analytics veya settings mutation/form ekranı
 - Sahte dashboard metrikleri
 - Online ödeme/depozito UI'ı
 - WhatsApp/SMS tercih ekranı

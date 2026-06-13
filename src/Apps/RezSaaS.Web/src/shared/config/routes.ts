@@ -6,7 +6,8 @@ export const routes = {
     resetPassword: "/sifre-sifirla"
   },
   business: {
-    panel: "/panel"
+    panel: "/panel",
+    settings: "/panel/ayarlar"
   },
   customer: {
     appeals: "/hesabim/itirazlar",

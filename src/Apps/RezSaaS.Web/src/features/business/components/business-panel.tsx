@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import type { BusinessAppointmentScheduleState } from "@/features/business/api/get-business-appointments";
 import type {
   BusinessAppointmentInboxState,
@@ -13,6 +14,7 @@ import type {
 } from "@/features/business/api/get-business-context";
 import { BusinessAppointmentSchedule } from "@/features/business/components/business-appointment-schedule";
 import { createTenantApiClient } from "@/shared/api/client";
+import { routes } from "@/shared/config/routes";
 import { formatBranchDateTime } from "@/shared/lib/date-time";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -506,6 +508,9 @@ function PanelHeader({
             <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
               {sessionEmail}
             </span>
+            <Button asChild variant="secondary">
+              <Link href={routes.business.settings}>Ayar snapshot</Link>
+            </Button>
           </div>
 
           <div className="space-y-3">

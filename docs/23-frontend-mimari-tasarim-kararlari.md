@@ -72,6 +72,11 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   eklendi. Route, admin appeal ve account closure case list/detail endpoint'lerini
   generated OpenAPI tipleriyle okur; accept/reject/approve/execute mutationları
   reason ve high-risk confirmation UX'i tamamlanmadan açılmaz.
+- 2026-06-13: `/panel/ayarlar` salt-okunur işletme yönetim snapshot'ı olarak
+  eklendi. Route, authenticated business context ve tenant slug üzerinden public
+  profile read model'ini okur; şube, personel, hizmet, çalışma saati ve galeri
+  durumunu gösterir. Organization/Catalog/Availability CRUD endpointleri
+  OpenAPI'de oluşmadan düzenleme formu yayınlanmaz.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
@@ -83,7 +88,7 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
 | Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel, global customer history ve customer abuse overview/appeal mevcut | `/hesabim/talepler` müşteri geçmişi, pending cancel ve `/hesabim/itirazlar` | Cursor pagination ve detay route'ları ileride iyileştirilecek |
 | Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | `/panel` talep kutusu, approve/decline ve abuse report | Liste pagination/search contract'ı ileride iyileştirilecek |
 | Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | `/platform/abuse`, `/platform/tenantlar` ve `/platform/itirazlar` salt-okunur overview yüzeyleri, step-up gate | Yüksek riskli tenant/membership/appeal/closure mutation UI'ları sonraki F5 dilimlerinde açılmalı |
-| Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | `/panel` içinde appointment schedule, rebook, resource block ve temel operasyon aksiyonları | Organization/Catalog/Resources/Availability ayar ekranları ve daha zengin calendar UX sonraki dilimlerdir |
+| Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | `/panel` içinde appointment schedule, rebook, resource block, temel operasyon aksiyonları ve `/panel/ayarlar` salt-okunur ayar snapshot'ı | Organization/Catalog/Resources/Availability mutation ekranları ve daha zengin calendar UX sonraki dilimlerdir |
 | Reviews, Analytics, Payments | Backend fazları bekleniyor | Yorum, rapor ve ödeme ekranları | API olmadan sahte dashboard veya form üretilmez |
 
 ## Repo ve Deploy Kararı
@@ -140,7 +145,7 @@ sınırlarını korur.
 | Public | `/`, `/kesfet`, `/isletme/{businessSlug}` | Indexlenebilir SSR/RSC, paylaşılabilir URL |
 | Auth | `/giris`, `/kayit`, `/sifremi-unuttum`, `/sifre-sifirla`, `/eposta-dogrula` | Public ama `noindex`; `/giris` tek login kapısıdır, auth dönüş route'u güvenli allow-list ile korunur |
 | Customer | `/hesabim/talepler`, `/hesabim/guvenlik`, `/hesabim/itirazlar` | Authenticated, private ve `no-store` |
-| Business | `/panel/talepler`, sonraki fazlarda `/panel/takvim`, `/panel/ayarlar` | Tenant membership ve branch scope kontrollü |
+| Business | `/panel`, `/panel/ayarlar`, sonraki fazlarda `/panel/takvim` | Tenant membership ve branch scope kontrollü |
 | Platform | `/platform/abuse`, `/platform/tenantlar`, `/platform/itirazlar` | Yalnızca `PlatformAdminWithStepUp`; ilk açılan yüzeyler read-only abuse, tenant ve appeal/closure overview |
 
 İlk `PlatformAdmin` bootstrap için normal ürün UI'ı yapılmaz. Bootstrap,
