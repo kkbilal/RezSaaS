@@ -289,6 +289,23 @@ Kurallar:
   `/api/admin/operations/reconciliation` response'larını generated OpenAPI tipiyle
   okur. Strike/sanction/appeal review/closure mutation butonları bu dilimde
   açılmadı.
+- `/platform/tenantlar` salt-okunur tenant control-plane yüzeyi eklendi. Route,
+  `GET /api/admin/tenants` ve seçili tenant detayı için
+  `GET /api/admin/tenants/{tenantId}` response'larını generated OpenAPI tipleriyle
+  okur; tenant header taşımaz.
+- Provisioning, suspend/reactivate/close ve membership add/suspend/revoke
+  mutation butonları açılmadı. `Closed` tenant ve `Revoked` membership terminal
+  durumları yalnızca bilgi olarak gösterilir.
+- `/platform/itirazlar` salt-okunur appeal/closure desk olarak eklendi. Route,
+  `GET /api/admin/abuse/appeals`,
+  `GET /api/admin/abuse/appeals/{appealId}`,
+  `GET /api/admin/abuse/closure-cases` ve
+  `GET /api/admin/abuse/closure-cases/{closureCaseId}` response'larını generated
+  OpenAPI tipleriyle okur; tenant header taşımaz.
+- Appeal accept/reject, closure approve/reject/execute ve closure proposal
+  mutationları açılmadı. Ekran yalnızca step-up adminin karar bağlamını, müşteri
+  beyanını, `CustomerNotice`/`InternalReason` ayrımını ve execution eligibility
+  zamanlarını gösterir.
 
 Kapanış kriterleri:
 

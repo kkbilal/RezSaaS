@@ -116,7 +116,10 @@ function PlatformHeader({
           Step-up: {formatUtcDateTime(stepUpExpiresAtUtc)}
         </span>
         <Button asChild variant="secondary">
-          <Link href={routes.business.panel}>İşletme paneli</Link>
+          <Link href={routes.platform.tenants}>Tenantlar</Link>
+        </Button>
+        <Button asChild variant="secondary">
+          <Link href={routes.platform.appeals}>İtirazlar</Link>
         </Button>
       </div>
     </header>

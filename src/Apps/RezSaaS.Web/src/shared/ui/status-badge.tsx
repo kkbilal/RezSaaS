@@ -3,9 +3,13 @@ import { cn } from "@/shared/lib/cn";
 const statusCopy: Record<string, string> = {
   Approved: "Onaylandı",
   Accepted: "Kabul edildi",
+  Active: "Aktif",
+  BranchManager: "Şube yöneticisi",
+  BusinessOwner: "İşletme sahibi",
   Cancelled: "İptal edildi",
   CancelledByAppeal: "İtirazla kapandı",
   CancelledByCustomer: "Müşteri iptal etti",
+  Closed: "Kapalı",
   Completed: "Tamamlandı",
   Confirmed: "Onaylandı",
   Critical: "Kritik",
@@ -23,15 +27,22 @@ const statusCopy: Record<string, string> = {
   PendingReview: "İncelemede",
   Rebooked: "Yeniden planlandı",
   Rejected: "Reddedildi",
+  Revoked: "Geri alınmış",
+  Staff: "Personel",
+  Suspended: "Askıda",
   Superseded: "Başka talep seçildi"
 };
 
 const statusStyles: Record<string, string> = {
   Approved: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
   Accepted: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
+  Active: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
+  BranchManager: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
+  BusinessOwner: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
   Cancelled: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
   CancelledByAppeal: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
   CancelledByCustomer: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
+  Closed: "bg-[var(--rs-danger-soft)] text-[var(--rs-danger)]",
   Completed: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
   Confirmed: "bg-[var(--rs-success-soft)] text-[var(--rs-success)]",
   Critical: "bg-[var(--rs-danger-soft)] text-[var(--rs-danger)]",
@@ -54,6 +65,10 @@ const statusStyles: Record<string, string> = {
     "border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] text-[var(--rs-warning)]",
   Rebooked: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
   Rejected: "bg-[var(--rs-danger-soft)] text-[var(--rs-danger)]",
+  Revoked: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
+  Staff: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]",
+  Suspended:
+    "border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] text-[var(--rs-warning)]",
   Superseded: "bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)] line-through"
 };
 

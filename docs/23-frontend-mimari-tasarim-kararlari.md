@@ -63,6 +63,15 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   açıldı. Route, `PlatformAdmin` rolü ve geçerli step-up session yoksa admin
   endpoint'lerini çağırmaz; global admin API çağrıları tenant header taşımaz ve
   generated OpenAPI response tipleriyle yapılır.
+- 2026-06-13: `/platform/tenantlar` salt-okunur tenant control-plane dilimi
+  eklendi. Route, `GET /api/admin/tenants` ve seçili kayıt için
+  `GET /api/admin/tenants/{tenantId}` kontratlarını generated OpenAPI tipleriyle
+  okur; provisioning, lifecycle ve membership mutation akışları bu dilimde
+  açılmaz.
+- 2026-06-13: `/platform/itirazlar` salt-okunur appeal/closure desk olarak
+  eklendi. Route, admin appeal ve account closure case list/detail endpoint'lerini
+  generated OpenAPI tipleriyle okur; accept/reject/approve/execute mutationları
+  reason ve high-risk confirmation UX'i tamamlanmadan açılmaz.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
@@ -73,7 +82,7 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
 | Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı | Frontend resource seçtirmez; optional staff tercihi backend kontratına bağlıdır |
 | Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel, global customer history ve customer abuse overview/appeal mevcut | `/hesabim/talepler` müşteri geçmişi, pending cancel ve `/hesabim/itirazlar` | Cursor pagination ve detay route'ları ileride iyileştirilecek |
 | Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | `/panel` talep kutusu, approve/decline ve abuse report | Liste pagination/search contract'ı ileride iyileştirilecek |
-| Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | `/platform/abuse` salt-okunur abuse overview ve step-up gate | Tenant yönetimi ve yüksek riskli mutation UI'ları sonraki F5 dilimlerinde açılmalı |
+| Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | `/platform/abuse`, `/platform/tenantlar` ve `/platform/itirazlar` salt-okunur overview yüzeyleri, step-up gate | Yüksek riskli tenant/membership/appeal/closure mutation UI'ları sonraki F5 dilimlerinde açılmalı |
 | Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block API'leri mevcut | `/panel` içinde appointment schedule, rebook, resource block ve temel operasyon aksiyonları | Organization/Catalog/Resources/Availability ayar ekranları ve daha zengin calendar UX sonraki dilimlerdir |
 | Reviews, Analytics, Payments | Backend fazları bekleniyor | Yorum, rapor ve ödeme ekranları | API olmadan sahte dashboard veya form üretilmez |
 
@@ -132,7 +141,7 @@ sınırlarını korur.
 | Auth | `/giris`, `/kayit`, `/sifremi-unuttum`, `/sifre-sifirla`, `/eposta-dogrula` | Public ama `noindex`; `/giris` tek login kapısıdır, auth dönüş route'u güvenli allow-list ile korunur |
 | Customer | `/hesabim/talepler`, `/hesabim/guvenlik`, `/hesabim/itirazlar` | Authenticated, private ve `no-store` |
 | Business | `/panel/talepler`, sonraki fazlarda `/panel/takvim`, `/panel/ayarlar` | Tenant membership ve branch scope kontrollü |
-| Platform | `/platform/abuse`, `/platform/tenantlar`, `/platform/itirazlar` | Yalnızca `PlatformAdminWithStepUp`; ilk açılan yüzey read-only abuse overview |
+| Platform | `/platform/abuse`, `/platform/tenantlar`, `/platform/itirazlar` | Yalnızca `PlatformAdminWithStepUp`; ilk açılan yüzeyler read-only abuse, tenant ve appeal/closure overview |
 
 İlk `PlatformAdmin` bootstrap için normal ürün UI'ı yapılmaz. Bootstrap,
 runbook/operasyon yüzeyi olarak kalır ve public web navigasyonundan erişilemez.
