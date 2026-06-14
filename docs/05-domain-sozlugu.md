@@ -41,6 +41,10 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `PaymentIntent` | Belirli appointment request/appointment veya abonelik faturası için ödeme niyetini temsil eden kayıt | Kart verisi taşımaz; provider reference ve hosted checkout URL'i teknik alanlardır |
 | `PaymentWebhookEvent` | Sağlayıcı webhook tekrarlarını idempotent izleyen global teknik kayıt | Raw payload değil yalnız SHA-256 payload hash'i saklanır |
 | `PaymentAuditLogEntry` | Ödeme ayarı ve ödeme operasyonları için tenant-scoped append-only audit kaydı | Secret, kart verisi veya raw provider payload'u içermez |
+| `IntegrationApiClient` | Tenant için dış API erişimi tanımlayan teknik istemci kaydı | Raw API key saklanmaz; yalnız key prefix ve SHA-256 hash saklanır |
+| `WebhookSubscription` | Tenant'ın dış sisteme olay göndermek için tanımladığı HTTPS webhook aboneliği | Signing secret raw saklanmaz; target URL query/userinfo/fragment içeremez |
+| `WebhookDelivery` | Bir webhook olayının teslimat denemesi ve sonucunu izleyen kayıt | Raw payload saklanmaz; payload SHA-256 hash ve correlation id tutulur |
+| `IntegrationAuditLogEntry` | Integration ayarları ve webhook/API operasyonları için tenant-scoped append-only audit kaydı | Secret veya raw payload içermez |
 | `AbuseEvent` | Abuse şüphesi veya doğrulanmış ihlal olayı | Otomatik veya manuel kaynaktan gelebilir |
 | `BusinessAbuseReport` | Yetkili işletme kullanıcısının belirli appointment request için oluşturduğu inceleme sinyali | Tek başına strike veya sanction üretmez; platform admin review ister |
 | `UserStrike` | Platform admin tarafından doğrulanmış abuse raporundan üretilen süreli risk kaydı | Tenant kaynağını taşır, kullanıcı risk hesabında platform-global değerlendirilir ve revoke edilebilir |
@@ -60,3 +64,4 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 - `AppointmentRequest` ile `Appointment` kavramını tek tablo veya tek durum listesine sıkıştırma; yaşam döngüleri ayrıdır.
 - Unvan (`Title`) bookability belirlemez; `Skill` ve hizmet uygunluğu belirler.
 - `PaymentIntent` kart ödeme verisi değildir; PAN/CVV/raw provider payload'u hiçbir domain terimine dönüştürülmez.
+- `IntegrationApiClient` raw API key değildir; dış entegrasyon secret'ları response/log/audit içine taşınmaz.

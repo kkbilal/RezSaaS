@@ -16,6 +16,7 @@ using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Booking.Domain;
 using RezSaaS.Modules.Booking.Infrastructure.Persistence;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
+using RezSaaS.Modules.Integrations.Infrastructure.Persistence;
 using RezSaaS.Modules.Messaging.Application;
 using RezSaaS.Modules.Messaging.Domain;
 using RezSaaS.Modules.Messaging.Infrastructure.Queue;
@@ -59,6 +60,9 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         Assert.Equal(0, await CountRowsAsync("catalog", "Services"));
         Assert.Equal(0, await CountRowsAsync("messaging", "PlatformTransactionalMessages"));
         Assert.Equal(0, await CountRowsAsync("messaging", "TransactionalMessages"));
+        Assert.Equal(0, await CountRowsAsync("integrations", "IntegrationApiClients"));
+        Assert.Equal(0, await CountRowsAsync("integrations", "WebhookSubscriptions"));
+        Assert.Equal(0, await CountRowsAsync("integrations", "WebhookDeliveries"));
         Assert.Equal(0, await CountRowsAsync("payments", "PaymentIntents"));
         Assert.Equal(0, await CountRowsAsync("payments", "PaymentPolicies"));
         Assert.Equal(0, await CountRowsAsync("payments", "PaymentWebhookEvents"));
@@ -2092,6 +2096,12 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
 
         await using (PaymentsDbContext dbContext =
             new(CreateOptions<PaymentsDbContext>()))
+        {
+            await dbContext.Database.MigrateAsync();
+        }
+
+        await using (IntegrationsDbContext dbContext =
+            new(CreateOptions<IntegrationsDbContext>()))
         {
             await dbContext.Database.MigrateAsync();
         }

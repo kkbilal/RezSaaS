@@ -41,6 +41,10 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: provider-agnostic `Payments` modülü, seed'siz persistence, hosted checkout only ilkesi ve raw payload saklamayan webhook idempotency temeli.
   - Tamamlandı: yalnız `PlatformAdminWithStepUp` korumalı read-only payment readiness endpoint'i.
   - Bekliyor: provider seçimi, hosted checkout adapter'ı, business/customer ödeme yüzeyleri, webhook signature doğrulaması ve refund/chargeback runbook'u.
+- Phase 5 başladı:
+  - Tamamlandı: default kapalı `Integrations` modülü tasarımı; API key/signing secret raw saklamayan, webhook payload hash'iyle çalışan persistence temeli.
+  - Tamamlandı: yalnız `PlatformAdminWithStepUp` korumalı read-only integration readiness endpoint'i.
+  - Bekliyor: business integration mutation'ları, public external API auth/scope enforcement, webhook delivery worker, CRM/export, İYS ve WhatsApp pilot adapter'ları.
 
 ## Frontend Durumu
 
@@ -55,5 +59,5 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
 ## Çalışma Disiplini
 
 - Kullanıcı commit izni verdi; push işlemlerini kullanıcı yapar.
-- Bu çalışma öncesi son tamamlanan commit: `c3f7526 feat: close frontend readiness backend gates`.
+- Bu çalışma öncesi son tamamlanan commit: `9345792 feat: add payments readiness foundation`.
 - Her dilim sonunda solution build, tüm testler, doküman/ADR etkisi ve temiz git durumu doğrulanır.

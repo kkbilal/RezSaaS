@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RezSaaS.Phase1CoreIntegrati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RezSaaS.Modules.Payments", "src\Modules\RezSaaS.Modules.Payments\RezSaaS.Modules.Payments.csproj", "{42AAA33B-66F1-4519-8EC8-3C6450811BB6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RezSaaS.Modules.Integrations", "src\Modules\RezSaaS.Modules.Integrations\RezSaaS.Modules.Integrations.csproj", "{F8339C63-9B98-4A5C-950F-26DF23FEDE90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -261,6 +263,18 @@ Global
 		{42AAA33B-66F1-4519-8EC8-3C6450811BB6}.Release|x64.Build.0 = Release|Any CPU
 		{42AAA33B-66F1-4519-8EC8-3C6450811BB6}.Release|x86.ActiveCfg = Release|Any CPU
 		{42AAA33B-66F1-4519-8EC8-3C6450811BB6}.Release|x86.Build.0 = Release|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Debug|x64.Build.0 = Debug|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Debug|x86.Build.0 = Debug|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Release|x64.ActiveCfg = Release|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Release|x64.Build.0 = Release|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Release|x86.ActiveCfg = Release|Any CPU
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -286,5 +300,6 @@ Global
 		{95718ED7-943E-4029-94A2-A624FDE0A409} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{27A69FF3-7EEC-4D7E-BEB8-8FDEA07B0C83} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{42AAA33B-66F1-4519-8EC8-3C6450811BB6} = {EC447DCF-ABFA-6E24-52A5-D7FD48A5C558}
+		{F8339C63-9B98-4A5C-950F-26DF23FEDE90} = {EC447DCF-ABFA-6E24-52A5-D7FD48A5C558}
 	EndGlobalSection
 EndGlobal

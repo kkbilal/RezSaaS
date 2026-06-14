@@ -17,6 +17,7 @@
 - Booking
 - Messaging (e-posta, SMS; WhatsApp sonraki faz)
 - Reviews
+- Integrations (Phase 5; API client, webhook, CRM/export temeli; default kapalı)
 - Payments (Phase 4; provider-agnostic, hosted checkout only)
 - Admin
 - Analytics (MVP sonrası)
@@ -62,6 +63,7 @@ Her randevu **1 staff + 1 resource** ile planlanır (ikisi de zorunlu). Bu kural
 - Availability: çalışma saatleri, izinler ve uygunluk hesaplama
 - Booking: request, appointment, durum geçişleri ve çakışma garantileri
 - Messaging: kanal tercihi, şablon, gönderim ve teslimat kaydı
+- Integrations: API client hash kayıtları, webhook subscription/delivery ve entegrasyon audit hazırlığı
 - Payments: ödeme politikası, intent, webhook idempotency ve ödeme audit hazırlığı
 - Admin: abuse vakası, strike, yaptırım ve audit inceleme
 

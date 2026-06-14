@@ -21,6 +21,7 @@ Bu yol haritası “kod yazmadan önce doğru parçalama” prensibiyle hazırla
 
 - Phase 1, Phase 2 ve Phase 3 tamamlandı.
 - Phase 4 backend hazırlığı başladı: `Payments` modülü default kapalı, provider-agnostic ve read-only readiness yüzeyiyle eklendi.
+- Phase 5 backend hazırlığı başladı: `Integrations` modülü default kapalı API/webhook readiness yüzeyiyle eklendi; CRM/export ve delivery mutation'ları henüz yayınlanmaz.
 - Paralel uygulama adımı frontend F0/F1 iskeleti ve auth/session UX'idir.
 
 ## Frontend Paralel Planı

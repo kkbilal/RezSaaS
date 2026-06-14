@@ -69,6 +69,7 @@ Mikroservis yok. Tek deployable uygulama; ancak **domain sınırları** net mod�
 - Booking
 - Messaging (MVP: email + sınırlı transactional SMS; WhatsApp sonraki faz pilotu)
 - Reviews
+- Integrations (Phase 5: API client, webhook, CRM/export temeli; default kapalı)
 - Payments (Phase 4: provider-agnostic, hosted checkout only, default kapalı)
 - Analytics
 - Admin (operasyon, denetim, abuse)
@@ -251,6 +252,10 @@ En azından şu aksiyonlar auditlenir:
 - Kart verisi, CVV, PAN veya raw ödeme sağlayıcı payload'u veritabanında, logda, audit detayında veya response'ta tutulamaz; ödeme yalnız hosted/redirect checkout ile tasarlanır.
 - Ödeme webhook'ları provider event id + payload hash ile idempotent kaydedilir; raw payload saklanmaz ve provider secret'ları repo/config dosyasına gömülmez.
 - Ödeme ayar mutation'ları `BusinessOwner` tenant-wide yetki + tenant-scope step-up veya `PlatformAdminWithStepUp` kararı netleşmeden yayınlanmaz; read-only readiness yüzeyi yalnız `PlatformAdminWithStepUp` olabilir.
+- External API ve webhook delivery Phase 5'te explicit config olmadan kapalıdır; read-only integrations readiness yalnız `PlatformAdminWithStepUp` olabilir.
+- Integration API key ve webhook signing secret raw değerleri veritabanı, log, audit veya response içine yazılamaz; yalnız prefix/hash gibi güvenli teknik kanıt saklanır.
+- Webhook delivery raw payload saklamaz; payload hash, correlation id, event type ve idempotent delivery durumu tutulur.
+- İşletme integration mutation'ları `BusinessOwner` tenant-wide yetki + tenant-scope step-up kararı netleşmeden yayınlanmaz; platform readiness endpoint'i tenant mutation bypass'ı değildir.
 
 ---
 

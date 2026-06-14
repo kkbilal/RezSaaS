@@ -31,6 +31,7 @@
     <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.TenantManagement\RezSaaS.Modules.TenantManagement.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\RezSaaS.BuildingBlocks\RezSaaS.BuildingBlocks.csproj" />
     <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Payments\RezSaaS.Modules.Payments.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RezSaaS.Modules.Integrations\RezSaaS.Modules.Integrations.csproj" />
   </ItemGroup>
 
 </Project>

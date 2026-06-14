@@ -15,6 +15,7 @@ using RezSaaS.Modules.Booking;
 using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Catalog;
 using RezSaaS.Modules.Identity;
+using RezSaaS.Modules.Integrations;
 using RezSaaS.Modules.Messaging;
 using RezSaaS.Modules.Organization;
 using RezSaaS.Modules.Organization.Application;
@@ -39,6 +40,7 @@ IModule[] modules =
     new BookingModule(),
     new MessagingModule(),
     new ReviewsModule(),
+    new IntegrationsModule(),
     new PaymentsModule(),
     new AdminModule(),
 ];
@@ -318,6 +320,7 @@ app.MapAdminControlPlaneEndpoints();
 app.MapAdminAbuseControlPlaneEndpoints();
 app.MapAdminAbuseWorkflowEndpoints();
 app.MapAdminOperationsEndpoints();
+app.MapAdminIntegrationOperationsEndpoints();
 app.MapAdminPaymentOperationsEndpoints();
 app.MapModuleEndpoints(modules);
 

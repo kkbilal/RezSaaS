@@ -38,6 +38,7 @@ public static class LocalDevelopmentConfiguration
             ["ConnectionStrings:BookingDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:CatalogDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:IdentityDatabase"] = CreateIdentityConnectionString(values),
+            ["ConnectionStrings:IntegrationsDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:MessagingDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:OrganizationDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:PaymentsDatabase"] = CreatePostgresConnectionString(values),

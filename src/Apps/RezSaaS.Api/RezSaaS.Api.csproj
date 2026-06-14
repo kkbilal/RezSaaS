@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\Modules\RezSaaS.Modules.Reviews\RezSaaS.Modules.Reviews.csproj" />
     <ProjectReference Include="..\..\Modules\RezSaaS.Modules.TenantManagement\RezSaaS.Modules.TenantManagement.csproj" />
     <ProjectReference Include="..\..\Modules\RezSaaS.Modules.Payments\RezSaaS.Modules.Payments.csproj" />
+    <ProjectReference Include="..\..\Modules\RezSaaS.Modules.Integrations\RezSaaS.Modules.Integrations.csproj" />
   </ItemGroup>
 
   <ItemGroup>

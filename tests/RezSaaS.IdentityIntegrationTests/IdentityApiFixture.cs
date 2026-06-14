@@ -22,6 +22,7 @@ using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Domain;
 using RezSaaS.Modules.Identity.Infrastructure.Persistence;
 using RezSaaS.Modules.Identity.Infrastructure.Security;
+using RezSaaS.Modules.Integrations.Infrastructure.Persistence;
 using RezSaaS.Modules.Messaging.Domain;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 using RezSaaS.Modules.Organization.Domain;
@@ -66,6 +67,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                 builder.UseSetting("ConnectionStrings:BookingDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:CatalogDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:IdentityDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:IntegrationsDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:MessagingDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:OrganizationDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:PaymentsDatabase", databaseConnectionString);
@@ -82,6 +84,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                             ["ConnectionStrings:BookingDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:CatalogDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:IdentityDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:IntegrationsDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:MessagingDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:OrganizationDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:PaymentsDatabase"] = databaseConnectionString,
@@ -689,6 +692,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             serviceProvider.GetRequiredService<AdminDbContext>();
         MessagingDbContext messagingDbContext =
             serviceProvider.GetRequiredService<MessagingDbContext>();
+        IntegrationsDbContext integrationsDbContext =
+            serviceProvider.GetRequiredService<IntegrationsDbContext>();
         PaymentsDbContext paymentsDbContext =
             serviceProvider.GetRequiredService<PaymentsDbContext>();
 
@@ -699,6 +704,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         await resourcesDbContext.Database.MigrateAsync();
         await bookingDbContext.Database.MigrateAsync();
         await messagingDbContext.Database.MigrateAsync();
+        await integrationsDbContext.Database.MigrateAsync();
         await paymentsDbContext.Database.MigrateAsync();
         await tenantManagementDbContext.Database.MigrateAsync();
     }

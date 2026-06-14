@@ -51,6 +51,8 @@ $passwordValue = ConvertTo-ConnectionStringValue $env:REZSAAS_POSTGRES_PASSWORD
 
 $env:ConnectionStrings__IdentityDatabase =
     "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
+$env:ConnectionStrings__IntegrationsDatabase =
+    "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
 $env:ConnectionStrings__AdminDatabase =
     "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
 $env:ConnectionStrings__TenantManagementDatabase =
