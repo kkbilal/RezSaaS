@@ -44,6 +44,7 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
 - Phase 5 başladı:
   - Tamamlandı: default kapalı `Integrations` modülü tasarımı; API key/signing secret raw saklamayan, webhook payload hash'iyle çalışan persistence temeli.
   - Tamamlandı: yalnız `PlatformAdminWithStepUp` korumalı read-only integration readiness endpoint'i.
+  - Tamamlandı: endpoint yayınlamadan API client ve webhook subscription lifecycle application servisleri; config kapalıyken create işlemi çalışmaz, plaintext secret yalnız create sonucunda tek seferlik döner, DB/audit içinde hash/metadata kalır.
   - Bekliyor: business integration mutation'ları, public external API auth/scope enforcement, webhook delivery worker, CRM/export, İYS ve WhatsApp pilot adapter'ları.
 
 ## Frontend Durumu

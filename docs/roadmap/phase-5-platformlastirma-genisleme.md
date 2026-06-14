@@ -21,6 +21,7 @@ RezSaaS’i gerçek bir “salon platformu”na taşımak: çoklu şube gelişmi
 - `Integrations` modülü tenant-scoped persistence temeliyle açılır.
 - External API ve webhook delivery varsayılan olarak kapalıdır.
 - API key ve webhook signing secret raw saklanmaz; yalnız güvenli prefix/hash alanları tutulur.
+- API client ve webhook subscription lifecycle servisleri application katmanında hazırdır; config kapalıyken create işlemi çalışmaz, plaintext secret yalnız create sonucunda tek seferlik döner.
 - Webhook delivery raw payload saklamaz; payload hash, correlation id, event type ve teslimat durumu izlenir.
 - İlk API yüzeyi yalnız `PlatformAdminWithStepUp` korumalı read-only `/api/admin/integrations/readiness` endpoint'idir.
 

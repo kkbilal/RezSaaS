@@ -16,6 +16,8 @@ using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Booking.Domain;
 using RezSaaS.Modules.Booking.Infrastructure.Persistence;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
+using RezSaaS.Modules.Integrations.Application;
+using RezSaaS.Modules.Integrations.Domain;
 using RezSaaS.Modules.Integrations.Infrastructure.Persistence;
 using RezSaaS.Modules.Messaging.Application;
 using RezSaaS.Modules.Messaging.Domain;
@@ -70,6 +72,122 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         Assert.Equal(0, await CountRowsAsync("availability", "BranchWorkingHours"));
         Assert.Equal(0, await CountRowsAsync("booking", "AppointmentRequests"));
         Assert.Equal(0, await CountRowsAsync("booking", "Appointments"));
+    }
+
+    [Fact]
+    public async Task IntegrationApiClientLifecycleStoresOnlyHashedSecretAndAuditMetadata()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        await using IntegrationsDbContext dbContext =
+            new(CreateOptions<IntegrationsDbContext>(), tenantContextAccessor);
+        IntegrationApiClientLifecycleService service = new(
+            dbContext,
+            Options.Create(new IntegrationReadinessOptions { ExternalApiEnabled = true }),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        CreateIntegrationApiClientResult createResult = await service.CreateAsync(
+            new CreateIntegrationApiClientCommand(
+                actorUserAccountId,
+                "CRM Export",
+                ["appointments:read", "customers:read", "appointments:read"]));
+        IntegrationLifecycleResult revokeResult = await service.RevokeAsync(
+            createResult.ApiClientId,
+            actorUserAccountId,
+            "Rotated during integration lifecycle test.");
+
+        IntegrationApiClient storedClient =
+            await dbContext.ApiClients.IgnoreQueryFilters().SingleAsync();
+        string auditJson = string.Join(
+            Environment.NewLine,
+            await dbContext.AuditLogEntries
+                .IgnoreQueryFilters()
+                .OrderBy(entity => entity.OccurredAtUtc)
+                .Select(entity => entity.DetailsJson)
+                .ToListAsync());
+
+        Assert.True(revokeResult.Succeeded);
+        Assert.StartsWith("rzs_live_", createResult.KeyPrefix, StringComparison.Ordinal);
+        Assert.StartsWith(createResult.KeyPrefix, createResult.OneTimePlaintextApiKey, StringComparison.Ordinal);
+        Assert.Equal(createResult.KeyPrefix, storedClient.KeyPrefix);
+        Assert.Equal(64, storedClient.KeyHashSha256.Length);
+        Assert.NotEqual(createResult.OneTimePlaintextApiKey, storedClient.KeyHashSha256);
+        Assert.Equal("appointments:read customers:read", storedClient.ScopeSet);
+        Assert.Equal(IntegrationApiClientStatus.Revoked, storedClient.Status);
+        Assert.Equal(2, await dbContext.AuditLogEntries.IgnoreQueryFilters().CountAsync());
+        Assert.DoesNotContain(createResult.OneTimePlaintextApiKey, auditJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WebhookSubscriptionLifecycleStoresOnlySigningHashAndSafeAuditMetadata()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        await using IntegrationsDbContext dbContext =
+            new(CreateOptions<IntegrationsDbContext>(), tenantContextAccessor);
+        WebhookSubscriptionLifecycleService service = new(
+            dbContext,
+            Options.Create(
+                new IntegrationReadinessOptions
+                {
+                    ExternalApiEnabled = true,
+                    WebhookDeliveryEnabled = true,
+                }),
+            tenantContextAccessor,
+            new FixedTimeProvider(testTime));
+
+        CreateWebhookSubscriptionResult createResult = await service.CreateAsync(
+            new CreateWebhookSubscriptionCommand(
+                actorUserAccountId,
+                "CRM Webhook",
+                "HTTPS://hooks.example.test/rezsaas",
+                ["appointment.created", "appointment.updated", "appointment.created"]));
+        IntegrationLifecycleResult pauseResult = await service.PauseAsync(
+            createResult.WebhookSubscriptionId,
+            actorUserAccountId);
+        IntegrationLifecycleResult reactivateResult = await service.ReactivateAsync(
+            createResult.WebhookSubscriptionId,
+            actorUserAccountId);
+        IntegrationLifecycleResult revokeResult = await service.RevokeAsync(
+            createResult.WebhookSubscriptionId,
+            actorUserAccountId,
+            "Endpoint ownership rotated.");
+
+        WebhookSubscription storedSubscription =
+            await dbContext.WebhookSubscriptions.IgnoreQueryFilters().SingleAsync();
+        string auditJson = string.Join(
+            Environment.NewLine,
+            await dbContext.AuditLogEntries
+                .IgnoreQueryFilters()
+                .OrderBy(entity => entity.OccurredAtUtc)
+                .Select(entity => entity.DetailsJson)
+                .ToListAsync());
+
+        Assert.True(pauseResult.Succeeded);
+        Assert.True(reactivateResult.Succeeded);
+        Assert.True(revokeResult.Succeeded);
+        Assert.StartsWith("whsec_", createResult.OneTimePlaintextSigningSecret, StringComparison.Ordinal);
+        Assert.Equal(64, storedSubscription.SigningSecretHashSha256.Length);
+        Assert.NotEqual(
+            createResult.OneTimePlaintextSigningSecret,
+            storedSubscription.SigningSecretHashSha256);
+        Assert.Equal("https://hooks.example.test/rezsaas", storedSubscription.TargetUrl);
+        Assert.Equal("appointment.created,appointment.updated", storedSubscription.EventTypes);
+        Assert.Equal(WebhookSubscriptionStatus.Revoked, storedSubscription.Status);
+        Assert.Equal(4, await dbContext.AuditLogEntries.IgnoreQueryFilters().CountAsync());
+        Assert.DoesNotContain(createResult.OneTimePlaintextSigningSecret, auditJson, StringComparison.Ordinal);
+        Assert.DoesNotContain(storedSubscription.TargetUrl, auditJson, StringComparison.Ordinal);
     }
 
     [Fact]

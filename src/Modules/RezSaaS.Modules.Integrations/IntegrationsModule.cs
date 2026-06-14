@@ -29,6 +29,8 @@ public sealed class IntegrationsModule : ModuleBase
                     && options.WebhookMaxPayloadBytes <= 256_000,
                 "Integration webhook max payload size must be between 1 and 256000 bytes.")
             .ValidateOnStart();
+        services.AddScoped<IntegrationApiClientLifecycleService>();
         services.AddScoped<IntegrationReadinessService>();
+        services.AddScoped<WebhookSubscriptionLifecycleService>();
     }
 }

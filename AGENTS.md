@@ -254,6 +254,7 @@ En azından şu aksiyonlar auditlenir:
 - Ödeme ayar mutation'ları `BusinessOwner` tenant-wide yetki + tenant-scope step-up veya `PlatformAdminWithStepUp` kararı netleşmeden yayınlanmaz; read-only readiness yüzeyi yalnız `PlatformAdminWithStepUp` olabilir.
 - External API ve webhook delivery Phase 5'te explicit config olmadan kapalıdır; read-only integrations readiness yalnız `PlatformAdminWithStepUp` olabilir.
 - Integration API key ve webhook signing secret raw değerleri veritabanı, log, audit veya response içine yazılamaz; yalnız prefix/hash gibi güvenli teknik kanıt saklanır.
+- Integration API key ve webhook signing secret plaintext değeri yalnız create application service sonucunda tek seferlik dönebilir; tekrar okunabilir biçimde persist edilemez ve audit detayına eklenemez.
 - Webhook delivery raw payload saklamaz; payload hash, correlation id, event type ve idempotent delivery durumu tutulur.
 - İşletme integration mutation'ları `BusinessOwner` tenant-wide yetki + tenant-scope step-up kararı netleşmeden yayınlanmaz; platform readiness endpoint'i tenant mutation bypass'ı değildir.
 
