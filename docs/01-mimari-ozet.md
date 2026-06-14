@@ -17,9 +17,9 @@
 - Booking
 - Messaging (e-posta, SMS; WhatsApp sonraki faz)
 - Reviews
+- Payments (Phase 4; provider-agnostic, hosted checkout only)
 - Admin
 - Analytics (MVP sonrası)
-- Payments (MVP sonrası)
 
 ## Veri modeli omurgası
 
@@ -62,6 +62,7 @@ Her randevu **1 staff + 1 resource** ile planlanır (ikisi de zorunlu). Bu kural
 - Availability: çalışma saatleri, izinler ve uygunluk hesaplama
 - Booking: request, appointment, durum geçişleri ve çakışma garantileri
 - Messaging: kanal tercihi, şablon, gönderim ve teslimat kaydı
+- Payments: ödeme politikası, intent, webhook idempotency ve ödeme audit hazırlığı
 - Admin: abuse vakası, strike, yaptırım ve audit inceleme
 
 ## Zaman ve veri kuralları

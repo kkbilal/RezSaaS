@@ -23,3 +23,12 @@ Booking çekirdeği ve pilot kullanımı doğrulandıktan sonra ödeme akışlar
 - Ödeme webhooks idempotent işlenir ve auditlenir.
 - Refund ve hata senaryoları operasyon runbook'unda tanımlıdır.
 
+## Mevcut durum
+
+- Tamamlandı: `Payments` modülü ayrı schema/DbContext/migration ile eklendi.
+- Tamamlandı: ödeme tahsilatı default kapalı tutuldu; provider key olmadan online collection açılamaz.
+- Tamamlandı: `PaymentPolicy`, `PaymentIntent`, `PaymentWebhookEvent` ve `PaymentAuditLogEntry` domain/persistence temeli oluşturuldu.
+- Tamamlandı: webhook idempotency için provider event id unique index ve raw payload yerine SHA-256 payload hash saklama kuralı eklendi.
+- Tamamlandı: `GET /api/admin/payments/readiness` yalnız `PlatformAdminWithStepUp` ile read-only olarak açıldı.
+- Bekliyor: provider seçimi, hosted checkout adapter'ı, business/customer payment endpoint'leri, gerçek webhook signature doğrulaması, refund/chargeback runbook'u.
+

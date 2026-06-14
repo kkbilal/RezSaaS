@@ -36,6 +36,7 @@
 - İşletme onay paneli `BusinessOwner` için tenant-wide; `BranchManager` için branch scope kontrollüdür. `Staff` varsayılan olarak onay/ret veremez.
 - İşletme appointment calendar, cancel, complete, no-show, rebook, note ve resource block operasyonları `BusinessOwner` için tenant-wide, `BranchManager` için branch-scoped çalışır; `Staff` varsayılan deny'dır.
 - İşletme public profil metni, SEO metadata ve staff display policy güncellemesi yalnızca `BusinessOwner` tenant-wide yetkisiyle yapılır; `BranchManager`/`Staff` bu tenant-wide ayarı değiştiremez.
+- Ödeme readiness ve provider konfigürasyon görünürlüğü yalnızca `PlatformAdminWithStepUp` ile read-only açılır; müşteri/işletme ödeme mutation'ları tenant-scope step-up kararı olmadan yayınlanmaz.
 - İşletme frontend bağlamı yalnızca authenticated kullanıcının aktif tenant membership'lerinden üretilir; `GET /api/business/context` tenant header istemez ve serbest tenant GUID seçimine izin vermez.
 - Business context capability'leri endpoint authz yerine geçmez; her işletme operasyonu yine tenant header, membership scope ve ilgili application service kontrolünden geçer.
 - İşletme panelinde müşteri e-posta/telefon bilgisi yalnızca maskelenmiş döner; raw PII panel response kontratına eklenmez.
@@ -54,6 +55,7 @@
 | Appointment calendar/operasyon | Hayır | Hayır | Atandığı şube | Tenant | Hayır | Acil operasyon ile |
 | Staff/resource düzenleme | Hayır | Hayır | Atandığı şube | Tenant | Hayır | Hayır |
 | Public profil ayarı | Hayır | Hayır | Hayır | Tenant | Hayır | Hayır |
+| Ödeme readiness görünümü | Hayır | Hayır | Hayır | Hayır | Hayır | Step-up operasyon ile |
 | Rol ve üyelik yönetimi | Hayır | Hayır | Hayır | Tenant | Hayır | Step-up operasyon ile |
 | Tenant suspend/reactivate/close | Hayır | Hayır | Hayır | Hayır | Hayır | Step-up operasyon ile |
 | Abuse işaretleme | Hayır | Hayır | Atandığı şube | Tenant | İnceleme | Evet |

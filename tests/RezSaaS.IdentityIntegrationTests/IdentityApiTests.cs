@@ -277,6 +277,12 @@ public sealed class IdentityApiTests : IClassFixture<IdentityApiFixture>
             "get",
             "200",
             "#/components/schemas/AdminOperationsReconciliationResponse");
+        AssertOpenApiJsonResponse(
+            paths,
+            "/api/admin/payments/readiness",
+            "get",
+            "200",
+            "#/components/schemas/AdminPaymentReadinessResponse");
     }
 
     [Fact]

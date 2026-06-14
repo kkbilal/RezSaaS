@@ -7,6 +7,7 @@ using RezSaaS.Modules.Catalog;
 using RezSaaS.Modules.Identity;
 using RezSaaS.Modules.Messaging;
 using RezSaaS.Modules.Organization;
+using RezSaaS.Modules.Payments;
 using RezSaaS.Modules.Resources;
 using RezSaaS.Modules.Reviews;
 using RezSaaS.Modules.TenantManagement;
@@ -29,6 +30,7 @@ public sealed class ModuleDependencyTests
             moduleTypes.Add(typeof(BookingModule));
             moduleTypes.Add(typeof(MessagingModule));
             moduleTypes.Add(typeof(ReviewsModule));
+            moduleTypes.Add(typeof(PaymentsModule));
             moduleTypes.Add(typeof(AdminModule));
 
             return moduleTypes;

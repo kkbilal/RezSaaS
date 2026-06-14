@@ -2816,6 +2816,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/payments/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminPaymentReadinessResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/business/appointment-requests/pending": {
         parameters: {
             query?: never;
@@ -4250,6 +4306,22 @@ export interface components {
             callbackPendingNotificationIds?: string[] | null;
             notificationOverdueClosureCaseIds?: string[] | null;
             executionStalledClosureCaseIds?: string[] | null;
+        };
+        AdminPaymentReadinessResponse: {
+            /** Format: date-time */
+            evaluatedAtUtc?: string;
+            status?: string | null;
+            onlineCollectionEnabled?: boolean;
+            providerConfigured?: boolean;
+            hostedCheckoutOnly?: boolean;
+            storesRawCardData?: boolean;
+            webhookIdempotencyStorageReady?: boolean;
+            /** Format: int32 */
+            policyCount?: number;
+            /** Format: int32 */
+            openIntentCount?: number;
+            /** Format: int32 */
+            unprocessedWebhookEventCount?: number;
         };
         AdminReviewAbuseAppealRequest: {
             reason?: string | null;

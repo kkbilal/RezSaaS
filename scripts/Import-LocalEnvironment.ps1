@@ -59,6 +59,8 @@ $env:ConnectionStrings__MessagingDatabase =
     "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
 $env:ConnectionStrings__OrganizationDatabase =
     "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
+$env:ConnectionStrings__PaymentsDatabase =
+    "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
 $env:ConnectionStrings__CatalogDatabase =
     "Host=$hostValue;Port=$portValue;Database=$databaseValue;Username=$userValue;Password=$passwordValue"
 $env:ConnectionStrings__ResourcesDatabase =

@@ -1,6 +1,6 @@
 # Çalışma Bağlamı Özeti
 
-Son güncelleme: 2026-06-04
+Son güncelleme: 2026-06-14
 
 Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürün/mimari kararlar için ilgili ana dokümanlar ve ADR kayıtları geçerlidir.
 
@@ -37,7 +37,10 @@ Bu belge uzun çalışma geçmişinin kompakt devralma özetidir. Normatif ürü
   - Tamamlandı: salt-okunur notification/closure reconciliation, ayrı operasyon health yüzeyi, step-up admin snapshot'ı, PII-minimum alarmlar ve manuel kurtarma runbook'u.
   - Tamamlandı: business appointment calendar/detail, note, cancel, complete, no-show, rebook ve resource block operasyonları.
   - Tamamlandı: backup/restore tatbikat scriptleri, genel incident runbook ve CI güvenlik kapıları.
-- Sıradaki ürün fazı: Phase 4 ödeme/gelir optimizasyonu hazırlığı; paralel frontend adımı F0/F1.
+- Phase 4 başladı:
+  - Tamamlandı: provider-agnostic `Payments` modülü, seed'siz persistence, hosted checkout only ilkesi ve raw payload saklamayan webhook idempotency temeli.
+  - Tamamlandı: yalnız `PlatformAdminWithStepUp` korumalı read-only payment readiness endpoint'i.
+  - Bekliyor: provider seçimi, hosted checkout adapter'ı, business/customer ödeme yüzeyleri, webhook signature doğrulaması ve refund/chargeback runbook'u.
 
 ## Frontend Durumu
 

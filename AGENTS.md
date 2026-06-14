@@ -69,6 +69,7 @@ Mikroservis yok. Tek deployable uygulama; ancak **domain sınırları** net mod�
 - Booking
 - Messaging (MVP: email + sınırlı transactional SMS; WhatsApp sonraki faz pilotu)
 - Reviews
+- Payments (Phase 4: provider-agnostic, hosted checkout only, default kapalı)
 - Analytics
 - Admin (operasyon, denetim, abuse)
 
@@ -246,6 +247,10 @@ En azından şu aksiyonlar auditlenir:
 - Reconciliation recovery mevcut idempotent application/API akışları üzerinden yapılır. Terminal notification requeue gibi yeni bir mutasyon yüzeyi eklenirse ayrı authz, audit, idempotency, rate limit ve ADR olmadan yayınlanamaz; doğrudan DB düzeltmesi yasaktır.
 - Production closure execution, gerçek SMTP teslimatı ve operasyon/reconciliation kapıları doğrulanana kadar güvenli varsayılanla kapalı tutulur; explicit configuration olmadan açılamaz.
 - `UserAccount.Status != Active` olan authenticated istekler merkezi aktif hesap kapısında `401` ile reddedilir; yeni endpoint bu kapıyı bypass edemez.
+- Online ödeme MVP varsayılanı değildir; `Payments` modülü production'da explicit konfigürasyon olmadan ödeme tahsilatı açamaz.
+- Kart verisi, CVV, PAN veya raw ödeme sağlayıcı payload'u veritabanında, logda, audit detayında veya response'ta tutulamaz; ödeme yalnız hosted/redirect checkout ile tasarlanır.
+- Ödeme webhook'ları provider event id + payload hash ile idempotent kaydedilir; raw payload saklanmaz ve provider secret'ları repo/config dosyasına gömülmez.
+- Ödeme ayar mutation'ları `BusinessOwner` tenant-wide yetki + tenant-scope step-up veya `PlatformAdminWithStepUp` kararı netleşmeden yayınlanmaz; read-only readiness yüzeyi yalnız `PlatformAdminWithStepUp` olabilir.
 
 ---
 

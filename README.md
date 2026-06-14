@@ -28,7 +28,7 @@ Türkiye odaklı, çoklu işletme/şube/personel/kaynak (koltuk/oda/yatak/istasy
 
 ## Not
 
-Repo dokümantasyon-first başlatıldı. Phase 1, Phase 2 ve Phase 3 tamamlandı; sıradaki ürün fazı Phase 4 ödeme/gelir optimizasyonu, paralel uygulama adımı frontend F0/F1'dir.
+Repo dokümantasyon-first başlatıldı. Phase 1, Phase 2 ve Phase 3 tamamlandı; Phase 4 ödeme/gelir optimizasyonu backend hazırlığı provider-agnostic ve default kapalı `Payments` modülüyle başladı.
 
 ## Geliştirme
 

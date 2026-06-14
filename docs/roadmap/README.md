@@ -20,7 +20,7 @@ Bu yol haritası “kod yazmadan önce doğru parçalama” prensibiyle hazırla
 ## Mevcut Durum
 
 - Phase 1, Phase 2 ve Phase 3 tamamlandı.
-- Sıradaki ürün fazı Phase 4 ödeme/gelir optimizasyonu hazırlığıdır.
+- Phase 4 backend hazırlığı başladı: `Payments` modülü default kapalı, provider-agnostic ve read-only readiness yüzeyiyle eklendi.
 - Paralel uygulama adımı frontend F0/F1 iskeleti ve auth/session UX'idir.
 
 ## Frontend Paralel Planı

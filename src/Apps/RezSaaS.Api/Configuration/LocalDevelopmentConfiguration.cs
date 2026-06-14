@@ -40,6 +40,7 @@ public static class LocalDevelopmentConfiguration
             ["ConnectionStrings:IdentityDatabase"] = CreateIdentityConnectionString(values),
             ["ConnectionStrings:MessagingDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:OrganizationDatabase"] = CreatePostgresConnectionString(values),
+            ["ConnectionStrings:PaymentsDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:ResourcesDatabase"] = CreatePostgresConnectionString(values),
             ["ConnectionStrings:TenantManagementDatabase"] = CreateIdentityConnectionString(values),
         };

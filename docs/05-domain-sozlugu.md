@@ -37,6 +37,10 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 | `TransactionalMessage` | Rezervasyon gibi mevcut işlemle ilgili operasyonel bildirim | Pazarlama mesajından ayrıdır |
 | `PlatformTransactionalMessage` | Tenant'a bağlı olmayan hesap/abuse operasyonları için `UserAccountId` hedefli transactional outbox kaydı | Raw e-posta taşımaz; alıcıyı Identity çözer, delivery key ile idempotent işlenir |
 | `CommercialMessage` | Kampanya, yeniden aktivasyon veya satış amaçlı ileti | İzin ve İYS değerlendirmesi gerektirir |
+| `PaymentPolicy` | Tenant veya branch kapsamındaki ödeme toplama politikasını tanımlayan kayıt | Phase 4 başlangıcında default kapalıdır; hosted checkout açılırsa provider key ister |
+| `PaymentIntent` | Belirli appointment request/appointment veya abonelik faturası için ödeme niyetini temsil eden kayıt | Kart verisi taşımaz; provider reference ve hosted checkout URL'i teknik alanlardır |
+| `PaymentWebhookEvent` | Sağlayıcı webhook tekrarlarını idempotent izleyen global teknik kayıt | Raw payload değil yalnız SHA-256 payload hash'i saklanır |
+| `PaymentAuditLogEntry` | Ödeme ayarı ve ödeme operasyonları için tenant-scoped append-only audit kaydı | Secret, kart verisi veya raw provider payload'u içermez |
 | `AbuseEvent` | Abuse şüphesi veya doğrulanmış ihlal olayı | Otomatik veya manuel kaynaktan gelebilir |
 | `BusinessAbuseReport` | Yetkili işletme kullanıcısının belirli appointment request için oluşturduğu inceleme sinyali | Tek başına strike veya sanction üretmez; platform admin review ister |
 | `UserStrike` | Platform admin tarafından doğrulanmış abuse raporundan üretilen süreli risk kaydı | Tenant kaynağını taşır, kullanıcı risk hesabında platform-global değerlendirilir ve revoke edilebilir |
@@ -55,3 +59,4 @@ Bu sözlük ürün, tasarım, backend ve frontend ekiplerinin aynı terimi aynı
 - `TenantMembership` ile `UserAccount`'ı tek tabloya sıkıştırma; global kimlik ve tenant yetkisi ayrı kalır.
 - `AppointmentRequest` ile `Appointment` kavramını tek tablo veya tek durum listesine sıkıştırma; yaşam döngüleri ayrıdır.
 - Unvan (`Title`) bookability belirlemez; `Skill` ve hizmet uygunluğu belirler.
+- `PaymentIntent` kart ödeme verisi değildir; PAN/CVV/raw provider payload'u hiçbir domain terimine dönüştürülmez.

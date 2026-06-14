@@ -2575,6 +2575,34 @@
         }
       }
     },
+    "/api/admin/payments/readiness": {
+      "get": {
+        "tags": [
+          "Admin Payments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentReadinessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "429": {
+            "description": "Too Many Requests"
+          }
+        }
+      }
+    },
     "/api/business/appointment-requests/pending": {
       "get": {
         "tags": [
@@ -5608,6 +5636,47 @@
         },
         "additionalProperties": false
       },
+      "AdminPaymentReadinessResponse": {
+        "type": "object",
+        "properties": {
+          "evaluatedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "onlineCollectionEnabled": {
+            "type": "boolean"
+          },
+          "providerConfigured": {
+            "type": "boolean"
+          },
+          "hostedCheckoutOnly": {
+            "type": "boolean"
+          },
+          "storesRawCardData": {
+            "type": "boolean"
+          },
+          "webhookIdempotencyStorageReady": {
+            "type": "boolean"
+          },
+          "policyCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "openIntentCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unprocessedWebhookEventCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "AdminReviewAbuseAppealRequest": {
         "type": "object",
         "properties": {
@@ -7937,6 +8006,9 @@
     },
     {
       "name": "Admin Operations"
+    },
+    {
+      "name": "Admin Payments"
     },
     {
       "name": "Business Appointment Requests"

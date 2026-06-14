@@ -32,3 +32,13 @@ MVP: **ödeme yok** (operasyon + rezervasyon çekirdeği önce).
 2) depozito  
 3) full prepayment  
 4) refund/webhook olgunluğu  
+
+## Phase 4 backend başlangıcı
+
+2026-06-14 itibarıyla Phase 4 backend hazırlığı provider seçmeden başlatıldı:
+
+- `Payments` modülü ayrı PostgreSQL schema'sı ile eklenir.
+- Online tahsilat default kapalıdır; provider seçimi ve onboarding kararı olmadan customer/business ödeme endpoint'i açılmaz.
+- Kart verisi RezSaaS içinde tutulmaz; ileride yalnız hosted/redirect checkout desteklenir.
+- Webhook idempotency provider event id + payload hash ile hazırlanır; raw sağlayıcı payload'u saklanmaz.
+- İlk dış yüzey yalnız `PlatformAdminWithStepUp` korumalı read-only readiness endpoint'idir.

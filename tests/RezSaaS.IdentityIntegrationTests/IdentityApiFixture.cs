@@ -26,6 +26,7 @@ using RezSaaS.Modules.Messaging.Domain;
 using RezSaaS.Modules.Messaging.Infrastructure.Persistence;
 using RezSaaS.Modules.Organization.Domain;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
+using RezSaaS.Modules.Payments.Infrastructure.Persistence;
 using RezSaaS.Modules.Resources.Domain;
 using RezSaaS.Modules.Resources.Infrastructure.Persistence;
 using RezSaaS.Modules.TenantManagement.Domain;
@@ -67,6 +68,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                 builder.UseSetting("ConnectionStrings:IdentityDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:MessagingDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:OrganizationDatabase", databaseConnectionString);
+                builder.UseSetting("ConnectionStrings:PaymentsDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:ResourcesDatabase", databaseConnectionString);
                 builder.UseSetting("ConnectionStrings:TenantManagementDatabase", databaseConnectionString);
                 builder.ConfigureAppConfiguration((_, configuration) =>
@@ -82,6 +84,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
                             ["ConnectionStrings:IdentityDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:MessagingDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:OrganizationDatabase"] = databaseConnectionString,
+                            ["ConnectionStrings:PaymentsDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:ResourcesDatabase"] = databaseConnectionString,
                             ["ConnectionStrings:TenantManagementDatabase"] = databaseConnectionString,
                             ["Admin:AbuseRisk:AccountClosureExecutionEnabled"] = "true",
@@ -686,6 +689,8 @@ public sealed class IdentityApiFixture : IAsyncLifetime
             serviceProvider.GetRequiredService<AdminDbContext>();
         MessagingDbContext messagingDbContext =
             serviceProvider.GetRequiredService<MessagingDbContext>();
+        PaymentsDbContext paymentsDbContext =
+            serviceProvider.GetRequiredService<PaymentsDbContext>();
 
         await adminDbContext.Database.MigrateAsync();
         await organizationDbContext.Database.MigrateAsync();
@@ -694,6 +699,7 @@ public sealed class IdentityApiFixture : IAsyncLifetime
         await resourcesDbContext.Database.MigrateAsync();
         await bookingDbContext.Database.MigrateAsync();
         await messagingDbContext.Database.MigrateAsync();
+        await paymentsDbContext.Database.MigrateAsync();
         await tenantManagementDbContext.Database.MigrateAsync();
     }
 
