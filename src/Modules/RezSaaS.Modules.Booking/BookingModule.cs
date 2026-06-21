@@ -1,4 +1,5 @@
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Booking.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +18,14 @@ public sealed class BookingModule : ModuleBase
             ?? throw new InvalidOperationException(
                 $"Connection string '{BookingDbContext.ConnectionStringName}' is required.");
 
-        services.AddDbContext<BookingDbContext>(
-            options => options.UseNpgsql(connectionString));
+        // Register tenant stamping interceptor
+        services.AddTransient<TenantStampingInterceptor>();
+        
+        services.AddDbContext<BookingDbContext>((sp, options) =>
+        {
+            var interceptor = sp.GetRequiredService<TenantStampingInterceptor>();
+            options.UseNpgsql(connectionString).AddInterceptors(interceptor);
+        });
         services.AddOptions<BookingSecurityOptions>()
             .Bind(configuration.GetSection(BookingSecurityOptions.SectionName))
             .Validate(

@@ -1,15 +1,17 @@
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { getCustomerAppointmentHistory } from '@/features/customer/api/get-appointment-history';
 import { AppointmentHistoryList } from '@/features/customer/components/AppointmentHistoryList';
 import { AppointmentHistorySkeleton } from '@/features/customer/components/AppointmentHistorySkeleton';
-import { EmptyState } from '@/shared/ui/EmptyState';
+import { EmptyState } from '@/shared/ui/empty-state';
+import { Button } from '@/shared/ui/button';
 
 export default function CustomerAppointmentsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Randevularım</h1>
-        <p className="mt-2 text-gray-600">Randevu geçmişinizi ve gelecek rezervasyonlarınızı görüntüleyin</p>
+        <h1 className="text-3xl font-bold text-[var(--rs-ink)]">Randevularım</h1>
+        <p className="mt-2 text-[var(--rs-muted)]">Randevu geçmişinizi ve gelecek rezervasyonlarınızı görüntüleyin</p>
       </div>
 
       <Suspense fallback={<AppointmentHistorySkeleton />}>
@@ -36,8 +38,11 @@ async function AppointmentsContent() {
       <EmptyState
         title="Henüz bir randevunuz yok"
         description="İlk rezervasyonunuzu yapmak için işletmeleri keşfetmeye başlayın"
-        actionLabel="İşletmeleri Keşfet"
-        actionHref="/kesfet"
+        action={
+          <Link href="/kesfet">
+            <Button>İşletmeleri Keşfet</Button>
+          </Link>
+        }
       />
     );
   }

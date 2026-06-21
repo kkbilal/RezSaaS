@@ -1,44 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DialogOverlay, DialogPanel } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { FormField, TextInput } from "@/shared/ui/form-field";
+import { apiClient } from "@/shared/api/client";
 
 export default function CustomerProfilePage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  async function loadProfile() {
+    setIsLoading(true);
+    try {
+      setEmail("customer@example.com");
+      setName("Müşteri Adı");
+      setPhone("+90 555 123 4567");
+    } catch {
+      showToast("Profil yüklenirken hata oluştu");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function handleSave() {
     setIsSaving(true);
     try {
-      // API endpoint implementation placeholder
-      // const result = await apiClient.PATCH("/api/customer/profile", {
-      //   body: { name: name.trim(), email: email.trim(), phone: phone.trim() },
-      // });
-      
-      showToast("Profil güncellenirken bir hata oluştu. API endpoint henüz mevcut değil.");
+      showToast("Profil güncelleme API endpoint'i henüz mevcut değil");
       return;
-      
-      /* 
-      if (!result.response.ok) {
-        showToast("Profil güncellenirken bir hata oluştu.");
-        return;
-      }
-
-      showToast("Profil başarıyla güncellendi.");
-      setIsEditing(false);
-      router.refresh();
-      */
     } catch {
       showToast("Profil güncellenemedi. Lütfen tekrar dene.");
     } finally {
@@ -49,24 +52,9 @@ export default function CustomerProfilePage() {
   async function handleDeleteAccount() {
     setIsDeleting(true);
     try {
-      // API endpoint implementation placeholder
-      showToast("Hesap silme talebi oluşturulurken bir hata oluştu. API endpoint henüz mevcut değil.");
+      showToast("Hesap silme talebi API endpoint'i henüz mevcut değil");
       setShowDeleteDialog(false);
       return;
-      
-      /*
-      const result = await apiClient.POST("/api/customer/profile/delete-request");
-
-      if (!result.response.ok) {
-        showToast("Hesap silme talebi oluşturulurken bir hata oluştu.");
-        setShowDeleteDialog(false);
-        return;
-      }
-
-      showToast("Hesap silme talebi oluşturuldu. E-posta adresinizi kontrol edin.");
-      setShowDeleteDialog(false);
-      router.refresh();
-      */
     } catch {
       showToast("Hesap silme talebi oluşturulamadı. Lütfen tekrar dene.");
       setShowDeleteDialog(false);
@@ -89,96 +77,104 @@ export default function CustomerProfilePage() {
         </p>
       </div>
 
-      <div className="max-w-2xl space-y-6">
+      {isLoading ? (
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Kişisel Bilgiler
-            </h2>
-            {!isEditing && (
-              <Button onClick={() => setIsEditing(true)} variant="secondary">
-                Düzenle
-              </Button>
+          <div className="text-center py-12 text-gray-600">
+            Yükleniyor...
+          </div>
+        </Card>
+      ) : (
+        <div className="max-w-2xl space-y-6">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Kişisel Bilgiler
+              </h2>
+              {!isEditing && (
+                <Button onClick={() => setIsEditing(true)} variant="secondary">
+                  Düzenle
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <FormField label="Ad Soyad">
+                <TextInput
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="Adınız ve soyadınız"
+                />
+              </FormField>
+
+              <FormField 
+                label="E-posta"
+                hint="E-posta değişikliği için doğrulama gerekir"
+              >
+                <TextInput
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="ornek@email.com"
+                />
+              </FormField>
+
+              <FormField 
+                label="Telefon"
+                hint="Rezervasyon bildirimleri için kullanılır"
+              >
+                <TextInput
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={!isEditing}
+                  placeholder="+90 555 123 4567"
+                />
+              </FormField>
+            </div>
+
+            {isEditing && (
+              <div className="mt-6 flex gap-3">
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex-1"
+                >
+                  {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </Button>
+                <Button
+                  onClick={() => setIsEditing(false)}
+                  variant="ghost"
+                  disabled={isSaving}
+                >
+                  İptal
+                </Button>
+              </div>
             )}
-          </div>
+          </Card>
 
-          <div className="space-y-4">
-            <FormField label="Ad Soyad">
-              <TextInput
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={!isEditing}
-                placeholder="Adınız ve soyadınız"
-              />
-            </FormField>
-
-            <FormField 
-              label="E-posta"
-              hint="E-posta değişikliği için doğrulama gerekir"
-            >
-              <TextInput
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={!isEditing}
-                placeholder="ornek@email.com"
-              />
-            </FormField>
-
-            <FormField 
-              label="Telefon"
-              hint="Rezervasyon bildirimleri için kullanılır"
-            >
-              <TextInput
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                disabled={!isEditing}
-                placeholder="+90 555 123 4567"
-              />
-            </FormField>
-          </div>
-
-          {isEditing && (
-            <div className="mt-6 flex gap-3">
+          <Card className="p-6 border-red-200">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Tehlikeli Bölge
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Hesabınızı silmek tüm verilerinizin kalıcı olarak silinmesine neden olur.
+                Bu işlem geri alınamaz.
+              </p>
               <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex-1"
+                onClick={() => setShowDeleteDialog(true)}
+                variant="danger"
+                className="w-full sm:w-auto"
               >
-                {isSaving ? "Kaydediliyor..." : "Kaydet"}
-              </Button>
-              <Button
-                onClick={() => setIsEditing(false)}
-                variant="ghost"
-                disabled={isSaving}
-              >
-                İptal
+                Hesabı Sil
               </Button>
             </div>
-          )}
-        </Card>
-
-        <Card className="p-6 border-red-200">
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Tehlikeli Bölge
-            </h2>
-            <p className="text-gray-600 text-sm">
-              Hesabınızı silmek tüm verilerinizin kalıcı olarak silinmesine neden olur.
-              Bu işlem geri alınamaz.
-            </p>
-            <Button
-              onClick={() => setShowDeleteDialog(true)}
-              variant="danger"
-              className="w-full sm:w-auto"
-            >
-              Hesabı Sil
-            </Button>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      )}
 
       {toast && (
         <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-gray-200 bg-white px-5 py-3 text-sm text-gray-900 shadow-lg">

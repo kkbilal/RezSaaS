@@ -6,8 +6,15 @@ type ApiClientOptions = {
   headers?: HeadersOptions;
 };
 
-const browserBaseUrl = process.env.NEXT_PUBLIC_REZSAAS_API_BASE_URL ?? "";
+const browserBaseUrl = process.env.NEXT_PUBLIC_REZSAAS_API_BASE_URL;
 export const tenantContextHeaderName = "X-RezSaaS-Tenant";
+
+if (!browserBaseUrl) {
+  throw new Error(
+    "NEXT_PUBLIC_REZSAAS_API_BASE_URL environment variable is not set. " +
+    "Please set it in your environment configuration."
+  );
+}
 
 export function createApiClient(options: ApiClientOptions = {}) {
   return createClient<paths>({

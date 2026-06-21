@@ -1,29 +1,40 @@
-interface EmptyStateProps {
-  title: string;
-  description: string;
-  actionLabel?: string;
-  actionHref?: string;
-  icon?: React.ReactNode;
-}
+import { type ReactNode } from "react";
+import { cn } from "@/shared/lib/cn";
 
-export function EmptyState({ title, description, actionLabel, actionHref, icon }: EmptyStateProps) {
+export type EmptyStateProps = {
+  icon?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  className?: string;
+};
+
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  className
+}: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center space-y-4 py-12 text-center",
+        className
+      )}
+    >
       {icon && (
-        <div className="mb-4 text-gray-300">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--rs-surface-muted)] text-[var(--rs-accent)]">
           {icon}
         </div>
       )}
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 max-w-md mb-6">{description}</p>
-      {actionLabel && actionHref && (
-        <a
-          href={actionHref}
-          className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
-        >
-          {actionLabel}
-        </a>
-      )}
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold text-[var(--rs-ink)]">{title}</h3>
+        {description && (
+          <p className="text-sm text-[var(--rs-muted)]">{description}</p>
+        )}
+      </div>
+      {action && action}
     </div>
   );
 }

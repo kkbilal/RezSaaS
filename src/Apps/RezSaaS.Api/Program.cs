@@ -72,6 +72,8 @@ builder.Services.AddSwaggerGen(options =>
             Type = SecuritySchemeType.Http,
         });
 });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<ITenantAccessor, TenantAccessor>();
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddModules(modules, builder.Configuration);

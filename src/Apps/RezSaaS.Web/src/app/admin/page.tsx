@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiClient } from "@/shared/api/client";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { FormField, TextInput } from "@/shared/ui/form-field";
 import { DialogOverlay, DialogPanel } from "@/shared/ui/dialog";
+import { EmptyState } from "@/shared/ui/empty-state";
+
+// Admin panel dev/stage only - production'da devre dışı
+if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_ENABLE_ADMIN_PANEL) {
+  throw new Error("Admin panel is not available in production. Set NEXT_PUBLIC_ENABLE_ADMIN_PANEL=true to enable.");
+}
 
 interface Business {
   tenantId: string;
@@ -280,10 +285,10 @@ export default function AdminPage() {
               Yükleniyor...
             </div>
           ) : businesses.length === 0 ? (
-            <div className="text-center py-12 text-gray-600">
-              <p className="text-lg font-medium mb-2">Henüz işletme yok</p>
-              <p>İlk işletmeyi eklemek için "Yeni İşletme Ekle" butonunu kullanın</p>
-            </div>
+            <EmptyState
+              title="Henüz işletme yok"
+              description="İlk işletmeyi eklemek için 'Yeni İşletme Ekle' butonunu kullanın"
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -377,9 +382,10 @@ export default function AdminPage() {
               Yükleniyor...
             </div>
           ) : bookings.length === 0 ? (
-            <div className="text-center py-12 text-gray-600">
-              <p className="text-lg font-medium mb-2">Henüz randevu yok</p>
-            </div>
+            <EmptyState
+              title="Henüz randevu yok"
+              description=""
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -453,9 +459,10 @@ export default function AdminPage() {
               Yükleniyor...
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-12 text-gray-600">
-              <p className="text-lg font-medium mb-2">Henüz kullanıcı yok</p>
-            </div>
+            <EmptyState
+              title="Henüz kullanıcı yok"
+              description=""
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
