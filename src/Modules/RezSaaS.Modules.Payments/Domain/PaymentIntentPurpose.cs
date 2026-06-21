@@ -4,5 +4,6 @@ public enum PaymentIntentPurpose
 {
     AppointmentDeposit,
     AppointmentPrepayment,
+    NoShowFee,
     SubscriptionInvoice,
 }

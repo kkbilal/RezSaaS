@@ -20,5 +20,7 @@ public sealed class AvailabilityModule : ModuleBase
         services.AddDbContext<AvailabilityDbContext>(
             options => options.UseNpgsql(connectionString));
         services.AddScoped<AvailabilityQueryService>();
+        services.AddScoped<BranchWorkingHoursManagementService>();
+        services.AddScoped<StaffUnavailableManagementService>();
     }
 }

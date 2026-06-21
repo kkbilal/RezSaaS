@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type {
   PlatformAbuseAppeal,
   PlatformAbuseEvent,
@@ -8,6 +10,10 @@ import type {
   PlatformClosureCase,
   PlatformReconciliation
 } from "@/features/platform/api/get-platform-abuse-overview";
+import {
+  PlatformReportConfirmDialog,
+  PlatformReportDismissDialog
+} from "@/features/platform/components/platform-report-review-dialog";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -24,6 +30,8 @@ export function PlatformAbusePage({
   sessionEmail,
   stepUpExpiresAtUtc
 }: PlatformAbusePageProps) {
+  const [confirmReportId, setConfirmReportId] = useState<string | null>(null);
+  const [dismissReportId, setDismissReportId] = useState<string | null>(null);
   const reconciliation = overview.reconciliation;
   const criticalCount =
     (reconciliation?.failedNotificationCount ?? 0) +
@@ -50,9 +58,8 @@ export function PlatformAbusePage({
                 Abuse ve itiraz sinyallerini step-up kapısı arkasında izle.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-[var(--rs-muted-strong)]">
-                Bu ekran salt-okunur ilk platform dilimidir. Strike, sanction,
-                closure review veya execution gibi yüksek riskli aksiyonlar ayrı
-                reason ve confirmation akışı tamamlanmadan açılmaz.
+                Abuse raporları onaylanabilir veya reddedilebilir. Strike, sanction
+                ve closure review mutasyonları kullanıcı detay sayfasında açılır.
               </p>
             </div>
 
@@ -71,7 +78,11 @@ export function PlatformAbusePage({
               description="İşletme abuse bildirimleri tek başına yaptırım üretmez; PlatformAdmin incelemesi bekler."
               title="Bekleyen işletme abuse raporları"
             >
-              <ReportList reports={overview.reports} />
+              <ReportList
+                onConfirm={(reportId) => setConfirmReportId(reportId)}
+                onDismiss={(reportId) => setDismissReportId(reportId)}
+                reports={overview.reports}
+              />
             </PlatformSection>
 
             <PlatformSection
@@ -89,6 +100,20 @@ export function PlatformAbusePage({
           </aside>
         </div>
       </div>
+
+      {confirmReportId ? (
+        <PlatformReportConfirmDialog
+          onDismiss={() => setConfirmReportId(null)}
+          reportId={confirmReportId}
+        />
+      ) : null}
+
+      {dismissReportId ? (
+        <PlatformReportDismissDialog
+          onDismiss={() => setDismissReportId(null)}
+          reportId={dismissReportId}
+        />
+      ) : null}
     </main>
   );
 }
@@ -157,7 +182,15 @@ function PlatformSection({
   );
 }
 
-function ReportList({ reports }: { reports: PlatformAbuseReport[] }) {
+function ReportList({
+  onConfirm,
+  onDismiss,
+  reports
+}: {
+  onConfirm: (reportId: string) => void;
+  onDismiss: (reportId: string) => void;
+  reports: PlatformAbuseReport[];
+}) {
   if (reports.length === 0) {
     return <EmptyState text="Bekleyen işletme abuse raporu yok." />;
   }
@@ -185,6 +218,29 @@ function ReportList({ reports }: { reports: PlatformAbuseReport[] }) {
             <span>Tenant: {shortGuid(report.tenantId)}</span>
             <span>Talep: {shortGuid(report.appointmentRequestId)}</span>
             <span>Oluşturma: {formatUtcDateTime(report.createdAtUtc)}</span>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="text-xs text-[var(--rs-muted)]">
+              Kullanıcı:{" "}
+              <Link
+                className="font-mono underline underline-offset-2 hover:text-[var(--rs-ink)]"
+                href={`/platform/abuse/kullanici/${report.reportedUserAccountId}`}
+              >
+                {shortGuid(report.reportedUserAccountId)}
+              </Link>
+            </span>
+            <Button
+              onClick={() => onConfirm(report.reportId!)}
+              variant="danger"
+            >
+              Strike oluştur
+            </Button>
+            <Button
+              onClick={() => onDismiss(report.reportId!)}
+              variant="secondary"
+            >
+              Reddet
+            </Button>
           </div>
         </article>
       ))}
@@ -217,8 +273,14 @@ function AppealList({ appeals }: { appeals: PlatformAbuseAppeal[] }) {
             {appeal.statement || "Açıklama yok."}
           </p>
           <p className="mt-4 text-xs text-[var(--rs-muted)]">
-            Kullanıcı: {shortGuid(appeal.userAccountId)} · Oluşturma:{" "}
-            {formatUtcDateTime(appeal.createdAtUtc)}
+            Kullanıcı:{" "}
+            <Link
+              className="font-mono underline underline-offset-2 hover:text-[var(--rs-ink)]"
+              href={`/platform/abuse/kullanici/${appeal.userAccountId}`}
+            >
+              {shortGuid(appeal.userAccountId)}
+            </Link>{" "}
+            · Oluşturma: {formatUtcDateTime(appeal.createdAtUtc)}
           </p>
         </article>
       ))}
@@ -335,8 +397,14 @@ function EventCard({ events }: { events: PlatformAbuseEvent[] }) {
                 {event.eventType ?? "Event"}
               </p>
               <p className="mt-1 text-xs text-[var(--rs-muted)]">
-                User: {shortGuid(event.userAccountId)} ·{" "}
-                {formatUtcDateTime(event.occurredAtUtc)}
+                User:{" "}
+                <Link
+                  className="font-mono underline underline-offset-2 hover:text-[var(--rs-ink)]"
+                  href={`/platform/abuse/kullanici/${event.userAccountId}`}
+                >
+                  {shortGuid(event.userAccountId)}
+                </Link>{" "}
+                · {formatUtcDateTime(event.occurredAtUtc)}
               </p>
             </div>
           ))

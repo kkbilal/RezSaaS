@@ -1,9 +1,10 @@
-import Link from "next/link";
-import { PublicBookingPanel } from "@/features/public-booking/components/public-booking-panel";
-import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
-import { routes } from "@/shared/config/routes";
-import { Button } from "@/shared/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+  import Link from "next/link";
+  import { PublicBookingPanel } from "@/features/public-booking/components/public-booking-panel";
+  import { EnhancedGallery } from "./enhanced-gallery";
+  import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
+  import { routes } from "@/shared/config/routes";
+  import { Button } from "@/shared/ui/button";
+  import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
 type BusinessProfilePageProps = {
   profile: PublicBusinessProfile;
@@ -77,7 +78,7 @@ export function BusinessProfilePage({ profile }: BusinessProfilePageProps) {
           </div>
         </section>
 
-        {gallery.length > 0 ? <Gallery images={gallery} /> : null}
+        {gallery.length > 0 ? <EnhancedGallery images={gallery} /> : null}
 
         <PublicBookingPanel profile={profile} />
 
@@ -131,7 +132,14 @@ function Gallery({
               <img
                 alt={image.altText ?? "İşletme galerisi"}
                 className="h-64 w-full object-cover"
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : "auto"}
+                height={256}
+                loading={index === 0 ? "eager" : "lazy"}
+                referrerPolicy="no-referrer"
+                sizes="(min-width: 1024px) 33vw, 100vw"
                 src={imageUrl}
+                width={640}
               />
             ) : (
               <div className="grid h-64 place-items-center bg-[var(--rs-surface-muted)] px-6 text-center text-sm text-[var(--rs-muted)]">
@@ -367,7 +375,7 @@ function getSafeImageUrl(value?: string | null) {
     return null;
   }
 
-  if (value.startsWith("/") || value.startsWith("https://") || value.startsWith("http://")) {
+  if (value.startsWith("/") || value.startsWith("https://")) {
     return value;
   }
 

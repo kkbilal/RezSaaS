@@ -16,6 +16,8 @@ public sealed class PaymentPolicy
         string currencyCode,
         string providerKey,
         bool hostedCheckoutEnabled,
+        decimal? noShowFixedAmount,
+        decimal? noShowPercentage,
         Guid updatedByUserAccountId,
         DateTimeOffset updatedAtUtc)
     {
@@ -34,7 +36,9 @@ public sealed class PaymentPolicy
             percentage,
             currencyCode,
             providerKey,
-            hostedCheckoutEnabled);
+            hostedCheckoutEnabled,
+            noShowFixedAmount,
+            noShowPercentage);
     }
 
     public Guid? BranchId { get; private set; }
@@ -48,6 +52,10 @@ public sealed class PaymentPolicy
     public Guid Id { get; private set; }
 
     public PaymentCollectionMode Mode { get; private set; } = PaymentCollectionMode.Disabled;
+
+    public decimal? NoShowFixedAmount { get; private set; }
+
+    public decimal? NoShowPercentage { get; private set; }
 
     public decimal? Percentage { get; private set; }
 
@@ -75,6 +83,8 @@ public sealed class PaymentPolicy
             currencyCode: "TRY",
             providerKey: string.Empty,
             hostedCheckoutEnabled: false,
+            noShowFixedAmount: null,
+            noShowPercentage: null,
             actorUserAccountId,
             updatedAtUtc);
     }
@@ -86,6 +96,8 @@ public sealed class PaymentPolicy
         string currencyCode,
         string providerKey,
         bool hostedCheckoutEnabled,
+        decimal? noShowFixedAmount,
+        decimal? noShowPercentage,
         Guid actorUserAccountId,
         DateTimeOffset updatedAtUtc)
     {
@@ -100,7 +112,9 @@ public sealed class PaymentPolicy
             percentage,
             currencyCode,
             providerKey,
-            hostedCheckoutEnabled);
+            hostedCheckoutEnabled,
+            noShowFixedAmount,
+            noShowPercentage);
     }
 
     private void Apply(
@@ -109,7 +123,9 @@ public sealed class PaymentPolicy
         decimal? percentage,
         string currencyCode,
         string providerKey,
-        bool hostedCheckoutEnabled)
+        bool hostedCheckoutEnabled,
+        decimal? noShowFixedAmount,
+        decimal? noShowPercentage)
     {
         if (mode == PaymentCollectionMode.Disabled && hostedCheckoutEnabled)
         {
@@ -158,12 +174,31 @@ public sealed class PaymentPolicy
                 nameof(providerKey));
         }
 
+        if (noShowFixedAmount is < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(noShowFixedAmount), "No-show amount cannot be negative.");
+        }
+
+        if (noShowPercentage is <= 0 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(noShowPercentage), "No-show percentage must be between 0 and 100.");
+        }
+
+        if (noShowFixedAmount is not null && noShowPercentage is not null)
+        {
+            throw new ArgumentException(
+                "No-show fee can be either fixed amount or percentage, not both.",
+                nameof(noShowFixedAmount));
+        }
+
         Mode = mode;
         FixedAmount = fixedAmount;
         Percentage = percentage;
         CurrencyCode = NormalizeCurrencyCode(currencyCode);
         ProviderKey = normalizedProviderKey;
         HostedCheckoutEnabled = hostedCheckoutEnabled;
+        NoShowFixedAmount = noShowFixedAmount;
+        NoShowPercentage = noShowPercentage;
     }
 
     private static string NormalizeCurrencyCode(string value)

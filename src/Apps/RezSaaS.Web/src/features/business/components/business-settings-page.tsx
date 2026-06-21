@@ -286,30 +286,77 @@ function CapabilityMapCard() {
   const items = [
     {
       description: "GET /api/business/context ile aktif tenant ve branch scope.",
+      href: undefined,
       label: "İşletme bağlamı",
       status: "Healthy"
     },
     {
       description:
         "Public profil read model'iyle şube, personel, hizmet ve çalışma saati görünür.",
+      href: undefined,
       label: "Vitrin snapshot",
       status: "Healthy"
     },
     {
       description:
         "Public profil metni BusinessOwner için gerçek settings API ile kaydedilir.",
+      href: undefined,
       label: "Profil ayarı",
       status: "Healthy"
     },
     {
+      description: "Şube ekleme, düzenleme ve arşivleme.",
+      href: routes.business.branches,
+      label: "Şubeler",
+      status: "Healthy"
+    },
+    {
+      description: "Personel ekleme ve arşivleme.",
+      href: routes.business.staff,
+      label: "Personel",
+      status: "Healthy"
+    },
+    {
+      description: "Yetenek (beceri) tanımlama ve silme.",
+      href: routes.business.skills,
+      label: "Yetenekler",
+      status: "Healthy"
+    },
+    {
+      description: "Hizmet ekleme, düzenleme ve varyant yönetimi.",
+      href: routes.business.services,
+      label: "Hizmetler",
+      status: "Healthy"
+    },
+    {
+      description: "Kaynak türü (koltuk, oda, yatak vb.) tanımlama ve silme.",
+      href: routes.business.resourceTypes,
+      label: "Kaynak Türleri",
+      status: "Healthy"
+    },
+    {
+      description: "Şube bazında kaynak (koltuk, oda, cihaz) yönetimi.",
+      href: routes.business.resources,
+      label: "Kaynaklar",
+      status: "Healthy"
+    },
+    {
+      description: "Haftalık çalışma saati düzenlemesi.",
+      href: routes.business.workingHours,
+      label: "Çalışma Saatleri",
+      status: "Healthy"
+    },
+    {
       description:
-        "Personel, hizmet, şube, çalışma saati ve galeri mutation endpointleri ayrı dilimde bekliyor.",
-      label: "Operasyon formları",
+        "Galeri düzenlemesi sonraki dilimde.",
+      href: undefined,
+      label: "Galeri",
       status: "Degraded"
     },
     {
       description:
         "Randevu operasyonları ayrı panelde gerçek tenant header ve idempotency ile çalışır.",
+      href: undefined,
       label: "Operasyon aksiyonları",
       status: "Healthy"
     }
@@ -331,7 +378,16 @@ function CapabilityMapCard() {
             key={item.label}
           >
             <div className="flex items-start justify-between gap-3">
-              <p className="font-medium text-[var(--rs-ink)]">{item.label}</p>
+              {item.href ? (
+                <Link
+                  className="font-medium text-[var(--rs-ink)] underline-offset-2 hover:underline"
+                  href={item.href}
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <p className="font-medium text-[var(--rs-ink)]">{item.label}</p>
+              )}
               <StatusBadge status={item.status} />
             </div>
             <p className="mt-2 text-sm leading-6 text-[var(--rs-muted)]">

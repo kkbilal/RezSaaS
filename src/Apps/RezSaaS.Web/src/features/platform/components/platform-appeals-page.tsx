@@ -1,10 +1,23 @@
+"use client";
+
 import Link from "next/link";
+import { useState, type ReactNode } from "react";
 import type {
   PlatformAppeal,
   PlatformAppealsFilters,
   PlatformAppealsOverview,
   PlatformClosureCase
 } from "@/features/platform/api/get-platform-appeals-overview";
+import {
+  PlatformAppealAcceptDialog,
+  PlatformAppealRejectDialog
+} from "@/features/platform/components/platform-appeal-review-dialog";
+import { PlatformClosureProposalDialog } from "@/features/platform/components/platform-closure-proposal-dialog";
+import {
+  PlatformClosureApproveDialog,
+  PlatformClosureRejectDialog,
+  PlatformClosureExecuteDialog
+} from "@/features/platform/components/platform-closure-review-dialog";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -38,6 +51,12 @@ export function PlatformAppealsPage({
   sessionEmail,
   stepUpExpiresAtUtc
 }: PlatformAppealsPageProps) {
+  const [acceptAppealId, setAcceptAppealId] = useState<string | null>(null);
+  const [rejectAppealId, setRejectAppealId] = useState<string | null>(null);
+  const [proposeClosureForUser, setProposeClosureForUser] = useState<string | null>(null);
+  const [approveClosureCase, setApproveClosureCase] = useState<PlatformClosureCase | null>(null);
+  const [rejectClosureCase, setRejectClosureCase] = useState<PlatformClosureCase | null>(null);
+  const [executeClosureCase, setExecuteClosureCase] = useState<PlatformClosureCase | null>(null);
   const pendingAppealCount = overview.appeals.filter(
     (appeal) => appeal.status === "PendingReview"
   ).length;
@@ -65,10 +84,9 @@ export function PlatformAppealsPage({
                 İtiraz ve kalıcı kapatma vakalarını karar açmadan incele.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-[var(--rs-muted-strong)]">
-                Bu dilim review ve execute mutationlarını özellikle açmaz.
-                Amaç, PlatformAdmin&apos;in itiraz beyanını, customer notice ve
-                internal reason ayrımını, ikinci admin ve itiraz penceresi
-                durumlarını gerçek API ile görmesidir.
+                İtiraz kabul/red, closure proposal, onay (ikinci admin), red ve
+                execute mutasyonları açıldı. Reason zorunludur; InternalReason
+                yalnız platform yüzeyinde görünür.
               </p>
             </div>
 
@@ -115,10 +133,58 @@ export function PlatformAppealsPage({
             <DetailGrid
               appeal={overview.selectedAppeal}
               closureCase={overview.selectedClosureCase}
+              onAcceptAppeal={(appealId) => setAcceptAppealId(appealId)}
+              onRejectAppeal={(appealId) => setRejectAppealId(appealId)}
+              onProposeClosure={(userAccountId) => setProposeClosureForUser(userAccountId)}
+              onApproveClosure={(cc) => setApproveClosureCase(cc)}
+              onRejectClosure={(cc) => setRejectClosureCase(cc)}
+              onExecuteClosure={(cc) => setExecuteClosureCase(cc)}
             />
           </section>
         </div>
       </div>
+
+      {acceptAppealId ? (
+        <PlatformAppealAcceptDialog
+          appealId={acceptAppealId}
+          onDismiss={() => setAcceptAppealId(null)}
+        />
+      ) : null}
+
+      {rejectAppealId ? (
+        <PlatformAppealRejectDialog
+          appealId={rejectAppealId}
+          onDismiss={() => setRejectAppealId(null)}
+        />
+      ) : null}
+
+      {proposeClosureForUser ? (
+        <PlatformClosureProposalDialog
+          onDismiss={() => setProposeClosureForUser(null)}
+          userAccountId={proposeClosureForUser}
+        />
+      ) : null}
+
+      {approveClosureCase ? (
+        <PlatformClosureApproveDialog
+          closureCase={approveClosureCase}
+          onDismiss={() => setApproveClosureCase(null)}
+        />
+      ) : null}
+
+      {rejectClosureCase ? (
+        <PlatformClosureRejectDialog
+          closureCase={rejectClosureCase}
+          onDismiss={() => setRejectClosureCase(null)}
+        />
+      ) : null}
+
+      {executeClosureCase ? (
+        <PlatformClosureExecuteDialog
+          closureCase={executeClosureCase}
+          onDismiss={() => setExecuteClosureCase(null)}
+        />
+      ) : null}
     </main>
   );
 }
@@ -274,7 +340,7 @@ function SafetyCard() {
       </CardHeader>
 
       <div className="mt-6 space-y-3 text-sm leading-6">
-        <RuleLine text="Accept/reject, closure approve/reject ve execute mutationları bu dilimde kapalıdır." />
+        <RuleLine text="Accept/reject, closure approve/reject ve execute mutationları açıldı." />
         <RuleLine text="Closure proposal için iki farklı step-up admin, teslim edilmiş notice ve itiraz penceresi gerekir." />
         <RuleLine text="Internal reason yalnız platform yüzeyinde görünür; müşteri yüzeyine CustomerNotice gider." />
       </div>
@@ -338,6 +404,15 @@ function AppealList({
               <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--rs-muted)]">
                 {appeal.statement || "Müşteri beyanı yok."}
               </p>
+              <p className="mt-3 text-xs text-[var(--rs-muted)]">
+                Kullanıcı:{" "}
+                <Link
+                  className="font-mono underline underline-offset-2 hover:text-[var(--rs-ink)]"
+                  href={`/platform/abuse/kullanici/${appeal.userAccountId}`}
+                >
+                  {shortGuid(appeal.userAccountId)}
+                </Link>
+              </p>
             </Link>
           ))
         )}
@@ -360,7 +435,7 @@ function ClosureCaseList({
       <CardHeader>
         <CardTitle>Closure cases</CardTitle>
         <CardDescription>
-          Kalıcı hesap kapatma saga durumları read-only izlenir.
+          Kalıcı hesap kapatma saga durumları ve mutasyonları.
         </CardDescription>
       </CardHeader>
       <div className="mt-5 grid gap-3">
@@ -388,7 +463,13 @@ function ClosureCaseList({
                 </span>
               </div>
               <h2 className="mt-4 text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]">
-                Kullanıcı · {shortGuid(closureCase.userAccountId)}
+                Kullanıcı ·{" "}
+                <Link
+                  className="underline underline-offset-2 hover:text-[var(--rs-ink-soft)]"
+                  href={`/platform/abuse/kullanici/${closureCase.userAccountId}`}
+                >
+                  {shortGuid(closureCase.userAccountId)}
+                </Link>
               </h2>
               <p className="mt-2 line-clamp-2 text-sm leading-6 text-[var(--rs-muted)]">
                 {closureCase.internalReason || "Internal reason yok."}
@@ -403,10 +484,22 @@ function ClosureCaseList({
 
 function DetailGrid({
   appeal,
-  closureCase
+  closureCase,
+  onAcceptAppeal,
+  onRejectAppeal,
+  onProposeClosure,
+  onApproveClosure,
+  onRejectClosure,
+  onExecuteClosure
 }: {
   appeal: PlatformAppeal | null;
   closureCase: PlatformClosureCase | null;
+  onAcceptAppeal: (appealId: string) => void;
+  onRejectAppeal: (appealId: string) => void;
+  onProposeClosure: (userAccountId: string) => void;
+  onApproveClosure: (closureCase: PlatformClosureCase) => void;
+  onRejectClosure: (closureCase: PlatformClosureCase) => void;
+  onExecuteClosure: (closureCase: PlatformClosureCase) => void;
 }) {
   if (!appeal && !closureCase) {
     return (
@@ -422,13 +515,40 @@ function DetailGrid({
 
   return (
     <div className="grid gap-6 xl:grid-cols-2">
-      {appeal ? <AppealDetailCard appeal={appeal} /> : null}
-      {closureCase ? <ClosureDetailCard closureCase={closureCase} /> : null}
+      {appeal ? (
+        <AppealDetailCard
+          appeal={appeal}
+          onAccept={() => appeal.appealId && onAcceptAppeal(appeal.appealId)}
+          onReject={() => appeal.appealId && onRejectAppeal(appeal.appealId)}
+        />
+      ) : null}
+      {closureCase ? (
+        <ClosureDetailCard
+          closureCase={closureCase}
+          onProposeClosure={() =>
+            closureCase.userAccountId &&
+            onProposeClosure(closureCase.userAccountId)
+          }
+          onApprove={() => onApproveClosure(closureCase)}
+          onReject={() => onRejectClosure(closureCase)}
+          onExecute={() => onExecuteClosure(closureCase)}
+        />
+      ) : null}
     </div>
   );
 }
 
-function AppealDetailCard({ appeal }: { appeal: PlatformAppeal }) {
+function AppealDetailCard({
+  appeal,
+  onAccept,
+  onReject
+}: {
+  appeal: PlatformAppeal;
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  const isPending = appeal.status === "PendingReview";
+
   return (
     <Card className="p-5">
       <CardHeader>
@@ -457,19 +577,43 @@ function AppealDetailCard({ appeal }: { appeal: PlatformAppeal }) {
       <TextBlock label="Müşteri beyanı" value={appeal.statement} />
       <TextBlock label="Review reason" value={appeal.reviewReason} />
 
-      <p className="mt-5 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4 text-sm leading-6 text-[var(--rs-muted)]">
-        Kabul edilen itiraz strike/sanction revoke eder veya closure case&apos;i
-        `CancelledByAppeal` durumuna taşır; bu ekranda karar butonu açılmadı.
-      </p>
+      {isPending ? (
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Button onClick={onAccept} variant="primary">
+            İtirazı kabul et
+          </Button>
+          <Button onClick={onReject} variant="secondary">
+            İtirazı reddet
+          </Button>
+        </div>
+      ) : (
+        <p className="mt-5 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4 text-sm leading-6 text-[var(--rs-muted)]">
+          Kabul edilen itiraz strike/sanction revoke eder veya closure case&apos;i
+          `CancelledByAppeal` durumuna taşır.
+        </p>
+      )}
     </Card>
   );
 }
 
 function ClosureDetailCard({
-  closureCase
+  closureCase,
+  onProposeClosure,
+  onApprove,
+  onReject,
+  onExecute
 }: {
   closureCase: PlatformClosureCase;
+  onProposeClosure: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onExecute: () => void;
 }) {
+  const status = closureCase.status;
+  const canApprove = status === "PendingApproval";
+  const canReject = status === "PendingApproval" || status === "Approved";
+  const canExecute = status === "Approved";
+
   return (
     <Card className="p-5">
       <CardHeader>
@@ -480,7 +624,7 @@ function ClosureDetailCard({
               Kullanıcı · {shortGuid(closureCase.userAccountId)}
             </CardDescription>
           </div>
-          <StatusBadge status={closureCase.status ?? "Unknown"} />
+          <StatusBadge status={status ?? "Unknown"} />
         </div>
       </CardHeader>
 
@@ -514,6 +658,27 @@ function ClosureDetailCard({
       <TextBlock label="Internal reason" value={closureCase.internalReason} />
       <TextBlock label="Customer notice" value={closureCase.customerNotice} />
       <TextBlock label="Decision reason" value={closureCase.decisionReason} />
+
+      <div className="mt-5 flex flex-wrap gap-3">
+        {canApprove ? (
+          <Button onClick={onApprove} variant="danger">
+            Closure onayla
+          </Button>
+        ) : null}
+        {canReject ? (
+          <Button onClick={onReject} variant="secondary">
+            Closure reddet
+          </Button>
+        ) : null}
+        {canExecute ? (
+          <Button onClick={onExecute} variant="danger">
+            Execution başlat
+          </Button>
+        ) : null}
+        <Button onClick={onProposeClosure} variant="secondary">
+          Yeni closure öner
+        </Button>
+      </div>
 
       <p className="mt-5 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4 text-sm leading-6 text-[var(--rs-muted)]">
         Execute için `Approved` vaka, teslim edilmiş notice, dolmuş itiraz

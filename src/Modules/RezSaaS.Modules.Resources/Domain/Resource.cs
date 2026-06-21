@@ -41,6 +41,16 @@ public sealed class Resource
         Status = ResourceStatus.OutOfService;
     }
 
+    public void Restore()
+    {
+        Status = ResourceStatus.Active;
+    }
+
+    public void Rename(string displayName)
+    {
+        DisplayName = NormalizeRequiredText(displayName, nameof(displayName));
+    }
+
     private static string NormalizeRequiredText(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))

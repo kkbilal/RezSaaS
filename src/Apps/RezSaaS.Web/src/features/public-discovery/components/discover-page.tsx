@@ -2,6 +2,10 @@ import Link from "next/link";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardTitle } from "@/shared/ui/card";
+import {
+  buildDiscoverHref,
+  getActiveDiscoveryFilterCount
+} from "../lib/discovery-search";
 import type {
   PublicBusinessSearchParams,
   PublicBusinessSearchState,
@@ -11,6 +15,14 @@ import type {
 type DiscoverPageProps = {
   params: PublicBusinessSearchParams;
   state: PublicBusinessSearchState;
+};
+
+type FacetOption = {
+  count: number;
+  href: string;
+  isActive: boolean;
+  label: string;
+  value: string;
 };
 
 const categories: Record<string, string> = {
@@ -46,6 +58,10 @@ export function DiscoverPage({ params, state }: DiscoverPageProps) {
           <SearchCard params={params} />
         </section>
 
+        {state.kind === "ready" ? (
+          <SearchRefinement businesses={state.businesses} params={params} />
+        ) : null}
+
         {state.kind === "unavailable" ? (
           <Card className="border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] p-6 shadow-none">
             <CardTitle>Arama tamamlanamadı</CardTitle>
@@ -58,6 +74,115 @@ export function DiscoverPage({ params, state }: DiscoverPageProps) {
         )}
       </div>
     </main>
+  );
+}
+
+function SearchRefinement({
+  businesses,
+  params
+}: {
+  businesses: PublicBusinessSummary[];
+  params: PublicBusinessSearchParams;
+}) {
+  const activeFilterCount = getActiveDiscoveryFilterCount(params);
+  const activeFilters = getActiveFilters(params);
+  const categoryFacets = getFacetOptions(businesses, params, "categoryKey");
+  const cityFacets = getFacetOptions(businesses, params, "city");
+  const districtFacets = getFacetOptions(businesses, params, "district");
+
+  return (
+    <section className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-white/70 p-5 shadow-[var(--rs-shadow-soft)] [animation-delay:90ms]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-[var(--rs-muted)]">
+            Arama özeti
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
+            {businesses.length} public işletme profili
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--rs-muted)]">
+            Filtreler URL üzerinde taşınır; kartlar tek discovery endpointinden
+            gelir ve profil başına ek çağrı üretmez.
+          </p>
+        </div>
+
+        {activeFilterCount > 0 ? (
+          <Button asChild variant="secondary">
+            <Link href={routes.public.discover}>Filtreleri temizle</Link>
+          </Button>
+        ) : null}
+      </div>
+
+      {activeFilters.length > 0 ? (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {activeFilters.map((filter) => (
+            <Link
+              className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted-strong)] shadow-[var(--rs-shadow-soft)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+              href={filter.href}
+              key={filter.label}
+            >
+              <span className="font-medium text-[var(--rs-ink)]">
+                {filter.label}:
+              </span>{" "}
+              {filter.value}
+              <span className="ml-2 text-xs text-[var(--rs-muted)]">sil</span>
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        <FacetGroup options={categoryFacets} title="Kategori" />
+        <FacetGroup options={cityFacets} title="Şehir" />
+        <FacetGroup options={districtFacets} title="İlçe" />
+      </div>
+    </section>
+  );
+}
+
+function FacetGroup({
+  options,
+  title
+}: {
+  options: FacetOption[];
+  title: string;
+}) {
+  if (options.length === 0) {
+    return (
+      <div className="rounded-[1.5rem] border border-dashed border-[var(--rs-border)] bg-white/50 p-4 text-sm text-[var(--rs-muted)]">
+        {title} filtresi için bu aramada veri yok.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-[var(--rs-muted)]">
+        {title}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {options.slice(0, 8).map((option) => (
+          <Link
+            className={
+              option.isActive
+                ? "rounded-full bg-[var(--rs-ink)] px-3 py-2 text-xs font-medium text-white shadow-[var(--rs-shadow-soft)]"
+                : "rounded-full border border-[var(--rs-border)] bg-white px-3 py-2 text-xs font-medium text-[var(--rs-muted-strong)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+            }
+            href={option.href}
+            key={option.value}
+          >
+            {option.label}
+            <span
+              className={
+                option.isActive ? "ml-2 text-white/60" : "ml-2 text-[var(--rs-muted)]"
+              }
+            >
+              {option.count}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -163,7 +288,11 @@ function SearchResults({ businesses }: { businesses: PublicBusinessSummary[] }) 
   return (
     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {businesses.map((business, index) => (
-        <BusinessResultCard business={business} index={index} key={business.slug} />
+        <BusinessResultCard
+          business={business}
+          index={index}
+          key={business.slug ?? `${business.displayName}-${index}`}
+        />
       ))}
     </section>
   );
@@ -193,11 +322,113 @@ function BusinessResultCard({
         {[business.district, business.city].filter(Boolean).join(", ") ||
           "Konum bilgisi hazırlanıyor"}
       </p>
-      <Button asChild className="mt-8 w-full" variant="secondary">
-        <Link href={routes.public.businessProfile(slug)}>Profili gör</Link>
-      </Button>
+      {slug ? (
+        <Button asChild className="mt-8 w-full" variant="secondary">
+          <Link href={routes.public.businessProfile(slug)}>Profili gör</Link>
+        </Button>
+      ) : (
+        <Button className="mt-8 w-full" disabled type="button" variant="secondary">
+          Profil hazırlanıyor
+        </Button>
+      )}
     </article>
   );
+}
+
+function getActiveFilters(params: PublicBusinessSearchParams) {
+  return [
+    {
+      href: buildDiscoverHref(params, { searchText: undefined }),
+      label: "Arama",
+      value: params.searchText
+    },
+    {
+      href: buildDiscoverHref(params, { city: undefined, district: undefined }),
+      label: "Şehir",
+      value: params.city
+    },
+    {
+      href: buildDiscoverHref(params, { district: undefined }),
+      label: "İlçe",
+      value: params.district
+    },
+    {
+      href: buildDiscoverHref(params, { categoryKey: undefined }),
+      label: "Kategori",
+      value: params.categoryKey ? getCategoryLabel(params.categoryKey) : undefined
+    }
+  ].filter(
+    (filter): filter is { href: string; label: string; value: string } =>
+      Boolean(filter.value)
+  );
+}
+
+function getFacetOptions(
+  businesses: PublicBusinessSummary[],
+  params: PublicBusinessSearchParams,
+  field: "categoryKey" | "city" | "district"
+): FacetOption[] {
+  const counts = new Map<string, number>();
+
+  for (const business of businesses) {
+    const value = business[field]?.trim();
+
+    if (value) {
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+  }
+
+  return Array.from(counts.entries())
+    .map(([value, count]) => {
+      const currentValue = params[field];
+      const isActive =
+        currentValue?.toLocaleLowerCase("tr-TR") ===
+        value.toLocaleLowerCase("tr-TR");
+
+      return {
+        count,
+        href: buildDiscoverHref(
+          params,
+          isActive ? getFacetClearPatch(field) : getFacetApplyPatch(field, value)
+        ),
+        isActive,
+        label: field === "categoryKey" ? getCategoryLabel(value) : value,
+        value
+      };
+    })
+    .sort(
+      (left, right) =>
+        right.count - left.count || left.label.localeCompare(right.label, "tr-TR")
+    );
+}
+
+function getFacetApplyPatch(
+  field: "categoryKey" | "city" | "district",
+  value: string
+): Partial<PublicBusinessSearchParams> {
+  if (field === "categoryKey") {
+    return { categoryKey: value };
+  }
+
+  if (field === "city") {
+    return { city: value, district: undefined };
+  }
+
+  return { district: value };
+}
+
+function getFacetClearPatch(
+  field: "categoryKey" | "city" | "district"
+): Partial<PublicBusinessSearchParams> {
+  if (field === "city") {
+    return { city: undefined, district: undefined };
+  }
+
+  if (field === "categoryKey") {
+    return { categoryKey: undefined };
+  }
+
+  return { district: undefined };
 }
 
 function getCategoryLabel(categoryKey?: string | null) {

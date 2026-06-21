@@ -7,6 +7,13 @@ export const routes = {
   },
   business: {
     panel: "/panel",
+    branches: "/panel/subeler",
+    staff: "/panel/personel",
+    skills: "/panel/yetenekler",
+    services: "/panel/hizmetler",
+    resourceTypes: "/panel/kaynak-turleri",
+    resources: "/panel/kaynaklar",
+    workingHours: "/panel/calisma-saatleri",
     settings: "/panel/ayarlar"
   },
   customer: {
@@ -15,6 +22,8 @@ export const routes = {
   },
   platform: {
     abuse: "/platform/abuse",
+    abuseUser: (userAccountId: string) =>
+      `/platform/abuse/kullanici/${encodeURIComponent(userAccountId)}`,
     appeals: "/platform/itirazlar",
     tenants: "/platform/tenantlar"
   },

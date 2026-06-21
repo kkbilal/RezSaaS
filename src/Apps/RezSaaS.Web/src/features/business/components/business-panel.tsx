@@ -13,6 +13,12 @@ import type {
   BusinessTenantContext
 } from "@/features/business/api/get-business-context";
 import { BusinessAppointmentSchedule } from "@/features/business/components/business-appointment-schedule";
+import {
+  getPendingApprovalConflictSignals,
+  hasPendingApprovalConflict,
+  shouldOptimisticallySupersede,
+  type BusinessRequestConflictSignal
+} from "@/features/business/lib/business-request-conflicts";
 import { createTenantApiClient } from "@/shared/api/client";
 import { routes, withTenant } from "@/shared/config/routes";
 import { formatBranchDateTime } from "@/shared/lib/date-time";
@@ -23,6 +29,11 @@ import {
 } from "@/shared/lib/idempotency";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import {
+  DialogFormPanel,
+  DialogOverlay,
+  DialogPanel
+} from "@/shared/ui/dialog";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
 type AppointmentRequestStatus =
@@ -191,7 +202,7 @@ export function BusinessPanel({
     request: BusinessAppointmentRequest,
     forceDecision: boolean = false
   ) {
-    if (!forceDecision && hasPendingConflict(request, requests)) {
+    if (!forceDecision && hasPendingApprovalConflict(request, requests)) {
       setConflictCandidate(request);
       return;
     }
@@ -362,7 +373,6 @@ export function BusinessPanel({
     nextStatus: string
   ) {
     const appointmentRequestId = request.id;
-    const conflictKey = getConflictKey(request);
 
     if (!appointmentRequestId) {
       return;
@@ -374,13 +384,12 @@ export function BusinessPanel({
         [appointmentRequestId]: nextStatus
       };
 
-      if (nextStatus === "Approved" && conflictKey) {
+      if (nextStatus === "Approved") {
         for (const currentRequest of requests) {
           if (
             currentRequest.id &&
             currentRequest.id !== appointmentRequestId &&
-            getConflictKey(currentRequest) === conflictKey &&
-            getRequestStatus(currentRequest) === "PendingApproval"
+            shouldOptimisticallySupersede(request, currentRequest)
           ) {
             nextOverrides[currentRequest.id] = "Superseded";
           }
@@ -445,6 +454,10 @@ export function BusinessPanel({
               ) : (
                 visibleRequests.map((request, index) => (
                   <AppointmentRequestCard
+                    conflictSignals={getPendingApprovalConflictSignals(
+                      request,
+                      requests
+                    )}
                     index={index}
                     isReported={
                       request.id ? reportedRequestIds.has(request.id) : false
@@ -799,6 +812,7 @@ function InboxToolbar({
 }
 
 function AppointmentRequestCard({
+  conflictSignals,
   index,
   isReported,
   isReporting,
@@ -808,6 +822,7 @@ function AppointmentRequestCard({
   onReport,
   request
 }: {
+  conflictSignals: BusinessRequestConflictSignal[];
   index: number;
   isReported: boolean;
   isReporting: boolean;
@@ -890,9 +905,7 @@ function AppointmentRequestCard({
             </p>
           </div>
 
-          {isPending ? (
-            <ConflictHint request={request} />
-          ) : null}
+          {isPending ? <ConflictHint signals={conflictSignals} /> : null}
         </div>
 
         <div className="flex gap-3 lg:min-w-44 lg:flex-col">
@@ -947,17 +960,34 @@ function AppointmentRequestCard({
   );
 }
 
-function ConflictHint({ request }: { request: BusinessAppointmentRequest }) {
-  if (!getConflictKey(request)) {
+function ConflictHint({ signals }: { signals: BusinessRequestConflictSignal[] }) {
+  if (signals.length === 0) {
     return null;
   }
 
+  const signalCopy = formatConflictSignals(signals);
+
   return (
     <p className="rounded-2xl border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] px-4 py-3 text-sm leading-6 text-[var(--rs-warning)]">
-      Aynı şube saatinde başka onay bekleyen talepler olabilir. Panel karar
-      öncesi uyarır; kesin çakışma kontrolü onay anında yeniden yapılır.
+      Bu talep {signalCopy} çakışabilecek başka onay bekleyen taleplerle aynı
+      zaman aralığına denk geliyor. Kesin kontrol onay anında yeniden yapılır.
     </p>
   );
+}
+
+function formatConflictSignals(signals: BusinessRequestConflictSignal[]) {
+  const hasStaffConflict = signals.includes("staff");
+  const hasResourceConflict = signals.includes("resource");
+
+  if (hasStaffConflict && hasResourceConflict) {
+    return "aynı personel ve aynı iç kaynakla";
+  }
+
+  if (hasStaffConflict) {
+    return "aynı personelle";
+  }
+
+  return "aynı iç kaynakla";
 }
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
@@ -983,18 +1013,23 @@ function ConflictDialog({
   request: BusinessAppointmentRequest;
 }) {
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
-      <section
-        aria-modal="true"
-        className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]"
-        role="dialog"
+    <DialogOverlay onEscapeKeyDown={onCancel}>
+      <DialogPanel
+        descriptionId="business-conflict-dialog-description"
+        titleId="business-conflict-dialog-title"
       >
         <div className="space-y-4">
           <StatusBadge status="PendingApproval" />
-          <h2 className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
+          <h2
+            className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]"
+            id="business-conflict-dialog-title"
+          >
             Eşzamanlı talep çakışması
           </h2>
-          <p className="text-sm leading-7 text-[var(--rs-muted)]">
+          <p
+            className="text-sm leading-7 text-[var(--rs-muted)]"
+            id="business-conflict-dialog-description"
+          >
             {shortGuid(request.id)} talebini onaylamak, aynı şube saatinde
             bekleyen diğer talepleri karşılanamaz duruma taşıyabilir. Onay anında
             personel ve kaynak çakışması yeniden kontrol edilir.
@@ -1019,8 +1054,8 @@ function ConflictDialog({
             {isSubmitting ? "İşleniyor" : "Çakışmayı kabul et ve onayla"}
           </Button>
         </div>
-      </section>
-    </div>
+      </DialogPanel>
+    </DialogOverlay>
   );
 }
 
@@ -1042,22 +1077,27 @@ function AbuseReportDialog({
   );
 
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
-      <form
-        aria-modal="true"
-        className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]"
+    <DialogOverlay onEscapeKeyDown={onCancel}>
+      <DialogFormPanel
+        descriptionId="business-abuse-report-dialog-description"
         onSubmit={(event) => {
           event.preventDefault();
           onSubmit();
         }}
-        role="dialog"
+        titleId="business-abuse-report-dialog-title"
       >
         <div className="space-y-4">
           <StatusBadge status={getRequestStatus(draft.request)} />
-          <h2 className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
+          <h2
+            className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]"
+            id="business-abuse-report-dialog-title"
+          >
             Abuse raporu oluştur
           </h2>
-          <p className="text-sm leading-7 text-[var(--rs-muted)]">
+          <p
+            className="text-sm leading-7 text-[var(--rs-muted)]"
+            id="business-abuse-report-dialog-description"
+          >
             Bu işlem müşteriye otomatik yaptırım uygulamaz; talep platform
             inceleme kuyruğuna alınır. Rapor yalnızca bu appointment request
             kapsamında oluşturulur.
@@ -1135,8 +1175,8 @@ function AbuseReportDialog({
             {isSubmitting ? "Gönderiliyor" : "İncelemeye gönder"}
           </Button>
         </div>
-      </form>
-    </div>
+      </DialogFormPanel>
+    </DialogOverlay>
   );
 }
 
@@ -1229,38 +1269,6 @@ function shortGuid(value?: string | null) {
   }
 
   return `${value.slice(0, 8)}…`;
-}
-
-function hasPendingConflict(
-  request: BusinessAppointmentRequest,
-  allRequests: BusinessAppointmentRequest[]
-) {
-  const conflictKey = getConflictKey(request);
-
-  if (!conflictKey) {
-    return false;
-  }
-
-  return allRequests.some(
-    (candidate) =>
-      candidate.id !== request.id &&
-      getRequestStatus(candidate) === "PendingApproval" &&
-      getConflictKey(candidate) === conflictKey
-  );
-}
-
-function getConflictKey(request: BusinessAppointmentRequest) {
-  if (!request.branchId || !request.requestedStartUtc || !request.requestedEndUtc) {
-    return null;
-  }
-
-  return [
-    request.branchId,
-    request.requestedStartUtc,
-    request.requestedEndUtc,
-    request.staffMemberId ?? "staff-auto",
-    request.resourceId ?? "resource-auto"
-  ].join(":");
 }
 
 function getDecisionErrorCopy(status: number) {

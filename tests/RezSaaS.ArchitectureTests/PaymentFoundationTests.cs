@@ -23,6 +23,8 @@ public sealed class PaymentFoundationTests
             currencyCode: "TRY",
             providerKey: "",
             hostedCheckoutEnabled: true,
+            noShowFixedAmount: null,
+            noShowPercentage: null,
             Guid.CreateVersion7(),
             TestTime));
     }

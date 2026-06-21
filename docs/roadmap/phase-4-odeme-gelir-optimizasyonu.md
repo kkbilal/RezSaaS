@@ -1,5 +1,14 @@
 # Phase 4 - Ödeme ve Gelir Optimizasyonu
 
+> ⚠️ **SUPERSEDED (ADR-068, 2026-06-20):** Bu tek-parça faz dokümanı artık
+> güncel değildir ve üç bağımsız alt faza ayrılmıştır:
+> - `phase-4a-depozito-ve-no-show.md` (depozito + no-show + hosted checkout)
+> - `phase-4b-tam-on-odeme-ve-iptal-politikasi.md` (tam ön-ödeme + iptal politikası)
+> - `phase-4c-gelir-genisleme.md` (paket/membership/gift card — opsiyonel)
+>
+> Bu dosya yalnızca geçmiş referans için korunur. Yeni çalışma ve kabul
+> kriterleri yukarıdaki alt faz dosyalarında yürütülür.
+
 ## Amaç
 
 Booking çekirdeği ve pilot kullanımı doğrulandıktan sonra ödeme akışlarını kademeli açmak ve birim ekonomiyi iyileştirmek. Bu faz MVP lansman kapısı değildir.

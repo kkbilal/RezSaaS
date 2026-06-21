@@ -1,38 +1,35 @@
 import type { Metadata } from "next";
-import {
-  searchPublicBusinesses,
-  type PublicBusinessSearchParams
-} from "@/features/public-discovery/api/public-businesses";
+import { searchPublicBusinesses } from "@/features/public-discovery/api/public-businesses";
 import { DiscoverPage } from "@/features/public-discovery/components/discover-page";
+import {
+  buildDiscoverHref,
+  getDiscoveryMetadataCopy,
+  normalizeDiscoverySearchParams,
+  type RawDiscoverySearchParams
+} from "@/features/public-discovery/lib/discovery-search";
 
 type DiscoverRouteProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<RawDiscoverySearchParams>;
 };
 
-export const metadata: Metadata = {
-  description:
-    "RezSaaS üzerinde salon, spa, klinik ve stüdyo işletmelerini keşfet.",
-  title: "Keşfet"
-};
+export async function generateMetadata({
+  searchParams
+}: DiscoverRouteProps): Promise<Metadata> {
+  const params = normalizeDiscoverySearchParams(await searchParams);
+  const copy = getDiscoveryMetadataCopy(params);
 
-export default async function DiscoverRoute({ searchParams }: DiscoverRouteProps) {
-  const params = normalizeSearchParams(await searchParams);
-  const state = await searchPublicBusinesses(params);
-
-  return <DiscoverPage params={params} state={state} />;
-}
-
-function normalizeSearchParams(
-  params: Record<string, string | string[] | undefined>
-): PublicBusinessSearchParams {
   return {
-    categoryKey: first(params.categoryKey),
-    city: first(params.city),
-    district: first(params.district),
-    searchText: first(params.searchText)
+    alternates: {
+      canonical: buildDiscoverHref(params)
+    },
+    description: copy.description,
+    title: copy.title
   };
 }
 
-function first(value?: string | string[]) {
-  return Array.isArray(value) ? value[0] : value;
+export default async function DiscoverRoute({ searchParams }: DiscoverRouteProps) {
+  const params = normalizeDiscoverySearchParams(await searchParams);
+  const state = await searchPublicBusinesses(params);
+
+  return <DiscoverPage params={params} state={state} />;
 }

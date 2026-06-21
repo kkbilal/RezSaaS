@@ -1,5 +1,11 @@
 # Phase 1 Uygulama Planı
 
+> ⚠️ **SUPERSEDED (ADR-068, 2026-06-20):** Bu doküman artık güncel uygulama
+> planı değildir. Phase 1 içeriği `roadmap/phase-1-cekirdek-saas.md` ve ilgili
+> ADR'ler (özellikle ADR-016/018/019/020/023/024) tarafından kapsanır. Bu dosya
+> yalnızca geçmiş referans için korunur; yeni çalışma `docs/roadmap/` altında
+> yürütülür.
+
 Bu plan Phase 1'i küçük, doğrulanabilir dikey dilimlere böler. Her dilim build, test, doküman ve güvenlik kontrolüyle kapanır.
 
 ## Dilim 0 - Platform İskeleti

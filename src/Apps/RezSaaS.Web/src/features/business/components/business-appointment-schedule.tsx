@@ -15,6 +15,7 @@ import {
 import { createWebIdempotencyKey } from "@/shared/lib/idempotency";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardTitle } from "@/shared/ui/card";
+import { DialogOverlay, DialogPanel } from "@/shared/ui/dialog";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
 type ScheduleFilter = "active" | "all" | "Completed" | "closed";
@@ -657,18 +658,23 @@ function AppointmentOperationDialog({
   const showTimeRange = operationNeedsTimeRange(draft.kind);
 
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
-      <section
-        aria-modal="true"
-        className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]"
-        role="dialog"
+    <DialogOverlay onEscapeKeyDown={onCancel}>
+      <DialogPanel
+        descriptionId="business-appointment-operation-dialog-description"
+        titleId="business-appointment-operation-dialog-title"
       >
         <div className="space-y-4">
           <StatusBadge status={getAppointmentStatus(draft.appointment)} />
-          <h2 className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
+          <h2
+            className="text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]"
+            id="business-appointment-operation-dialog-title"
+          >
             {details.title}
           </h2>
-          <p className="text-sm leading-7 text-[var(--rs-muted)]">
+          <p
+            className="text-sm leading-7 text-[var(--rs-muted)]"
+            id="business-appointment-operation-dialog-description"
+          >
             {getServiceSummary(draft.appointment)} ·{" "}
             {formatAppointmentWindow(draft.appointment)}
           </p>
@@ -730,8 +736,8 @@ function AppointmentOperationDialog({
             {isSubmitting ? "İşleniyor" : details.submitLabel}
           </Button>
         </div>
-      </section>
-    </div>
+      </DialogPanel>
+    </DialogOverlay>
   );
 }
 

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import type {
   PlatformTenantDetail,
   PlatformTenantFilters,
@@ -6,6 +9,13 @@ import type {
   PlatformTenantMembership,
   PlatformTenantsOverview
 } from "@/features/platform/api/get-platform-tenants-overview";
+import { PlatformTenantLifecycleActions } from "@/features/platform/components/platform-tenant-lifecycle-actions";
+import { PlatformTenantProvisionDialog } from "@/features/platform/components/platform-tenant-provision-dialog";
+import { PlatformMembershipAddDialog } from "@/features/platform/components/platform-membership-add-dialog";
+import {
+  PlatformMembershipSuspendDialog,
+  PlatformMembershipRevokeDialog
+} from "@/features/platform/components/platform-membership-action-dialog";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -29,6 +39,16 @@ export function PlatformTenantsPage({
   sessionEmail,
   stepUpExpiresAtUtc
 }: PlatformTenantsPageProps) {
+  const [showProvisionDialog, setShowProvisionDialog] = useState(false);
+  const [showMembershipAdd, setShowMembershipAdd] = useState(false);
+  const [suspendTarget, setSuspendTarget] = useState<{
+    membership: PlatformTenantMembership;
+    tenantId: string;
+  } | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<{
+    membership: PlatformTenantMembership;
+    tenantId: string;
+  } | null>(null);
   const tenants = overview.tenants;
   const selectedTenant = overview.selectedTenant;
   const activeCount = tenants.filter(
@@ -45,6 +65,7 @@ export function PlatformTenantsPage({
     <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
       <div className="mx-auto max-w-7xl space-y-8">
         <PlatformTenantHeader
+          onProvision={() => setShowProvisionDialog(true)}
           sessionEmail={sessionEmail}
           stepUpExpiresAtUtc={stepUpExpiresAtUtc}
         />
@@ -56,12 +77,11 @@ export function PlatformTenantsPage({
                 Tenant control-plane
               </p>
               <h1 className="text-5xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-7xl">
-                Tenant yaşam döngüsünü mutation açmadan görünür yap.
+                Tenant yaşam döngüsünü kontrollü platform aksiyonuyla yönet.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-[var(--rs-muted-strong)]">
-                Bu F5 dilimi salt-okunur çalışır. Provisioning, suspend,
-                reactivate, close ve membership mutation akışları reason,
-                confirmation ve audit UX tamamlanmadan açılmaz.
+                Tenant lifecycle, provisioning ve membership mutationları reason
+                ve confirmation kapısıyla açıldı.
               </p>
             </div>
 
@@ -88,18 +108,73 @@ export function PlatformTenantsPage({
               }
               tenants={tenants}
             />
-            <TenantDetailCard tenant={selectedTenant} />
+            {selectedTenant ? (
+              <TenantDetailCard
+                onAddMembership={() => setShowMembershipAdd(true)}
+                onSuspendMembership={(membership) =>
+                  setSuspendTarget({
+                    membership,
+                    tenantId: selectedTenant.tenantId!
+                  })
+                }
+                onRevokeMembership={(membership) =>
+                  setRevokeTarget({
+                    membership,
+                    tenantId: selectedTenant.tenantId!
+                  })
+                }
+                tenant={selectedTenant}
+              />
+            ) : (
+              <TenantDetailCard
+                onAddMembership={() => {}}
+                onSuspendMembership={() => {}}
+                onRevokeMembership={() => {}}
+                tenant={null}
+              />
+            )}
           </section>
         </div>
       </div>
+
+      {showProvisionDialog ? (
+        <PlatformTenantProvisionDialog
+          onDismiss={() => setShowProvisionDialog(false)}
+        />
+      ) : null}
+
+      {showMembershipAdd && selectedTenant?.tenantId ? (
+        <PlatformMembershipAddDialog
+          onDismiss={() => setShowMembershipAdd(false)}
+          tenantId={selectedTenant.tenantId}
+        />
+      ) : null}
+
+      {suspendTarget ? (
+        <PlatformMembershipSuspendDialog
+          membership={suspendTarget.membership}
+          onDismiss={() => setSuspendTarget(null)}
+          tenantId={suspendTarget.tenantId}
+        />
+      ) : null}
+
+      {revokeTarget ? (
+        <PlatformMembershipRevokeDialog
+          membership={revokeTarget.membership}
+          onDismiss={() => setRevokeTarget(null)}
+          tenantId={revokeTarget.tenantId}
+        />
+      ) : null}
     </main>
   );
 }
 
 function PlatformTenantHeader({
+  onProvision,
   sessionEmail,
   stepUpExpiresAtUtc
 }: {
+  onProvision: () => void;
   sessionEmail: string;
   stepUpExpiresAtUtc?: string | null;
 }) {
@@ -118,6 +193,9 @@ function PlatformTenantHeader({
         <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
           Step-up: {formatUtcDateTime(stepUpExpiresAtUtc)}
         </span>
+        <Button onClick={onProvision} variant="primary">
+          Tenant oluştur
+        </Button>
         <Button asChild variant="secondary">
           <Link href={routes.platform.abuse}>Abuse overview</Link>
         </Button>
@@ -205,7 +283,7 @@ function SafetyCard() {
       <div className="mt-6 space-y-3 text-sm leading-6">
         <RuleLine text="Closed tenant terminal durumdur ve geri alınabilir aksiyon gibi gösterilmez." />
         <RuleLine text="Revoked membership terminaldir; yeniden aktif yapılacak bir buton bu dilimde yoktur." />
-        <RuleLine text="Provisioning ve lifecycle mutationları reason, confirmation ve audit UX ile ayrıca açılacak." />
+        <RuleLine text="Provisioning, lifecycle, membership add/suspend/revoke mutasyonları açıldı." />
       </div>
     </Card>
   );
@@ -280,7 +358,17 @@ function TenantList({
   );
 }
 
-function TenantDetailCard({ tenant }: { tenant: PlatformTenantDetail | null }) {
+function TenantDetailCard({
+  onAddMembership,
+  onSuspendMembership,
+  onRevokeMembership,
+  tenant
+}: {
+  onAddMembership: () => void;
+  onSuspendMembership: (membership: PlatformTenantMembership) => void;
+  onRevokeMembership: (membership: PlatformTenantMembership) => void;
+  tenant: PlatformTenantDetail | null;
+}) {
   if (!tenant) {
     return (
       <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
@@ -314,25 +402,42 @@ function TenantDetailCard({ tenant }: { tenant: PlatformTenantDetail | null }) {
         <InfoBox label="Closed" value={formatUtcDateTime(tenant.closedAtUtc)} />
       </div>
 
-      <div className="mt-6 rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4">
-        <h3 className="font-semibold tracking-[-0.03em] text-[var(--rs-ink)]">
-          Membership snapshot
-        </h3>
-        <p className="mt-1 text-sm leading-6 text-[var(--rs-muted)]">
-          BusinessOwner tenant-wide; BranchManager ve Staff branch scope
-          taşıyabilir. Revoked terminaldir.
-        </p>
+      <PlatformTenantLifecycleActions tenant={tenant} />
 
-        <MembershipList memberships={tenant.memberships ?? []} />
+      <div className="mt-6 rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-semibold tracking-[-0.03em] text-[var(--rs-ink)]">
+              Membership snapshot
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-[var(--rs-muted)]">
+              BusinessOwner tenant-wide; BranchManager ve Staff branch scope
+              taşıyabilir. Revoked terminaldir.
+            </p>
+          </div>
+          <Button onClick={onAddMembership} variant="secondary">
+            Membership ekle
+          </Button>
+        </div>
+
+        <MembershipList
+          memberships={tenant.memberships ?? []}
+          onSuspend={onSuspendMembership}
+          onRevoke={onRevokeMembership}
+        />
       </div>
     </Card>
   );
 }
 
 function MembershipList({
-  memberships
+  memberships,
+  onSuspend,
+  onRevoke
 }: {
   memberships: PlatformTenantMembership[];
+  onSuspend: (membership: PlatformTenantMembership) => void;
+  onRevoke: (membership: PlatformTenantMembership) => void;
 }) {
   if (memberships.length === 0) {
     return <EmptyState text="Bu tenant için membership kaydı yok." />;
@@ -340,29 +445,51 @@ function MembershipList({
 
   return (
     <div className="mt-4 grid gap-3">
-      {memberships.map((membership) => (
-        <article
-          className="rounded-[1.25rem] border border-[var(--rs-border)] bg-white p-4"
-          key={membership.membershipId}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-semibold text-[var(--rs-ink)]">
-                {membership.role ?? "Rol yok"}
-              </p>
-              <p className="mt-1 font-mono text-xs text-[var(--rs-muted)]">
-                {shortGuid(membership.userAccountId)}
-              </p>
+      {memberships.map((membership) => {
+        const isActive = membership.status === "Active";
+        const isSuspended = membership.status === "Suspended";
+
+        return (
+          <article
+            className="rounded-[1.25rem] border border-[var(--rs-border)] bg-white p-4"
+            key={membership.membershipId}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-[var(--rs-ink)]">
+                  {membership.role ?? "Rol yok"}
+                </p>
+                <p className="mt-1 font-mono text-xs text-[var(--rs-muted)]">
+                  {shortGuid(membership.userAccountId)}
+                </p>
+              </div>
+              <StatusBadge status={membership.status ?? "Unknown"} />
             </div>
-            <StatusBadge status={membership.status ?? "Unknown"} />
-          </div>
-          <div className="mt-4 grid gap-2 text-xs text-[var(--rs-muted)] sm:grid-cols-3">
-            <span>Membership: {shortGuid(membership.membershipId)}</span>
-            <span>Branch: {shortGuid(membership.branchId)}</span>
-            <span>Oluşturma: {formatUtcDateTime(membership.createdAtUtc)}</span>
-          </div>
-        </article>
-      ))}
+            <div className="mt-4 grid gap-2 text-xs text-[var(--rs-muted)] sm:grid-cols-3">
+              <span>Membership: {shortGuid(membership.membershipId)}</span>
+              <span>Branch: {shortGuid(membership.branchId)}</span>
+              <span>Oluşturma: {formatUtcDateTime(membership.createdAtUtc)}</span>
+            </div>
+            {isActive ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button onClick={() => onSuspend(membership)} variant="ghost">
+                  Askıya al
+                </Button>
+                <Button onClick={() => onRevoke(membership)} variant="ghost">
+                  İptal et
+                </Button>
+              </div>
+            ) : null}
+            {isSuspended ? (
+              <div className="mt-3">
+                <Button onClick={() => onRevoke(membership)} variant="ghost">
+                  İptal et
+                </Button>
+              </div>
+            ) : null}
+          </article>
+        );
+      })}
     </div>
   );
 }

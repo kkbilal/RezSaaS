@@ -6,69 +6,71 @@ namespace RezSaaS.Api.Business;
 
 public static class BusinessResourceEndpointExtensions
 {
-    public static IEndpointRouteBuilder MapBusinessResourceEndpoints(
-        this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapBusinessResourceEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder resources = endpoints
-            .MapGroup("/api/business/resources")
+            .MapGroup("/api/business/branches/{branchId:guid}/resources")
             .WithTags("Business Resources")
             .RequireAuthorization()
             .RequireRateLimiting(BookingRateLimitPolicyNames.BusinessDecisions);
 
-        resources.MapPost(
-            "/{resourceId:guid}/blocks",
-            async (
-                Guid resourceId,
-                [FromBody] BusinessResourceBlockRequest request,
-                ClaimsPrincipal user,
-                BusinessResourceComposer composer,
-                CancellationToken cancellationToken) =>
-            {
-                BusinessResourceBlockResult result =
-                    await composer.CreateBlockAsync(
-                        user,
-                        resourceId,
-                        request,
-                        cancellationToken);
+        resources.MapGet("/", async (Guid branchId, ClaimsPrincipal user, BusinessResourceComposer composer, CancellationToken ct) =>
+            ToListHttpResult(await composer.ListByBranchAsync(user, branchId, ct)))
+            .WithName("ListBusinessResources").Produces<List<BusinessResourceResponse>>()
+            .Produces(401).Produces(403);
 
-                if (result.Outcome == BusinessAppointmentOutcome.Success)
-                {
-                    BusinessResourceBlockResponse response = result.Response!;
+        resources.MapPost("/", async (Guid branchId, [FromBody] BusinessResourceCreateRequest req, ClaimsPrincipal user, BusinessResourceComposer composer, CancellationToken ct) =>
+            ToHttpResult(await composer.CreateAsync(user, branchId, req, ct), 201))
+            .WithName("CreateBusinessResource").Produces<BusinessResourceResponse>(201)
+            .Produces<BusinessResourceErrorResponse>(400).Produces(401).Produces(403);
 
-                    return Results.Created(
-                        $"/api/business/resources/{resourceId}/blocks/{response.ResourceBlockId}",
-                        response);
-                }
+        resources.MapPatch("/{resourceId:guid}", async (Guid branchId, Guid resourceId, [FromBody] BusinessResourceRenameRequest req, ClaimsPrincipal user, BusinessResourceComposer composer, CancellationToken ct) =>
+            ToHttpResult(await composer.RenameAsync(user, branchId, resourceId, req, ct)))
+            .WithName("RenameBusinessResource").Produces<BusinessResourceResponse>()
+            .Produces<BusinessResourceErrorResponse>(400).Produces(401).Produces(403).Produces<BusinessResourceErrorResponse>(404);
 
-                return ToErrorResult(result.Outcome, result.ErrorCode);
-            })
-            .WithName("CreateBusinessResourceBlock")
-            .Produces<BusinessResourceBlockResponse>(StatusCodes.Status201Created)
-            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden)
-            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status404NotFound)
-            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status409Conflict)
-            .Produces<BusinessAppointmentErrorResponse>(StatusCodes.Status422UnprocessableEntity);
+        resources.MapPost("/{resourceId:guid}/out-of-service", async (Guid branchId, Guid resourceId, ClaimsPrincipal user, BusinessResourceComposer composer, CancellationToken ct) =>
+            ToHttpResult(await composer.MarkOutOfServiceAsync(user, branchId, resourceId, ct)))
+            .WithName("MarkBusinessResourceOutOfService").Produces<BusinessResourceResponse>()
+            .Produces(401).Produces(403).Produces<BusinessResourceErrorResponse>(404);
+
+        resources.MapPost("/{resourceId:guid}/restore", async (Guid branchId, Guid resourceId, ClaimsPrincipal user, BusinessResourceComposer composer, CancellationToken ct) =>
+            ToHttpResult(await composer.RestoreAsync(user, branchId, resourceId, ct)))
+            .WithName("RestoreBusinessResource").Produces<BusinessResourceResponse>()
+            .Produces(401).Produces(403).Produces<BusinessResourceErrorResponse>(404);
 
         return endpoints;
     }
 
-    private static IResult ToErrorResult(
-        BusinessAppointmentOutcome outcome,
-        string? errorCode)
+    private static IResult ToHttpResult(BusinessResourceResult r, int successCode = 200)
     {
-        BusinessAppointmentErrorResponse error =
-            new(errorCode ?? "BUSINESS_RESOURCE_OPERATION_FAILED");
+        if (r.Outcome == BusinessResourceOutcome.Success && r.Resource is not null)
+            return successCode == 201 ? Results.Created(string.Empty, r.Resource) : Results.Ok(r.Resource);
 
-        return outcome switch
+        var err = new BusinessResourceErrorResponse(r.ErrorCode ?? "RESOURCE_FAILED");
+        return r.Outcome switch
         {
-            BusinessAppointmentOutcome.BadRequest => Results.BadRequest(error),
-            BusinessAppointmentOutcome.Unauthorized => Results.Unauthorized(),
-            BusinessAppointmentOutcome.Forbidden => Results.Forbid(),
-            BusinessAppointmentOutcome.NotFound => Results.NotFound(error),
-            BusinessAppointmentOutcome.Conflict => Results.Conflict(error),
-            _ => Results.UnprocessableEntity(error),
+            BusinessResourceOutcome.BadRequest => Results.BadRequest(err),
+            BusinessResourceOutcome.Unauthorized => Results.Unauthorized(),
+            BusinessResourceOutcome.Forbidden => Results.Forbid(),
+            BusinessResourceOutcome.NotFound => Results.NotFound(err),
+            BusinessResourceOutcome.Conflict => Results.Conflict(err),
+            _ => Results.BadRequest(err),
+        };
+    }
+
+    private static IResult ToListHttpResult(BusinessResourceResult r)
+    {
+        if (r.Outcome == BusinessResourceOutcome.Success && r.Resources is not null)
+            return Results.Ok(r.Resources);
+
+        var err = new BusinessResourceErrorResponse(r.ErrorCode ?? "RESOURCE_FAILED");
+        return r.Outcome switch
+        {
+            BusinessResourceOutcome.BadRequest => Results.BadRequest(err),
+            BusinessResourceOutcome.Unauthorized => Results.Unauthorized(),
+            BusinessResourceOutcome.Forbidden => Results.Forbid(),
+            _ => Results.BadRequest(err),
         };
     }
 }

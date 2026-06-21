@@ -22,5 +22,7 @@ public sealed class ResourcesModule : ModuleBase
         services.AddScoped<PublicResourceAvailabilityQueryService>();
         services.AddScoped<ResourceLabelQueryService>();
         services.AddScoped<ResourceOperationalBlockService>();
+        services.AddScoped<ResourceTypeManagementService>();
+        services.AddScoped<ResourceManagementService>();
     }
 }

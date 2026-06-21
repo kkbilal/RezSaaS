@@ -2,6 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  bookingDraftStorageKey,
+  createBookingDraft,
+  parseBookingDraft,
+  shouldRecoverSlotSelection,
+  type BookingDraft
+} from "@/features/public-booking/lib/booking-draft";
 import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
 import { apiClient } from "@/shared/api/client";
 import type { ApiSchema } from "@/shared/api/types";
@@ -20,18 +27,6 @@ type PublicBookingPanelProps = {
   profile: PublicBusinessProfile;
 };
 
-type BookingDraft = {
-  branchSlug: string;
-  businessSlug: string;
-  date: string;
-  expiresAt: number;
-  idempotencyKey: string;
-  serviceVariantIds: string[];
-  staffMemberId?: string;
-  startUtc: string;
-  version: 1;
-};
-
 type SubmitState =
   | {
       kind: "idle";
@@ -44,9 +39,6 @@ type SubmitState =
       kind: "error";
       message: string;
     };
-
-const bookingDraftStorageKey = "rezsaas.bookingDraft.v1";
-const bookingDraftTtlMs = 30 * 60 * 1000;
 
 export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
   const businessSlug = profile.slug ?? "";
@@ -89,6 +81,11 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
     [selectedSlotStartUtc, slotState.result?.slots]
   );
 
+  function resetBookingIntent() {
+    setIdempotencyKey("");
+    clearBookingDraft();
+  }
+
   useEffect(() => {
     const draft = readBookingDraft(businessSlug);
 
@@ -118,6 +115,7 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
         : [...current, variantId]
     );
     setSelectedSlotStartUtc("");
+    resetBookingIntent();
     setSubmitState({ kind: "idle" });
   }
 
@@ -132,6 +130,7 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
 
     setSlotState({ isLoading: true });
     setSelectedSlotStartUtc("");
+    resetBookingIntent();
     setSubmitState({ kind: "idle" });
 
     try {
@@ -187,12 +186,10 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
       branchSlug: selectedBranch.slug,
       businessSlug,
       date,
-      expiresAt: Date.now() + bookingDraftTtlMs,
       idempotencyKey: requestIdempotencyKey,
       serviceVariantIds: selectedVariantIds,
       staffMemberId: selectedStaffId || undefined,
-      startUtc: selectedSlotStartUtc,
-      version: 1
+      startUtc: selectedSlotStartUtc
     });
 
     try {
@@ -225,6 +222,11 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
       }
 
       if (!response.ok || !data) {
+        if (shouldRecoverSlotSelection(response.status)) {
+          setSelectedSlotStartUtc("");
+          resetBookingIntent();
+        }
+
         setSubmitState({
           kind: "error",
           message: getCreateErrorCopy(response.status)
@@ -270,6 +272,8 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
                 setSelectedBranchSlug(value);
                 setDate(getTodayInBranchTimeZone(branch?.timeZoneId));
                 setSelectedSlotStartUtc("");
+                resetBookingIntent();
+                setSubmitState({ kind: "idle" });
               }}
               value={selectedBranchSlug}
             >
@@ -287,6 +291,8 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
                 onChange={(event) => {
                   setDate(event.target.value);
                   setSelectedSlotStartUtc("");
+                  resetBookingIntent();
+                  setSubmitState({ kind: "idle" });
                 }}
                 type="date"
                 value={date}
@@ -298,6 +304,8 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
               onChange={(value) => {
                 setSelectedStaffId(value);
                 setSelectedSlotStartUtc("");
+                resetBookingIntent();
+                setSubmitState({ kind: "idle" });
               }}
               value={selectedStaffId}
             >
@@ -367,7 +375,11 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
           ) : null}
 
           <SlotResults
-            onSelect={setSelectedSlotStartUtc}
+            onSelect={(startUtc) => {
+              setSelectedSlotStartUtc(startUtc);
+              resetBookingIntent();
+              setSubmitState({ kind: "idle" });
+            }}
             selectedSlotStartUtc={selectedSlotStartUtc}
             slots={slotState.result?.slots ?? []}
             timeZoneId={slotState.result?.branchTimeZoneId ?? selectedBranch?.timeZoneId}
@@ -588,34 +600,24 @@ function createVariantOptions(services: Service[]) {
   );
 }
 
-function persistBookingDraft(draft: BookingDraft) {
-  window.sessionStorage.setItem(bookingDraftStorageKey, JSON.stringify(draft));
+function persistBookingDraft(draft: Omit<BookingDraft, "expiresAt" | "version">) {
+  window.sessionStorage.setItem(
+    bookingDraftStorageKey,
+    JSON.stringify(createBookingDraft(draft))
+  );
 }
 
 function readBookingDraft(businessSlug: string): BookingDraft | null {
-  try {
-    const rawDraft = window.sessionStorage.getItem(bookingDraftStorageKey);
+  const draft = parseBookingDraft(
+    window.sessionStorage.getItem(bookingDraftStorageKey),
+    businessSlug
+  );
 
-    if (!rawDraft) {
-      return null;
-    }
-
-    const draft = JSON.parse(rawDraft) as BookingDraft;
-
-    if (
-      draft.version !== 1 ||
-      draft.businessSlug !== businessSlug ||
-      draft.expiresAt <= Date.now()
-    ) {
-      clearBookingDraft();
-      return null;
-    }
-
-    return draft;
-  } catch {
+  if (!draft) {
     clearBookingDraft();
-    return null;
   }
+
+  return draft;
 }
 
 function clearBookingDraft() {

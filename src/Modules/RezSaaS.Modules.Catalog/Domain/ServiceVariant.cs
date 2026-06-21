@@ -86,6 +86,37 @@ public sealed class ServiceVariant
             requiredResourceTypeId);
     }
 
+    public void Rename(string name)
+    {
+        Name = NormalizeRequiredText(name, nameof(name));
+        NormalizedName = Name.ToUpperInvariant();
+    }
+
+    public void UpdatePricing(decimal priceAmount)
+    {
+        if (priceAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(priceAmount), "Price cannot be negative.");
+        }
+
+        PriceAmount = priceAmount;
+    }
+
+    public void UpdateDuration(int durationMinutes)
+    {
+        if (durationMinutes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(durationMinutes), "Duration must be greater than zero.");
+        }
+
+        DurationMinutes = durationMinutes;
+    }
+
+    public void UpdateResourceType(Guid? requiredResourceTypeId)
+    {
+        RequiredResourceTypeId = requiredResourceTypeId;
+    }
+
     private static string NormalizeRequiredText(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))

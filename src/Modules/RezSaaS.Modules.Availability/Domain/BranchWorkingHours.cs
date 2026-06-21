@@ -64,6 +64,18 @@ public sealed class BranchWorkingHours
             isClosed);
     }
 
+    public void SetHours(TimeOnly opensAt, TimeOnly closesAt, bool isClosed)
+    {
+        if (!isClosed && closesAt <= opensAt)
+        {
+            throw new ArgumentException("Closing time must be later than opening time.", nameof(closesAt));
+        }
+
+        OpensAt = opensAt;
+        ClosesAt = closesAt;
+        IsClosed = isClosed;
+    }
+
     private static void RequireNonEmpty(Guid value, string parameterName)
     {
         if (value == Guid.Empty)

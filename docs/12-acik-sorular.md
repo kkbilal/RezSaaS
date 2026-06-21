@@ -1,6 +1,39 @@
 # Açık Sorular
 
-Bu sorular Phase 0 kapanışından önce yanıtlanmalıdır. Kararlar `06-karar-kaydi.md` içine işlenir.
+Bu sorular ürün/mimari karar noktalarıdır; her biri bir fazı **bloke edebilir**.
+Kararlar `06-karar-kaydi.md` içine işlenir.
+
+> **Güncelleme (ADR-068, 2026-06-20):** Phase 0 artık tamamlandı; ancak
+> aşağıdaki soruların çoğu hâlâ açıktır. "Tümü Phase 0 öncesi" yerine artık
+> **aşağıdaki "Faz Blokaj İzi" tablosu** kaynak doğrudur: hangi sorunun hangi
+> fazı (veya MVP lansman kapısını) bloke ettiği orada izlenir. Açık soruyu
+> blokaj olarak işaretlemeden ilgili faz başlatılmamalıdır.
+
+## Faz Blokaj İzi (ADR-068)
+
+| Açık soru / karar | Bloke ettiği faz veya kapı | Not |
+| --- | --- | --- |
+| Production SMTP sağlayıcısı + secret + confirmation/reset E2E doğrulaması | **MVP lansman kapısı** | ADR-019 fail-fast kuralı |
+| Platform admin/işletme yönetimi MFA enrollment UI + güvenilir cihaz | **MVP lansman kapısı** (privileged yüzeyler) | ADR-059 |
+| İlk `PlatformAdmin` bootstrap token runbook'u | **MVP lansman kapısı** (ilk tenant provisioning) | ADR-026/044 |
+| `responseBuffer` ve hazırlık/temizlik buffer süresi kararı | MVP (slot hesabı tutarlılığı) | ADR-007 ile ilişkili |
+| Booking idempotency kayıtları saklama/temizleme politikası | **MVP lansman kapısı** (operasyon) | ADR-037 |
+| Çoklu aktif `Business` desteği + lifecycle contract | Phase 5a (genişletme), mevcut tenant tek-business varsayımı korunur | ADR-064 |
+| SMS sağlayıcısı + gönderici adı + maliyet eşiği | Phase 5d | ADR-009/029 |
+| WhatsApp Business pilot kategorisi/onboarding | Phase 5d | ADR-009 |
+| Telefon doğrulaması MVP kapısı mı yoksa pilot mu? | Phase 5d (pilot) önerisi | Ürün çağrısı |
+| Tenant slug değişimi + redirect/alias politikası | Phase 5a | ADR-030 |
+| `BranchManager`/`Staff` branch scope Organization lifecycle contract | Phase 5a (yetki ağacı) | ADR-035/046 |
+| Ödeme sağlayıcısı seçimi (hosted checkout adapter) | Phase 4a | ADR-065 |
+| İptal politikası/no-show ücret kuralı taksonomisi | Phase 4b | ADR-008 sonrası |
+| Paket/membership/gift card ürün doğrulaması | Phase 4c (opsiyonel) | Ürün çağrısı |
+| CRM/export sağlayıcı adapter'ları | Phase 5c | ADR-066/067 |
+| Public API scope + rate limit + partner onboarding | Phase 5c | ADR-066 |
+| Marketplace sponsored placement hacmi | Phase 5e | ADR-051 sonrası |
+| i18n locale/currency + provider abstraction | Phase 5e | En yüksek riskli |
+| KVKK saklama/silme politikası + hukuk takvimi | **MVP lansman kapısı** (uyumluluk) | `docs/02`, `docs/11` |
+| Abuse appeal SLA + reason-code taksonomisi | Phase 3 kapanışı (kısmen açık), Phase 5e'yi etkileyebilir | ADR-050 |
+| Discovery facet taksonomisi (kategori/şehir/ilçe) statik mi read model mi? | MVP (F2 facet kapanışı) | ADR-031/032 |
 
 ## Ürün
 

@@ -1,5 +1,16 @@
 # Phase 5 - Platformlaştırma ve Genişleme
 
+> ⚠️ **SUPERSEDED (ADR-068, 2026-06-20):** Bu tek-parça faz dokümanı artık
+> güncel değildir ve beş bağımsız alt faza ayrılmıştır:
+> - `phase-5a-isletme-yonetim-crud.md` (settings CRUD + yetki ağacı)
+> - `phase-5b-analytics-modulu.md` (Analytics modülü)
+> - `phase-5c-acik-api-ve-webhook.md` (public API + webhook teslimatı)
+> - `phase-5d-mesajlasma-genisleme.md` (SMS/WhatsApp/İYS)
+> - `phase-5e-platform-buyume-ve-i18n.md` (marketplace + i18n — en yüksek riskli)
+>
+> Bu dosya yalnızca geçmiş referans için korunur. Yeni çalışma ve kabul
+> kriterleri yukarıdaki alt faz dosyalarında yürütülür.
+
 ## Amaç
 
 RezSaaS’i gerçek bir “salon platformu”na taşımak: çoklu şube gelişmiş, entegrasyonlar ve büyüme araçları.

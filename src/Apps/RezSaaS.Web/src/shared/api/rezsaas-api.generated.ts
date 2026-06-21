@@ -3136,6 +3136,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/business/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessBranches"];
+        put?: never;
+        post: operations["CreateBusinessBranch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetBusinessBranch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UpdateBusinessBranch"];
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/slot-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UpdateBusinessBranchSlotSettings"];
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ArchiveBusinessBranch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessStaff"];
+        put?: never;
+        post: operations["CreateBusinessStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/staff/{staffId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetBusinessStaff"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UpdateBusinessStaff"];
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/staff/{staffId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ArchiveBusinessStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/business/context": {
         parameters: {
             query?: never;
@@ -3182,6 +3294,136 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["UpdateBusinessProfileSettings"];
+        trace?: never;
+    };
+    "/api/business/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessSkills"];
+        put?: never;
+        post: operations["CreateBusinessSkill"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/skills/{skillId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["DeleteBusinessSkill"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/staff/{staffMemberId}/skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AssignSkillToStaff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/staff/{staffMemberId}/skills/{skillId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["RemoveSkillFromStaff"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services": {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        get: operations["ListBusinessServices"];
+        put?: never;
+        post: operations["CreateBusinessService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}": {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        get: operations["GetBusinessService"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UpdateBusinessService"];
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/archive": {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        get?: never;
+        put?: never;
+        post: operations["ArchiveBusinessService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/variants": {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        get: operations["ListServiceVariants"];
+        put?: never;
+        post: operations["CreateServiceVariant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/variants/{variantId}": {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        get: operations["GetServiceVariant"];
+        put?: never;
+        post?: never;
+        delete: operations["DeleteServiceVariant"];
+        options?: never;
+        head?: never;
+        patch: operations["UpdateServiceVariant"];
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/variants/{variantId}/required-skills/{skillId}": {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        get?: never;
+        put?: never;
+        post: operations["AssignRequiredSkill"];
+        delete: operations["RemoveRequiredSkill"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/customer/abuse/overview": {
@@ -4735,6 +4977,75 @@ export interface components {
         BusinessSettingsErrorResponse: {
             errorCode?: string | null;
         };
+        BusinessBranchResponse: {
+            /** Format: uuid */
+            id?: string;
+            slug?: string | null;
+            displayName?: string | null;
+            timeZoneId?: string | null;
+            city?: string | null;
+            district?: string | null;
+            addressLine?: string | null;
+            slotIntervalMinutes?: number | null;
+            maxPublicSlots?: number | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        BusinessBranchErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessStaffResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            branchId?: string;
+            displayName?: string | null;
+            /** Format: uuid */
+            userAccountId?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        BusinessStaffErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessSkillResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+        };
+        BusinessSkillErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessServiceResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            categoryKey?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        BusinessServiceErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessVariantResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            serviceId?: string;
+            name?: string | null;
+            durationMinutes?: number;
+            priceAmount?: number;
+            currencyCode?: string | null;
+            /** Format: uuid */
+            requiredResourceTypeId?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        BusinessVariantErrorResponse: {
+            errorCode?: string | null;
+        };
         BusinessTenantContextResponse: {
             /** Format: uuid */
             membershipId?: string;
@@ -6060,6 +6371,498 @@ export interface operations {
                     "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
                 };
             };
+        };
+    };
+    ListBusinessBranches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchResponse"][] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+        };
+    };
+    GetBusinessBranch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+        };
+    };
+    CreateBusinessBranch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: { "application/json": { slug: string; displayName: string; timeZoneId: string; city?: string; district?: string; addressLine?: string } };
+        };
+        responses: {
+            201: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+            };
+            400: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            409: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+        };
+    };
+    UpdateBusinessBranch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string };
+            cookie?: never;
+        };
+        requestBody: {
+            content: { "application/json": { displayName?: string; city?: string; district?: string; addressLine?: string } };
+        };
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+            };
+            400: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+        };
+    };
+    UpdateBusinessBranchSlotSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string };
+            cookie?: never;
+        };
+        requestBody: {
+            content: { "application/json": { slotIntervalMinutes?: number | null; maxPublicSlots?: number | null } };
+        };
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+            };
+            400: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+        };
+    };
+    ArchiveBusinessBranch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            };
+        };
+    };
+    ListBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffResponse"][] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+        };
+    };
+    GetBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string; staffId: string };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
+            };
+        };
+    };
+    CreateBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string };
+            cookie?: never;
+        };
+        requestBody: {
+            content: { "application/json": { displayName: string; userAccountId?: string | null } };
+        };
+        responses: {
+            201: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
+            };
+            400: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+        };
+    };
+    UpdateBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string; staffId: string };
+            cookie?: never;
+        };
+        requestBody: {
+            content: { "application/json": { displayName: string } };
+        };
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
+            };
+            400: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
+            };
+        };
+    };
+    ArchiveBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { branchId: string; staffId: string };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
+            };
+        };
+    };
+    ListBusinessSkills: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillResponse"][] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+        };
+    };
+    CreateBusinessSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: { "application/json": { name: string } };
+        };
+        responses: {
+            201: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillResponse"] };
+            };
+            400: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            409: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+            };
+        };
+    };
+    DeleteBusinessSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { skillId: string };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content?: never;
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+            };
+            409: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+            };
+        };
+    };
+    AssignSkillToStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { staffMemberId: string };
+            cookie?: never;
+        };
+        requestBody: {
+            content: { "application/json": { skillId: string } };
+        };
+        responses: {
+            200: {
+                headers: { [name: string]: unknown };
+                content?: never;
+            };
+            400: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+            };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+            };
+            409: {
+                headers: { [name: string]: unknown };
+                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+            };
+        };
+    };
+    RemoveSkillFromStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: { staffMemberId: string; skillId: string };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content?: never };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] } };
+        };
+    };
+    ListBusinessServices: {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"][] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+        };
+    };
+    GetBusinessService: {
+        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+        };
+    };
+    CreateBusinessService: {
+        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+        requestBody: { content: { "application/json": { name: string; categoryKey: string } } };
+        responses: {
+            201: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
+            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+        };
+    };
+    UpdateBusinessService: {
+        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
+        requestBody: { content: { "application/json": { name: string; categoryKey: string } } };
+        responses: {
+            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
+            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+        };
+    };
+    ArchiveBusinessService: {
+        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
+        };
+    };
+    ListServiceVariants: {
+        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"][] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+        };
+    };
+    GetServiceVariant: {
+        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string }; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+        };
+    };
+    CreateServiceVariant: {
+        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
+        requestBody: { content: { "application/json": { name: string; durationMinutes: number; priceAmount: number; currencyCode: string; requiredResourceTypeId?: string | null } } };
+        responses: {
+            201: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"] } };
+            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+        };
+    };
+    UpdateServiceVariant: {
+        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string }; cookie?: never };
+        requestBody: { content: { "application/json": { name: string; durationMinutes: number; priceAmount: number; currencyCode: string; requiredResourceTypeId?: string | null } } };
+        responses: {
+            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"] } };
+            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+        };
+    };
+    DeleteServiceVariant: {
+        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string }; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content?: never };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+        };
+    };
+    AssignRequiredSkill: {
+        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string; skillId: string }; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content?: never };
+            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
+        };
+    };
+    RemoveRequiredSkill: {
+        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string; skillId: string }; cookie?: never };
+        requestBody?: never;
+        responses: {
+            200: { headers: { [name: string]: unknown }; content?: never };
+            401: { headers: { [name: string]: unknown }; content?: never };
+            403: { headers: { [name: string]: unknown }; content?: never };
+            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
         };
     };
     GetBusinessContext: {

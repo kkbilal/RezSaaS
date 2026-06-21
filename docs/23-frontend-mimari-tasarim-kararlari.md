@@ -1,6 +1,6 @@
 # Frontend Mimari ve Tasarım Kararları
 
-Son güncelleme: 2026-06-14
+Son güncelleme: 2026-06-18
 
 ## Amaç
 
@@ -68,6 +68,11 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   `GET /api/admin/tenants/{tenantId}` kontratlarını generated OpenAPI tipleriyle
   okur; provisioning, lifecycle ve membership mutation akışları bu dilimde
   açılmaz.
+- 2026-06-18: `/platform/tenantlar` tenant lifecycle suspend/reactivate/close
+  mutation dilimine geçti. UI gerçek admin endpoint'lerini generated OpenAPI tipi
+  ve platform-global cookie auth ile çağırır; tenant header taşımaz. Her aksiyon
+  zorunlu, PII/secret içermeyen reason ve exact confirmation ister; `Closed`
+  tenant terminal durum olarak kalır.
 - 2026-06-13: `/platform/itirazlar` salt-okunur appeal/closure desk olarak
   eklendi. Route, admin appeal ve account closure case list/detail endpoint'lerini
   generated OpenAPI tipleriyle okur; accept/reject/approve/execute mutationları
@@ -85,6 +90,10 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   idempotency key üretimi aynı kullanıcı niyeti boyunca sabitlendi. Başarılı
   komut tamamlanınca key temizlenir; hata veya retry halinde aynı intent key'i
   tekrar kullanılır.
+- 2026-06-14: Business inbox approval conflict uyarısı ve onay sonrası yerel
+  `Superseded` güncellemesi, backend'in ayrı staff/time ve resource/time
+  invariant'larını izleyen testli helper'a taşındı. UI çakışmayı önceden görünür
+  kılar; nihai karar transaction içindeki backend kontrolünde kalır.
 - 2026-06-14: Rebook ve resource block formları UTC input yerine branch-local
   `datetime-local` deneyimine geçti; frontend şube saatini UTC'ye çevirerek
   backend kontratına gönderir. Dönüşüm helper'ları Node test runner ile
@@ -93,17 +102,39 @@ yüzeyleri farklı bilgi yoğunluğu ve güvenlik seviyelerine sahiptir; ancak a
   staff display policy formu `PATCH /api/business/settings/profile` kontratına
   bağlandı. Form yalnızca `business.settings.manage` capability taşıyan
   `BusinessOwner` için açılır; `BranchManager` salt-okunur snapshot görür.
+- 2026-06-14: Tasarım sistemi iskeletinde shared `DialogOverlay`,
+  `DialogPanel` ve `DialogFormPanel` primitive'leri eklendi; business inbox ve
+  appointment operasyon modalları aynı modal semantiklerini, Escape davranışını
+  ve `aria-labelledby`/`aria-describedby` bağlarını kullanır.
+- 2026-06-14: Storybook kurulumu tamamlanana kadar kırılmaları erken yakalamak
+  için Node test runner tabanlı design-system contract testi eklendi. Test,
+  global semantic token'ları, reduced-motion kuralını, button varyant/focus
+  sözleşmesini ve dialog ARIA/Escape davranışını kontrol eder.
+- 2026-06-14: `/kesfet` arama parametreleri normalize edilen, paylaşılabilir URL
+  ve dinamik metadata üreten ortak discovery search helper'ına taşındı. Backend
+  facet/taksonomi endpoint'i gelene kadar ekrana yalnızca mevcut discovery
+  response'undan türetilmiş kategori/şehir/ilçe hızlı filtreleri eklenir; sahte
+  facet veya profil başına ek API çağrısı üretilmez.
+- 2026-06-14: Public profil galerisi `img` render'ında boyut, `loading`,
+  `decoding`, `fetchPriority` ve `referrerPolicy` attribute'larıyla temel
+  görsel/perf davranışı iyileştirildi; allow-list kararı gelene kadar yalnız
+  relative veya `https://` görsel URL'leri render edilir.
+- 2026-06-14: Public booking draft okuma/yazma ve slot recovery kararı component
+  dışındaki test edilebilir helper'a taşındı. Draft yalnız booking niyeti
+  alanlarını, kısa TTL'i ve business slug doğrulamasını taşır; müşteri PII veya
+  auth token saklanmaz. Slot değişimi gerektiren `409/422` create hatalarında
+  seçili slot ve idempotency intent temizlenir.
 
 ## Backend Faz Analizi ve Frontend Karşılığı
 
 | Backend alanı | Mevcut durum | Frontend karşılığı | Eksik veya riskli nokta |
 | --- | --- | --- | --- |
 | Phase 1 Identity/Auth | Register, login, refresh, confirmation, reset ve manage endpoint'leri mevcut | Auth ekranları ve hesap güvenliği | Session/rol/tenant bootstrap kontratı ve gerçek MFA step-up oturumu tamamlanmalı |
-| Phase 2 public keşif | İşletme arama, profil, hizmet, branch, staff, çalışma saati ve galeri mevcut | `/kesfet` ve `/isletme/{businessSlug}` SSR route'ları | Zengin facet/taksonomi ve görsel optimization allow-list sonraki iyileştirme |
-| Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı | Frontend resource seçtirmez; optional staff tercihi backend kontratına bağlıdır |
+| Phase 2 public keşif | İşletme arama, profil, hizmet, branch, staff, çalışma saati ve galeri mevcut | `/kesfet` ve `/isletme/{businessSlug}` SSR route'ları, normalized URL filtreleri ve result-set tabanlı hızlı filtreler | Zengin backend facet/taksonomi endpoint'i ve production görsel optimization allow-list sonraki iyileştirme |
+| Phase 2 slot ve request create | Multi-service slot arama ve authenticated `PendingApproval` create mevcut | Rezervasyon sihirbazı, PII'siz draft restore, stable idempotency ve slot recovery | Frontend resource seçtirmez; Playwright booking journey ve tam error-envelope UX sertleşmesi sonraki iyileştirme |
 | Phase 2 müşteri self-service | Business slug kapsamında request liste/detay/pending cancel, global customer history ve customer abuse overview/appeal mevcut | `/hesabim/talepler` müşteri geçmişi, pending cancel ve `/hesabim/itirazlar` | Cursor pagination ve detay route'ları ileride iyileştirilecek |
-| Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | `/panel` talep kutusu, approve/decline ve abuse report | Liste pagination/search contract'ı ileride iyileştirilecek |
-| Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | `/platform/abuse`, `/platform/tenantlar` ve `/platform/itirazlar` salt-okunur overview yüzeyleri, step-up gate | Yüksek riskli tenant/membership/appeal/closure mutation UI'ları sonraki F5 dilimlerinde açılmalı |
+| Phase 2 işletme onayı | Pending/liste/detay, approve/decline, abuse report ve label enrichment mevcut | `/panel` talep kutusu, approve/decline, abuse report ve staff/resource conflict uyarısı | Cursor pagination/search contract'ı ve Playwright approve/decline journey ileride iyileştirilecek |
+| Phase 3 platform control-plane | Tenant, membership, lifecycle, abuse, appeal, closure ve step-up session API'leri mevcut | `/platform/abuse`, `/platform/tenantlar`, `/platform/itirazlar`, step-up gate ve tenant lifecycle suspend/reactivate/close UI'ı | Provisioning, membership, abuse report review, sanction, appeal review ve closure mutation UI'ları sonraki F5 dilimlerinde açılmalı |
 | Phase 3 operasyon derinliği | Appointment calendar/detail, note, cancel, complete, no-show, rebook, resource block ve business profile settings API'leri mevcut | `/panel` içinde appointment schedule, stable idempotency, tenant switcher, branch-local rebook/resource block, temel operasyon aksiyonları ve `/panel/ayarlar` public profil formu | Branch/staff/service/resource/availability mutation ekranları, cursor pagination ve daha zengin calendar UX sonraki dilimlerdir |
 | Reviews, Analytics, Payments | Backend fazları bekleniyor | Yorum, rapor ve ödeme ekranları | API olmadan sahte dashboard veya form üretilmez |
 
@@ -196,6 +227,9 @@ Kurallar:
   halinde incelenmiş component kaynak kodu başlangıç noktası olarak alınabilir;
   varsayılan görünümü ürün içine taşınmaz.
 - Her dependency güncel desteklenen patch sürümünde tutulur; lockfile zorunludur.
+- Storybook/a11y paketi yerel toolchain'e eklenene kadar semantic token, button
+  ve dialog primitive sözleşmeleri dependency-free Node contract test ile
+  korunur. Bu test Storybook yerine geçmez; F0-F1 için erken kırılma kapısıdır.
 
 ## API Sözleşmesi ve Veri Akışı
 
@@ -338,5 +372,7 @@ kontrat uygulanmadan önce ayrı ADR ve concurrency testi gerekir.
   ve kritik admin kararları Playwright ile uçtan uca doğrulanır.
 - Storybook component'leri loading, empty, error, long-content, keyboard ve
   reduced-motion durumlarını kapsar.
+- Storybook kurulmadan önceki ara kalite kapısı olarak design-system contract
+  testi `pnpm test` içinde çalışır.
 - Görsel kalite yalnızca screenshot benzerliği değildir; gerçek içerik,
   responsive davranış, erişilebilirlik ve domain doğruluğu birlikte incelenir.

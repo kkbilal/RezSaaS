@@ -1,5 +1,11 @@
 # Phase 2 Uygulama Planı
 
+> ⚠️ **SUPERSEDED (ADR-068, 2026-06-20):** Bu doküman artık güncel uygulama
+> planı değildir. Phase 2 içeriği `roadmap/phase-2-musteri-kesif-rezervasyon-mvp.md`
+> ve ilgili ADR'ler (özellikle ADR-027/030/031/032/033/034/035/036/037/038/039)
+> tarafından kapsanır. Bu dosya yalnızca geçmiş referans için korunur; yeni
+> çalışma `docs/roadmap/` altında yürütülür.
+
 Phase 2 hedefi, gerçek kullanıcı alabilecek ilk uçtan uca müşteri akışını üretmektir: keşif → işletme profili → uygun slot → hesaplı rezervasyon isteği → işletme onayı.
 
 ## Başlangıç Kararları

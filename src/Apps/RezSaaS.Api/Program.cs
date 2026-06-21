@@ -128,7 +128,16 @@ builder.Services.AddOptions<PlatformOperationsReconciliationOptions>()
         "Platform operations reconciliation options must use positive values.")
     .ValidateOnStart();
 builder.Services.AddScoped<PublicBusinessProfileComposer>();
+builder.Services.AddScoped<PublicReviewComposer>();
 builder.Services.AddScoped<PublicSlotSearchComposer>();
+builder.Services.AddScoped<RezSaaS.Api.Customer.CustomerCreateReviewComposer>();
+builder.Services.AddScoped<RezSaaS.Api.Business.BusinessReviewComposer>();
+
+// Reviews cross-module contract adapters (composition root only).
+// These bridge Reviews -> Booking/Organization/Identity without direct module references.
+builder.Services.AddScoped<RezSaaS.BuildingBlocks.Reviews.ICompletedAppointmentLookup, RezSaaS.Api.Reviews.BookingCompletedAppointmentLookupAdapter>();
+builder.Services.AddScoped<RezSaaS.BuildingBlocks.Reviews.IBusinessRatingSummarySink, RezSaaS.Api.Reviews.OrganizationBusinessRatingSummarySinkAdapter>();
+builder.Services.AddScoped<RezSaaS.BuildingBlocks.Reviews.ICustomerDisplayNameResolver, RezSaaS.Api.Reviews.IdentityCustomerDisplayNameResolverAdapter>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
 builder.Services.AddScoped<SessionBootstrapComposer>();
 builder.Services.AddScoped<BusinessContextComposer>();
@@ -136,7 +145,15 @@ builder.Services.AddScoped<BusinessAppointmentRequestComposer>();
 builder.Services.AddScoped<BusinessAbuseReportComposer>();
 builder.Services.AddScoped<BusinessAppointmentComposer>();
 builder.Services.AddScoped<BusinessResourceComposer>();
+builder.Services.AddScoped<BusinessResourceTypeComposer>();
+builder.Services.AddScoped<BusinessBranchComposer>();
+builder.Services.AddScoped<BusinessStaffComposer>();
+builder.Services.AddScoped<BusinessSkillComposer>();
+builder.Services.AddScoped<BusinessServiceComposer>();
+builder.Services.AddScoped<BusinessVariantComposer>();
 builder.Services.AddScoped<BusinessSettingsComposer>();
+builder.Services.AddScoped<BusinessWorkingHoursComposer>();
+builder.Services.AddScoped<BusinessStaffUnavailableComposer>();
 builder.Services.AddScoped<AdminTenantProvisioningComposer>();
 builder.Services.AddScoped<AdminAbuseControlPlaneComposer>();
 builder.Services.AddScoped<AdminAbuseReportComposer>();
@@ -306,6 +323,7 @@ app.MapHealthChecks(
     })
     .RequireRateLimiting(AdminControlPlaneRateLimitPolicyNames.Operations);
 app.MapPublicBusinessProfileEndpoints();
+app.MapPublicReviewEndpoints();
 app.MapPublicBusinessSlotEndpoints();
 app.MapPublicAppointmentRequestEndpoints();
 app.MapSessionEndpoints();
@@ -313,9 +331,19 @@ app.MapBusinessContextEndpoints();
 app.MapBusinessAppointmentRequestEndpoints();
 app.MapBusinessAppointmentEndpoints();
 app.MapBusinessResourceEndpoints();
+app.MapBusinessResourceTypeEndpoints();
+app.MapBusinessBranchEndpoints();
+app.MapBusinessStaffEndpoints();
+app.MapBusinessSkillEndpoints();
+app.MapBusinessServiceEndpoints();
+app.MapBusinessVariantEndpoints();
+app.MapBusinessWorkingHoursEndpoints();
+app.MapBusinessStaffUnavailableEndpoints();
 app.MapBusinessSettingsEndpoints();
+app.MapBusinessReviewEndpoints();
 app.MapCustomerAppointmentHistoryEndpoints();
 app.MapCustomerAbuseEndpoints();
+app.MapCustomerReviewEndpoints();
 app.MapAdminControlPlaneEndpoints();
 app.MapAdminAbuseControlPlaneEndpoints();
 app.MapAdminAbuseWorkflowEndpoints();

@@ -34,6 +34,10 @@ public sealed class OrganizationModule : ModuleBase
         services.AddScoped<PublicBusinessDirectoryService>();
         services.AddScoped<BusinessEntityLabelQueryService>();
         services.AddScoped<BusinessProfileSettingsService>();
+        services.AddScoped<BranchManagementService>();
+        services.AddScoped<StaffManagementService>();
+        services.AddScoped<SkillManagementService>();
+        services.AddScoped<StaffSkillService>();
     }
 
     public override void MapEndpoints(IEndpointRouteBuilder endpoints)

@@ -37,6 +37,22 @@ public sealed class Service
         return new Service(Guid.CreateVersion7(), tenantId, name, categoryKey, createdAtUtc);
     }
 
+    public void Rename(string name)
+    {
+        Name = NormalizeRequiredText(name, nameof(name));
+        NormalizedName = Name.ToUpperInvariant();
+    }
+
+    public void UpdateCategory(string categoryKey)
+    {
+        CategoryKey = NormalizeRequiredText(categoryKey, nameof(categoryKey));
+    }
+
+    public void Archive()
+    {
+        Status = ServiceStatus.Archived;
+    }
+
     private static string NormalizeRequiredText(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
