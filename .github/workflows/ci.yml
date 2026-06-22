@@ -37,16 +37,15 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Enable pnpm
+        run: corepack enable
+
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
           node-version: 24
-          package-manager: pnpm@10
           cache: pnpm
           cache-dependency-path: src/Apps/RezSaaS.Web/pnpm-lock.yaml
-
-      - name: Enable pnpm
-        run: corepack enable
 
       - name: Restore .NET tools
         run: dotnet tool restore
