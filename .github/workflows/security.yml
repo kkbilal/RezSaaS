@@ -39,10 +39,19 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        run: dotnet restore RezSaaS.sln
+        run: dotnet restore RezSaaS.sln -p:NuGetAudit=false
 
       - name: Audit vulnerable packages
-        run: dotnet list RezSaaS.sln package --vulnerable --include-transitive
+        run: |
+          dotnet list RezSaaS.sln package --vulnerable --include-transitive --format json > audit.json
+          if jq -e '.projects[]?.frameworks[]?.topLevelPackages[]?.vulnerabilities // empty' audit.json > /dev/null 2>&1 || \
+             jq -e '.projects[]?.frameworks[]?.transitivePackages[]?.vulnerabilities // empty' audit.json > /dev/null 2>&1; then
+            echo "::error::Vulnerable packages detected!"
+            jq . audit.json
+            exit 1
+          else
+            echo "No vulnerable packages found."
+          fi
 
   codeql:
     name: CodeQL SAST
@@ -52,12 +61,12 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v5
+        uses: github/codeql-action/init@v4
         with:
           languages: csharp,javascript-typescript
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v5
+        uses: github/codeql-action/autobuild@v4
 
       - name: Analyze
-        uses: github/codeql-action/analyze@v5
+        uses: github/codeql-action/analyze@v4
