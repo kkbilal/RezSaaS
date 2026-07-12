@@ -95,6 +95,7 @@ export default async function BusinessSettingsRoute({
 
   return (
     <PanelShell
+      capabilities={tenant.capabilities ?? []}
       currentTenantId={tenant.tenantId}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}
       tenants={buildPanelTenants(context.tenants)}

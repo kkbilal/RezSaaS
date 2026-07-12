@@ -91,6 +91,7 @@ export default async function BusinessBranchesRoute({ searchParams }: Props) {
   if (branchesState.branches.length === 0) {
     return (
       <PanelShell
+        capabilities={tenant.capabilities ?? []}
         currentTenantId={tenant.tenantId}
         sessionEmail={sessionState.session.account?.email ?? "Oturum"}
         tenants={buildPanelTenants(context.tenants)}
@@ -105,6 +106,7 @@ export default async function BusinessBranchesRoute({ searchParams }: Props) {
 
   return (
     <PanelShell
+      capabilities={tenant.capabilities ?? []}
       currentTenantId={tenant.tenantId}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}
       tenants={buildPanelTenants(context.tenants)}

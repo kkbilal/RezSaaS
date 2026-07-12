@@ -98,6 +98,7 @@ export default async function BusinessCalendarRoute({
 
   return (
     <PanelShell
+      capabilities={tenant.capabilities ?? []}
       currentTenantId={tenant.tenantId}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}
       tenants={buildPanelTenants(context.tenants)}

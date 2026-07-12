@@ -78,6 +78,7 @@ export default async function BusinessWorkingHoursRoute({
   const sessionEmail = sessionState.session.account?.email ?? "Oturum";
     return (
     <PanelShell
+      capabilities={tenant.capabilities ?? []}
       currentTenantId={tenant.tenantId}
       sessionEmail={sessionEmail}
       tenants={buildPanelTenants(context.tenants)}

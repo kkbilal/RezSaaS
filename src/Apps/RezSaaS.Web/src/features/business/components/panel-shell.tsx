@@ -2,24 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useMemo, useState, type ReactNode } from "react";
+import { accessContextFromCapabilities } from "@/shared/auth/access-context";
 import { routes } from "@/shared/config/routes";
 import { cn } from "@/shared/lib/cn";
+import { PANEL_NAV, pruneNav } from "@/shared/navigation/nav-manifest";
 import { Avatar } from "@/shared/ui/avatar";
 
 export type PanelTenantOption = {
   tenantId: string;
   label: string;
   branchLabel?: string;
-};
-
-type PanelNavGroup = {
-  title: string;
-  items: ReadonlyArray<{
-    href: string;
-    label: string;
-    badge?: ReactNode;
-  }>;
 };
 
 type PanelShellProps = {
@@ -29,6 +22,14 @@ type PanelShellProps = {
   tenants: ReadonlyArray<PanelTenantOption>;
   currentTenantId?: string | null;
   pendingRequestCount?: number;
+  /**
+   * Aktif tenant'in capability listesi (GET /api/business/context -> tenant.capabilities).
+   *
+   * ZORUNLU ALAN -- opsiyonel yapilmaz. Bir sayfa gecirmeyi unutursa DERLEME HATASI alir.
+   * Opsiyonel olsaydi, unutan sayfa sessizce yanlis menu gosterirdi; tam da onlemeye
+   * calistigimiz fail-open hatasi.
+   */
+  capabilities: readonly string[];
 };
 
 export function PanelShell(props: PanelShellProps) {
@@ -40,6 +41,7 @@ export function PanelShell(props: PanelShellProps) {
 }
 
 function PanelShellInner({
+  capabilities,
   children,
   currentTenantId,
   pendingRequestCount,
@@ -59,39 +61,22 @@ function PanelShellInner({
     router.push(`${pathname}?${params.toString()}`);
   }
 
-  const navGroups: ReadonlyArray<PanelNavGroup> = [
-    {
-      title: "Ana",
-      items: [
-        { href: routes.business.panel, label: "Dashboard" },
-        {
-          href: routes.business.requests,
-          label: "Talepler",
-          badge:
-            pendingRequestCount && pendingRequestCount > 0
-              ? pendingRequestCount
-              : undefined
-        },
-        { href: routes.business.calendar, label: "Takvim" }
-      ]
-    },
-    {
-      title: "Yönetim",
-      items: [
-        { href: routes.business.staff, label: "Personel" },
-        { href: routes.business.services, label: "Hizmetler" },
-        { href: routes.business.branches, label: "Şubeler" },
-        { href: routes.business.resources, label: "Kaynaklar" },
-        { href: routes.business.skills, label: "Yetenekler" },
-        { href: routes.business.resourceTypes, label: "Kaynak türleri" },
-        { href: routes.business.workingHours, label: "Çalışma saatleri" }
-      ]
-    },
-    {
-      title: "Yapılandırma",
-      items: [{ href: routes.business.settings, label: "Ayarlar" }]
-    }
-  ];
+  /*
+   * MENU ARTIK SABIT DEGIL -- capability'den TURETILIYOR.
+   *
+   * Eskiden burada 8 ogeli sabit bir dizi vardi ve role BAKILMADAN herkese basiliyordu.
+   * Sonuc: sube muduru (BranchManager) Personel/Hizmetler/Subeler/Kaynaklar/Yetenekler/
+   * Kaynak turleri/Calisma saatleri/Ayarlar ogelerinin HEPSINI goruyor, ama backend'de
+   * bu uclarin 11'i de yalnizca BusinessOwner kabul ediyor -- yani menudeki 7 ogeden
+   * 7'sinde 403 duvarina carpiyordu.
+   *
+   * pruneNav FAIL-CLOSED: capability yoksa oge SILINIR (disabled birakilmaz -- tiklanabilir
+   * bir tuzak biraktirmayiz). Tum ogeleri elenen grup, BASLIGIYLA BIRLIKTE yok olur.
+   */
+  const navGroups = useMemo(
+    () => pruneNav(PANEL_NAV, accessContextFromCapabilities(capabilities)),
+    [capabilities]
+  );
 
   const currentTenant =
     tenants.find((tenant) => tenant.tenantId === currentTenantId) ?? tenants[0];
@@ -152,32 +137,39 @@ function PanelShellInner({
 
           <nav className="mt-2 flex-1 space-y-4 overflow-y-auto px-2 pb-4">
             {navGroups.map((group) => (
-              <div key={group.title} className="space-y-1">
+              <div key={group.id} className="space-y-1">
                 {!collapsed ? (
                   <p className="px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--rs-muted)]">
-                    {group.title}
+                    {group.label}
                   </p>
                 ) : null}
                 {group.items.map((item) => {
-                  const active = isActiveRoute(pathname, item.href);
+                  const active = isActiveRoute(pathname, item.path);
+                  const Icon = item.icon;
+                  const badgeValue = resolveBadge(item.badge, pendingRequestCount);
+
                   return (
                     <Link
-                      key={item.href}
-                      href={item.href}
+                      key={item.id}
+                      href={item.path}
                       title={collapsed ? item.label : undefined}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition",
+                        // min-h-11 = 44px: dokunma hedefi. Panelin birincil cihazi resepsiyon tableti.
+                        "flex min-h-11 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition",
                         active
                           ? "bg-[var(--rs-accent)] text-white shadow-[var(--rs-shadow-button)]"
                           : "text-[var(--rs-muted)] hover:bg-[var(--rs-surface-muted)] hover:text-[var(--rs-ink)]",
                         collapsed && "justify-center"
                       )}
                     >
-                      <span className="truncate">{item.label}</span>
-                      {!collapsed && item.badge !== undefined ? (
+                      {Icon ? <Icon aria-hidden className="size-4 shrink-0" /> : null}
+                      {!collapsed ? (
+                        <span className="truncate">{item.label}</span>
+                      ) : null}
+                      {!collapsed && badgeValue !== null ? (
                         <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--rs-accent-soft)] px-1.5 text-[0.65rem] font-semibold text-[var(--rs-accent-strong)]">
-                          {item.badge}
+                          {badgeValue}
                         </span>
                       ) : null}
                     </Link>
@@ -232,21 +224,31 @@ function PanelShellInner({
             <nav className="mb-4 flex flex-col gap-1 rounded-[var(--rs-radius-lg)] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-2 shadow-[var(--rs-shadow-soft)] lg:hidden">
               {navGroups.flatMap((group) =>
                 group.items.map((item) => {
-                  const active = isActiveRoute(pathname, item.href);
+                  const active = isActiveRoute(pathname, item.path);
+                  const Icon = item.icon;
+                  const badgeValue = resolveBadge(item.badge, pendingRequestCount);
+
                   return (
                     <Link
-                      key={item.href}
-                      href={item.href}
+                      key={item.id}
+                      href={item.path}
                       onClick={() => setMobileOpen(false)}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "rounded-full px-3 py-2 text-sm font-medium",
+                        // min-h-11 = 44px dokunma hedefi
+                        "flex min-h-11 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium",
                         active
                           ? "bg-[var(--rs-accent)] text-white"
                           : "text-[var(--rs-muted)]"
                       )}
                     >
-                      {item.label}
+                      {Icon ? <Icon aria-hidden className="size-4 shrink-0" /> : null}
+                      <span className="truncate">{item.label}</span>
+                      {badgeValue !== null ? (
+                        <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--rs-accent-soft)] px-1.5 text-[0.65rem] font-semibold text-[var(--rs-accent-strong)]">
+                          {badgeValue}
+                        </span>
+                      ) : null}
                     </Link>
                   );
                 })
@@ -355,4 +357,21 @@ function isActiveRoute(pathname: string, href: string): boolean {
     return pathname === href;
   }
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * Manifestteki rozet ANAHTARINI gercek sayiya cevirir.
+ *
+ * Manifest bir VERI dosyasidir; icinde canli sayi tasimaz. Sayiyi kabuk saglar.
+ * Sifir veya tanimsizsa rozet HIC cizilmez ("0" rozeti gurultudur).
+ */
+function resolveBadge(
+  badge: "pendingRequests" | undefined,
+  pendingRequestCount: number | undefined
+): number | null {
+  if (badge !== "pendingRequests") {
+    return null;
+  }
+
+  return pendingRequestCount && pendingRequestCount > 0 ? pendingRequestCount : null;
 }

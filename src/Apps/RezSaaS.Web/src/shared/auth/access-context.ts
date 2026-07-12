@@ -102,6 +102,34 @@ export function buildAccessContext(input: {
 }
 
 /**
+ * Yalnizca capability listesinden bir AccessContext uretir.
+ *
+ * Kabuk (PanelShell) icin: kabuk zaten auth ve tenant duvarinin ARKASINDA render ediliyor,
+ * elinde sadece aktif tenant'in capability listesi var. Menuyu budamak icin bu yeterli.
+ *
+ * FAIL-CLOSED: taninmayan capability elenir. Bos liste -> hicbir menu ogesi gorunmez
+ * (Staff'in durumu: backend bos dizi donuyor).
+ */
+export function accessContextFromCapabilities(
+  capabilities: readonly string[],
+  tenant?: { tenantId?: string; tenantDisplayName?: string; branchId?: string | null }
+): AccessContext {
+  return {
+    activeTenant: {
+      branchId: tenant?.branchId ?? null,
+      capabilities: new Set(capabilities.filter(isBusinessCapability)),
+      isTenantWide: !tenant?.branchId,
+      role: "",
+      tenantDisplayName: tenant?.tenantDisplayName ?? "İşletme",
+      tenantId: tenant?.tenantId ?? ""
+    },
+    isAuthenticated: true,
+    isPlatformAdmin: false,
+    stepUpSatisfied: false
+  };
+}
+
+/**
  * FAIL-CLOSED yetki sorgusu. Tek kapi.
  *
  * Bilinmeyen/eslesmeyen her durumda FALSE doner. "Emin degilsem hayir" -- cunku bir izni

@@ -82,6 +82,7 @@ export default async function PanelPage({ searchParams }: PanelPageProps) {
 
   return (
     <PanelShell
+      capabilities={tenant.capabilities ?? []}
       currentTenantId={tenant.tenantId}
       pendingRequestCount={pendingCount}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}
