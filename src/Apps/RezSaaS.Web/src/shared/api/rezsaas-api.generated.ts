@@ -2760,62 +2760,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/integrations/readiness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AdminIntegrationReadinessResponse"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Too Many Requests */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/operations/reconciliation": {
         parameters: {
             query?: never;
@@ -2839,62 +2783,6 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["AdminOperationsReconciliationResponse"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Too Many Requests */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/payments/readiness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AdminPaymentReadinessResponse"];
                     };
                 };
                 /** @description Unauthorized */
@@ -3200,54 +3088,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/business/branches/{branchId}/staff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ListBusinessStaff"];
-        put?: never;
-        post: operations["CreateBusinessStaff"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/business/branches/{branchId}/staff/{staffId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["GetBusinessStaff"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["UpdateBusinessStaff"];
-        trace?: never;
-    };
-    "/api/business/branches/{branchId}/staff/{staffId}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["ArchiveBusinessStaff"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/business/context": {
         parameters: {
             query?: never;
@@ -3264,7 +3104,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/business/resources/{resourceId}/blocks": {
+    "/api/business/resource-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessResourceTypes"];
+        put?: never;
+        post: operations["CreateBusinessResourceType"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/resource-types/{resourceTypeId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3273,7 +3129,199 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["CreateBusinessResourceBlock"];
+        post?: never;
+        delete: operations["DeleteBusinessResourceType"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessResources"];
+        put?: never;
+        post: operations["CreateBusinessResource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/resources/{resourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["RenameBusinessResource"];
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/resources/{resourceId}/out-of-service": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MarkBusinessResourceOutOfService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/resources/{resourceId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestoreBusinessResource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/reviews/{reviewId}/moderate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ModerateBusinessReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/variants/{variantId}/required-skills/{skillId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["AssignRequiredSkill"];
+        delete: operations["RemoveRequiredSkill"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListServiceVariants"];
+        put?: never;
+        post: operations["CreateServiceVariant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/variants/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetServiceVariant"];
+        put?: never;
+        post?: never;
+        delete: operations["DeleteServiceVariant"];
+        options?: never;
+        head?: never;
+        patch: operations["UpdateServiceVariant"];
+        trace?: never;
+    };
+    "/api/business/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessServices"];
+        put?: never;
+        post: operations["CreateBusinessService"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetBusinessService"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UpdateBusinessService"];
+        trace?: never;
+    };
+    "/api/business/services/{serviceId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ArchiveBusinessService"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3360,67 +3408,113 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/business/services": {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
-        get: operations["ListBusinessServices"];
+    "/api/business/branches/{branchId}/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessStaff"];
         put?: never;
-        post: operations["CreateBusinessService"];
+        post: operations["CreateBusinessStaff"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/business/services/{serviceId}": {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
-        get: operations["GetBusinessService"];
+    "/api/business/branches/{branchId}/staff/{staffId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetBusinessStaff"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["UpdateBusinessService"];
+        patch: operations["UpdateBusinessStaff"];
         trace?: never;
     };
-    "/api/business/services/{serviceId}/archive": {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
+    "/api/business/branches/{branchId}/staff/{staffId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get?: never;
         put?: never;
-        post: operations["ArchiveBusinessService"];
+        post: operations["ArchiveBusinessStaff"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/business/services/{serviceId}/variants": {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
-        get: operations["ListServiceVariants"];
+    "/api/business/staff/{staffMemberId}/unavailable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessStaffUnavailable"];
         put?: never;
-        post: operations["CreateServiceVariant"];
+        post: operations["CreateBusinessStaffUnavailable"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/business/services/{serviceId}/variants/{variantId}": {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
-        get: operations["GetServiceVariant"];
+    "/api/business/staff/{staffMemberId}/unavailable/{unavailableId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         put?: never;
         post?: never;
-        delete: operations["DeleteServiceVariant"];
+        delete: operations["DeleteBusinessStaffUnavailable"];
         options?: never;
         head?: never;
-        patch: operations["UpdateServiceVariant"];
+        patch?: never;
         trace?: never;
     };
-    "/api/business/services/{serviceId}/variants/{variantId}/required-skills/{skillId}": {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
-        get?: never;
+    "/api/business/branches/{branchId}/working-hours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBusinessWorkingHours"];
         put?: never;
-        post: operations["AssignRequiredSkill"];
-        delete: operations["RemoveRequiredSkill"];
+        post?: never;
+        delete: operations["ClearBusinessWorkingHours"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/business/branches/{branchId}/working-hours/{dayOfWeek}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["UpsertBusinessWorkingHours"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3484,6 +3578,22 @@ export interface paths {
         get: operations["GetCustomerAppointmentHistory"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customer/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CreateCustomerReview"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3964,7 +4074,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/public/businesses/{slug}": {
+    "/api/public/businesses/{slug}/reviews": {
         parameters: {
             query?: never;
             header?: never;
@@ -3973,7 +4083,10 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                };
                 header?: never;
                 path: {
                     slug: string;
@@ -3988,7 +4101,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PublicBusinessProfileView"];
+                        "application/json": components["schemas"]["PublicReviewSummaryResponse"];
                     };
                 };
                 /** @description Not Found */
@@ -4585,25 +4698,6 @@ export interface components {
         AdminControlPlaneErrorResponse: {
             errorCode?: string | null;
         };
-        AdminIntegrationReadinessResponse: {
-            /** Format: date-time */
-            evaluatedAtUtc?: string;
-            status?: string | null;
-            externalApiEnabled?: boolean;
-            webhookDeliveryEnabled?: boolean;
-            apiKeyHashStorageReady?: boolean;
-            webhookSigningSecretHashReady?: boolean;
-            storesRawSecrets?: boolean;
-            storesRawWebhookPayloads?: boolean;
-            /** Format: int32 */
-            activeApiClientCount?: number;
-            /** Format: int32 */
-            activeWebhookSubscriptionCount?: number;
-            /** Format: int32 */
-            pendingWebhookDeliveryCount?: number;
-            /** Format: int32 */
-            failedWebhookDeliveryCount?: number;
-        };
         AdminOperationsReconciliationResponse: {
             /** Format: date-time */
             evaluatedAtUtc?: string;
@@ -4623,22 +4717,6 @@ export interface components {
             callbackPendingNotificationIds?: string[] | null;
             notificationOverdueClosureCaseIds?: string[] | null;
             executionStalledClosureCaseIds?: string[] | null;
-        };
-        AdminPaymentReadinessResponse: {
-            /** Format: date-time */
-            evaluatedAtUtc?: string;
-            status?: string | null;
-            onlineCollectionEnabled?: boolean;
-            providerConfigured?: boolean;
-            hostedCheckoutOnly?: boolean;
-            storesRawCardData?: boolean;
-            webhookIdempotencyStorageReady?: boolean;
-            /** Format: int32 */
-            policyCount?: number;
-            /** Format: int32 */
-            openIntentCount?: number;
-            /** Format: int32 */
-            unprocessedWebhookEventCount?: number;
         };
         AdminReviewAbuseAppealRequest: {
             reason?: string | null;
@@ -4931,6 +5009,45 @@ export interface components {
             rebookReason?: string | null;
             lines?: components["schemas"]["BusinessAppointmentLineResponse"][] | null;
         };
+        BusinessBranchCreateRequest: {
+            slug?: string | null;
+            displayName?: string | null;
+            timeZoneId?: string | null;
+            city?: string | null;
+            district?: string | null;
+            addressLine?: string | null;
+        };
+        BusinessBranchErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessBranchResponse: {
+            /** Format: uuid */
+            id?: string;
+            slug?: string | null;
+            displayName?: string | null;
+            timeZoneId?: string | null;
+            city?: string | null;
+            district?: string | null;
+            addressLine?: string | null;
+            /** Format: int32 */
+            slotIntervalMinutes?: number | null;
+            /** Format: int32 */
+            maxPublicSlots?: number | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        BusinessBranchSlotSettingsRequest: {
+            /** Format: int32 */
+            slotIntervalMinutes?: number | null;
+            /** Format: int32 */
+            maxPublicSlots?: number | null;
+        };
+        BusinessBranchUpdateRequest: {
+            displayName?: string | null;
+            city?: string | null;
+            district?: string | null;
+            addressLine?: string | null;
+        };
         BusinessContextResponse: {
             tenants?: components["schemas"]["BusinessTenantContextResponse"][] | null;
         };
@@ -4954,44 +5071,102 @@ export interface components {
             seoDescription?: string | null;
             staffDisplayPolicy?: string | null;
         };
-        BusinessResourceBlockRequest: {
-            /** Format: date-time */
-            startUtc?: string;
-            /** Format: date-time */
-            endUtc?: string;
-            reason?: string | null;
+        BusinessResourceCreateRequest: {
+            /** Format: uuid */
+            resourceTypeId?: string;
+            displayName?: string | null;
         };
-        BusinessResourceBlockResponse: {
+        BusinessResourceErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessResourceRenameRequest: {
+            displayName?: string | null;
+        };
+        BusinessResourceResponse: {
             /** Format: uuid */
-            resourceBlockId?: string;
+            id?: string;
             /** Format: uuid */
-            resourceId?: string;
+            resourceTypeId?: string;
+            displayName?: string | null;
+            status?: string | null;
+        };
+        BusinessResourceTypeCreateRequest: {
+            key?: string | null;
+            displayName?: string | null;
+        };
+        BusinessResourceTypeErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessResourceTypeResponse: {
+            /** Format: uuid */
+            id?: string;
+            key?: string | null;
+            displayName?: string | null;
+        };
+        BusinessReviewModerateRequest: {
+            decision?: string | null;
+            moderationNote?: string | null;
+        };
+        BusinessReviewResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            businessId?: string;
             /** Format: uuid */
             branchId?: string;
+            /** Format: uuid */
+            appointmentId?: string;
+            /** Format: int32 */
+            rating?: number;
+            comment?: string | null;
+            status?: string | null;
             /** Format: date-time */
-            startUtc?: string;
+            createdAtUtc?: string;
             /** Format: date-time */
-            endUtc?: string;
-            reason?: string | null;
+            moderatedAtUtc?: string | null;
+            customerDisplayName?: string | null;
+            serviceNames?: string[] | null;
+        };
+        BusinessServiceCreateRequest: {
+            name?: string | null;
+            categoryKey?: string | null;
+        };
+        BusinessServiceErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessServiceResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            categoryKey?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        BusinessServiceUpdateRequest: {
+            name?: string | null;
+            categoryKey?: string | null;
         };
         BusinessSettingsErrorResponse: {
             errorCode?: string | null;
         };
-        BusinessBranchResponse: {
+        BusinessSkillCreateRequest: {
+            name?: string | null;
+        };
+        BusinessSkillErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessSkillResponse: {
             /** Format: uuid */
             id?: string;
-            slug?: string | null;
-            displayName?: string | null;
-            timeZoneId?: string | null;
-            city?: string | null;
-            district?: string | null;
-            addressLine?: string | null;
-            slotIntervalMinutes?: number | null;
-            maxPublicSlots?: number | null;
-            /** Format: date-time */
-            createdAtUtc?: string;
+            name?: string | null;
         };
-        BusinessBranchErrorResponse: {
+        BusinessStaffCreateRequest: {
+            displayName?: string | null;
+            /** Format: uuid */
+            userAccountId?: string | null;
+        };
+        BusinessStaffErrorResponse: {
             errorCode?: string | null;
         };
         BusinessStaffResponse: {
@@ -5006,45 +5181,33 @@ export interface components {
             /** Format: date-time */
             createdAtUtc?: string;
         };
-        BusinessStaffErrorResponse: {
-            errorCode?: string | null;
-        };
-        BusinessSkillResponse: {
+        BusinessStaffSkillAssignRequest: {
             /** Format: uuid */
-            id?: string;
-            name?: string | null;
+            skillId?: string;
         };
-        BusinessSkillErrorResponse: {
-            errorCode?: string | null;
-        };
-        BusinessServiceResponse: {
-            /** Format: uuid */
-            id?: string;
-            name?: string | null;
-            categoryKey?: string | null;
-            status?: string | null;
+        BusinessStaffUnavailableCreateRequest: {
             /** Format: date-time */
-            createdAtUtc?: string;
+            startUtc?: string;
+            /** Format: date-time */
+            endUtc?: string;
+            reason?: string | null;
         };
-        BusinessServiceErrorResponse: {
+        BusinessStaffUnavailableErrorResponse: {
             errorCode?: string | null;
         };
-        BusinessVariantResponse: {
+        BusinessStaffUnavailableResponse: {
             /** Format: uuid */
             id?: string;
             /** Format: uuid */
-            serviceId?: string;
-            name?: string | null;
-            durationMinutes?: number;
-            priceAmount?: number;
-            currencyCode?: string | null;
-            /** Format: uuid */
-            requiredResourceTypeId?: string | null;
+            staffMemberId?: string;
             /** Format: date-time */
-            createdAtUtc?: string;
+            startUtc?: string;
+            /** Format: date-time */
+            endUtc?: string;
+            reason?: string | null;
         };
-        BusinessVariantErrorResponse: {
-            errorCode?: string | null;
+        BusinessStaffUpdateRequest: {
+            displayName?: string | null;
         };
         BusinessTenantContextResponse: {
             /** Format: uuid */
@@ -5058,6 +5221,61 @@ export interface components {
             branchId?: string | null;
             isTenantWide?: boolean;
             capabilities?: string[] | null;
+        };
+        BusinessVariantCreateRequest: {
+            name?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: double */
+            priceAmount?: number;
+            currencyCode?: string | null;
+            /** Format: uuid */
+            requiredResourceTypeId?: string | null;
+        };
+        BusinessVariantErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessVariantResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            serviceId?: string;
+            name?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: double */
+            priceAmount?: number;
+            currencyCode?: string | null;
+            /** Format: uuid */
+            requiredResourceTypeId?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        BusinessVariantUpdateRequest: {
+            name?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number;
+            /** Format: double */
+            priceAmount?: number;
+            currencyCode?: string | null;
+            /** Format: uuid */
+            requiredResourceTypeId?: string | null;
+        };
+        BusinessWorkingHoursErrorResponse: {
+            errorCode?: string | null;
+        };
+        BusinessWorkingHoursResponse: {
+            /** Format: uuid */
+            id?: string;
+            dayOfWeek?: string | null;
+            opensAt?: string | null;
+            closesAt?: string | null;
+            isClosed?: boolean;
+        };
+        BusinessWorkingHoursUpsertRequest: {
+            opensAt?: string | null;
+            closesAt?: string | null;
+            isClosed?: boolean;
         };
         CustomerAbuseAppealResponse: {
             /** Format: uuid */
@@ -5138,6 +5356,36 @@ export interface components {
             /** Format: uuid */
             targetId?: string;
             statement?: string | null;
+        };
+        CustomerCreateReviewErrorResponse: {
+            errorCode?: string | null;
+        };
+        CustomerCreateReviewRequest: {
+            businessSlug?: string | null;
+            /** Format: uuid */
+            appointmentId?: string;
+            /** Format: int32 */
+            rating?: number;
+            comment?: string | null;
+        };
+        CustomerCreateReviewResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            businessId?: string;
+            /** Format: uuid */
+            branchId?: string;
+            /** Format: uuid */
+            appointmentId?: string;
+            /** Format: int32 */
+            rating?: number;
+            comment?: string | null;
+            status?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+            /** Format: date-time */
+            moderatedAtUtc?: string | null;
+            serviceNames?: string[] | null;
         };
         CustomerSanctionResponse: {
             /** Format: uuid */
@@ -5267,14 +5515,6 @@ export interface components {
             staffMembers?: components["schemas"]["PublicStaffMemberProfileResponse"][] | null;
             workingHours?: components["schemas"]["PublicBranchWorkingHoursProfileResponse"][] | null;
         };
-        PublicBusinessBranchView: {
-            slug?: string | null;
-            displayName?: string | null;
-            timeZoneId?: string | null;
-            city?: string | null;
-            district?: string | null;
-            addressLine?: string | null;
-        };
         PublicBusinessGalleryImageProfileResponse: {
             imageUrl?: string | null;
             altText?: string | null;
@@ -5301,19 +5541,31 @@ export interface components {
             branches?: components["schemas"]["PublicBusinessBranchProfileResponse"][] | null;
             services?: components["schemas"]["PublicServiceProfileResponse"][] | null;
         };
-        PublicBusinessProfileView: {
-            slug?: string | null;
-            displayName?: string | null;
-            categoryKey?: string | null;
-            description?: string | null;
-            branches?: components["schemas"]["PublicBusinessBranchView"][] | null;
-        };
         PublicBusinessSummaryView: {
+            /** Format: uuid */
+            tenantId?: string;
             slug?: string | null;
             displayName?: string | null;
             categoryKey?: string | null;
             city?: string | null;
             district?: string | null;
+        };
+        PublicReviewResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            rating?: number;
+            comment?: string | null;
+            customerDisplayName?: string | null;
+            /** Format: date-time */
+            createdAtUtc?: string;
+        };
+        PublicReviewSummaryResponse: {
+            /** Format: double */
+            averageRating?: number | null;
+            /** Format: int32 */
+            totalCount?: number;
+            reviews?: components["schemas"]["PublicReviewResponse"][] | null;
         };
         PublicServiceProfileResponse: {
             /** Format: uuid */
@@ -6382,32 +6634,28 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description OK */
             200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchResponse"][] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchResponse"][];
+                };
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    GetBusinessBranch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { branchId: string };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -6419,22 +6667,96 @@ export interface operations {
             cookie?: never;
         };
         requestBody: {
-            content: { "application/json": { slug: string; displayName: string; timeZoneId: string; city?: string; district?: string; addressLine?: string } };
+            content: {
+                "application/json": components["schemas"]["BusinessBranchCreateRequest"];
+            };
         };
         responses: {
+            /** @description Created */
             201: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchResponse"];
+                };
             };
+            /** @description Bad Request */
             400: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
             409: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
+            };
+        };
+    };
+    GetBusinessBranch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
             };
         };
     };
@@ -6442,26 +6764,57 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: { branchId: string };
+            path: {
+                branchId: string;
+            };
             cookie?: never;
         };
         requestBody: {
-            content: { "application/json": { displayName?: string; city?: string; district?: string; addressLine?: string } };
+            content: {
+                "application/json": components["schemas"]["BusinessBranchUpdateRequest"];
+            };
         };
         responses: {
+            /** @description OK */
             200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchResponse"];
+                };
             };
+            /** @description Bad Request */
             400: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
             404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
             };
         };
     };
@@ -6469,26 +6822,57 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: { branchId: string };
+            path: {
+                branchId: string;
+            };
             cookie?: never;
         };
         requestBody: {
-            content: { "application/json": { slotIntervalMinutes?: number | null; maxPublicSlots?: number | null } };
+            content: {
+                "application/json": components["schemas"]["BusinessBranchSlotSettingsRequest"];
+            };
         };
         responses: {
+            /** @description OK */
             200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchResponse"];
+                };
             };
+            /** @description Bad Request */
             400: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
             404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
             };
         };
     };
@@ -6496,373 +6880,45 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: { branchId: string };
+            path: {
+                branchId: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
+            /** @description OK */
             200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchResponse"];
+                };
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessBranchErrorResponse"] };
-            };
-        };
-    };
-    ListBusinessStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { branchId: string };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffResponse"][] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    GetBusinessStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { branchId: string; staffId: string };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
-            };
-        };
-    };
-    CreateBusinessStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { branchId: string };
-            cookie?: never;
-        };
-        requestBody: {
-            content: { "application/json": { displayName: string; userAccountId?: string | null } };
-        };
-        responses: {
-            201: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
-            };
-            400: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    UpdateBusinessStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { branchId: string; staffId: string };
-            cookie?: never;
-        };
-        requestBody: {
-            content: { "application/json": { displayName: string } };
-        };
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
-            };
-            400: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
-            };
-        };
-    };
-    ArchiveBusinessStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { branchId: string; staffId: string };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffResponse"] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessStaffErrorResponse"] };
-            };
-        };
-    };
-    ListBusinessSkills: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillResponse"][] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    CreateBusinessSkill: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: { "application/json": { name: string } };
-        };
-        responses: {
-            201: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillResponse"] };
-            };
-            400: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            409: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
-            };
-        };
-    };
-    DeleteBusinessSkill: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { skillId: string };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
-            };
-            409: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
-            };
-        };
-    };
-    AssignSkillToStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { staffMemberId: string };
-            cookie?: never;
-        };
-        requestBody: {
-            content: { "application/json": { skillId: string } };
-        };
-        responses: {
-            200: {
-                headers: { [name: string]: unknown };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
-            400: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
-            };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
+            /** @description Not Found */
             404: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessBranchErrorResponse"];
+                };
             };
-            409: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] };
-            };
-        };
-    };
-    RemoveSkillFromStaff: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: { staffMemberId: string; skillId: string };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content?: never };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessSkillErrorResponse"] } };
-        };
-    };
-    ListBusinessServices: {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"][] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    GetBusinessService: {
-        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-        };
-    };
-    CreateBusinessService: {
-        parameters: { query?: never; header?: never; path?: never; cookie?: never };
-        requestBody: { content: { "application/json": { name: string; categoryKey: string } } };
-        responses: {
-            201: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
-            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-        };
-    };
-    UpdateBusinessService: {
-        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
-        requestBody: { content: { "application/json": { name: string; categoryKey: string } } };
-        responses: {
-            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
-            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-        };
-    };
-    ArchiveBusinessService: {
-        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessServiceErrorResponse"] } };
-        };
-    };
-    ListServiceVariants: {
-        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"][] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-        };
-    };
-    GetServiceVariant: {
-        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string }; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-        };
-    };
-    CreateServiceVariant: {
-        parameters: { query?: never; header?: never; path: { serviceId: string }; cookie?: never };
-        requestBody: { content: { "application/json": { name: string; durationMinutes: number; priceAmount: number; currencyCode: string; requiredResourceTypeId?: string | null } } };
-        responses: {
-            201: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"] } };
-            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-        };
-    };
-    UpdateServiceVariant: {
-        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string }; cookie?: never };
-        requestBody: { content: { "application/json": { name: string; durationMinutes: number; priceAmount: number; currencyCode: string; requiredResourceTypeId?: string | null } } };
-        responses: {
-            200: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantResponse"] } };
-            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-        };
-    };
-    DeleteServiceVariant: {
-        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string }; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content?: never };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-        };
-    };
-    AssignRequiredSkill: {
-        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string; skillId: string }; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content?: never };
-            400: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-            409: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
-        };
-    };
-    RemoveRequiredSkill: {
-        parameters: { query?: never; header?: never; path: { serviceId: string; variantId: string; skillId: string }; cookie?: never };
-        requestBody?: never;
-        responses: {
-            200: { headers: { [name: string]: unknown }; content?: never };
-            401: { headers: { [name: string]: unknown }; content?: never };
-            403: { headers: { [name: string]: unknown }; content?: never };
-            404: { headers: { [name: string]: unknown }; content: { "application/json": components["schemas"]["BusinessVariantErrorResponse"] } };
         };
     };
     GetBusinessContext: {
@@ -6892,18 +6948,50 @@ export interface operations {
             };
         };
     };
-    CreateBusinessResourceBlock: {
+    ListBusinessResourceTypes: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                resourceId: string;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceTypeResponse"][];
+                };
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateBusinessResourceType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BusinessResourceBlockRequest"];
+                "application/json": components["schemas"]["BusinessResourceTypeCreateRequest"];
             };
         };
         responses: {
@@ -6913,7 +7001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BusinessResourceBlockResponse"];
+                    "application/json": components["schemas"]["BusinessResourceTypeResponse"];
                 };
             };
             /** @description Bad Request */
@@ -6922,7 +7010,52 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                    "application/json": components["schemas"]["BusinessResourceTypeErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceTypeErrorResponse"];
+                };
+            };
+        };
+    };
+    DeleteBusinessResourceType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resourceTypeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceTypeResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -6945,7 +7078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                    "application/json": components["schemas"]["BusinessResourceTypeErrorResponse"];
                 };
             };
             /** @description Conflict */
@@ -6954,16 +7087,971 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                    "application/json": components["schemas"]["BusinessResourceTypeErrorResponse"];
                 };
             };
-            /** @description Unprocessable Content */
-            422: {
+        };
+    };
+    ListBusinessResources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BusinessAppointmentErrorResponse"];
+                    "application/json": components["schemas"]["BusinessResourceResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateBusinessResource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessResourceCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RenameBusinessResource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+                resourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessResourceRenameRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceErrorResponse"];
+                };
+            };
+        };
+    };
+    MarkBusinessResourceOutOfService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+                resourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceErrorResponse"];
+                };
+            };
+        };
+    };
+    RestoreBusinessResource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+                resourceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessResourceErrorResponse"];
+                };
+            };
+        };
+    };
+    ListBusinessReviews: {
+        parameters: {
+            query: {
+                status?: string;
+                page: number;
+                pageSize: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ModerateBusinessReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessReviewModerateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessReviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AssignRequiredSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+                variantId: string;
+                skillId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RemoveRequiredSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+                variantId: string;
+                skillId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ListServiceVariants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateServiceVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessVariantCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+        };
+    };
+    GetServiceVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+        };
+    };
+    DeleteServiceVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+        };
+    };
+    UpdateServiceVariant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+                variantId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessVariantUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessVariantErrorResponse"];
+                };
+            };
+        };
+    };
+    ListBusinessServices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateBusinessService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessServiceCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
+                };
+            };
+        };
+    };
+    GetBusinessService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
+                };
+            };
+        };
+    };
+    UpdateBusinessService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessServiceUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
+                };
+            };
+        };
+    };
+    ArchiveBusinessService: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                serviceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessServiceErrorResponse"];
                 };
             };
         };
@@ -7091,6 +8179,762 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BusinessSettingsErrorResponse"];
                 };
+            };
+        };
+    };
+    ListBusinessSkills: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateBusinessSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessSkillCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+        };
+    };
+    DeleteBusinessSkill: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                skillId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+        };
+    };
+    AssignSkillToStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                staffMemberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessStaffSkillAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+        };
+    };
+    RemoveSkillFromStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                staffMemberId: string;
+                skillId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessSkillErrorResponse"];
+                };
+            };
+        };
+    };
+    ListBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessStaffCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GetBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+                staffId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffErrorResponse"];
+                };
+            };
+        };
+    };
+    UpdateBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+                staffId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessStaffUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffErrorResponse"];
+                };
+            };
+        };
+    };
+    ArchiveBusinessStaff: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+                staffId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffErrorResponse"];
+                };
+            };
+        };
+    };
+    ListBusinessStaffUnavailable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                staffMemberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffUnavailableResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CreateBusinessStaffUnavailable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                staffMemberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessStaffUnavailableCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffUnavailableResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffUnavailableErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffUnavailableErrorResponse"];
+                };
+            };
+        };
+    };
+    DeleteBusinessStaffUnavailable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                staffMemberId: string;
+                unavailableId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffUnavailableResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessStaffUnavailableErrorResponse"];
+                };
+            };
+        };
+    };
+    ListBusinessWorkingHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessWorkingHoursResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ClearBusinessWorkingHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessWorkingHoursResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UpsertBusinessWorkingHours: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branchId: string;
+                dayOfWeek: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessWorkingHoursUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessWorkingHoursResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessWorkingHoursErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -7376,6 +9220,62 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    CreateCustomerReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerCreateReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerCreateReviewResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerCreateReviewErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerCreateReviewErrorResponse"];
+                };
             };
         };
     };

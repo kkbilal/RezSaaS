@@ -19,16 +19,16 @@ export type AppointmentOperationKind =
   | "no-show"
   | "note"
   | "rebook"
-  | "resource-block";
+  | "notes";
 
 /** Ekranlardan gelen ham girdi: metin kutulari ve datetime-local degerleri SUBE saatindedir. */
 export type AppointmentOperationInput = {
   appointment: BusinessAppointment;
-  /** datetime-local degeri, SUBE saat diliminde. Yalnizca rebook / resource-block icin. */
+  /** datetime-local degeri, SUBE saat diliminde. Yalnizca rebook icin. */
   endLocalValue?: string;
   idempotencyKey: string;
   kind: AppointmentOperationKind;
-  /** datetime-local degeri, SUBE saat diliminde. Yalnizca rebook / resource-block icin. */
+  /** datetime-local degeri, SUBE saat diliminde. Yalnizca rebook icin. */
   startLocalValue?: string;
   tenantId: string | null;
   text: string;
@@ -116,13 +116,6 @@ export function prepareAppointmentOperation(
     };
   }
 
-  if (input.kind === "resource-block" && !input.appointment.resourceId) {
-    return {
-      ok: false,
-      message: "Kaynak bloklama için iç kaynak bilgisi doğrulanmalı."
-    };
-  }
-
   return {
     ok: true,
     request: {
@@ -192,21 +185,7 @@ export async function runAppointmentOperation(
                     params: headerParams
                   }
                 )
-              : request.kind === "resource-block"
-                ? await client.POST("/api/business/resources/{resourceId}/blocks", {
-                    body: {
-                      endUtc: request.endUtc!,
-                      reason: text,
-                      startUtc: request.startUtc!
-                    },
-                    params: {
-                      path: {
-                        // prepare() bu alanin dolu oldugunu dogruladi.
-                        resourceId: request.resourceId!
-                      }
-                    }
-                  })
-                : await client.POST(
+              : await client.POST(
                     "/api/business/appointments/{appointmentId}/notes",
                     {
                       body: { note: text || null },
@@ -236,16 +215,11 @@ export async function runAppointmentOperation(
 }
 
 export function operationNeedsReason(kind: AppointmentOperationKind) {
-  return (
-    kind === "cancel" ||
-    kind === "no-show" ||
-    kind === "rebook" ||
-    kind === "resource-block"
-  );
+  return kind === "cancel" || kind === "no-show" || kind === "rebook";
 }
 
 export function operationNeedsTimeRange(kind: AppointmentOperationKind) {
-  return kind === "rebook" || kind === "resource-block";
+  return kind === "rebook";
 }
 
 /** Yikici (geri alinamaz) operasyonlar: onay adimi ZORUNLU. */
@@ -331,18 +305,6 @@ export function getOperationDetails(kind: AppointmentOperationKind) {
     };
   }
 
-  if (kind === "resource-block") {
-    return {
-      helper:
-        "Bu işlem seçili iç kaynağı belirtilen şube saati aralığında kullanılamaz yapar. Public slot hesaplama bu bloğu kapasite engeli olarak görür.",
-      maxLength: 500,
-      placeholder: "Örn. Bakım / arıza / oda kullanılamıyor",
-      submitLabel: "Kaynağı blokla",
-      textareaLabel: "Blok sebebi",
-      title: "İç kaynağı blokla"
-    };
-  }
-
   return {
     helper:
       "Bu not yalnızca işletme operasyon yüzeyinde tutulur. Hassas veya gereksiz kişisel bilgi yazma.",
@@ -369,10 +331,6 @@ export function getOperationSuccessCopy(kind: AppointmentOperationKind) {
 
   if (kind === "rebook") {
     return "Randevu yeniden planlandı; yeni confirmed kayıt listeye yenilemeyle düşecek.";
-  }
-
-  if (kind === "resource-block") {
-    return "İç kaynak belirtilen aralıkta bloklandı.";
   }
 
   return "Randevu notu güncellendi.";
@@ -405,10 +363,6 @@ export function getOperationErrorCopy(
 
     if (kind === "rebook") {
       return "Yeni zaman aynı personel veya iç kaynak için çakışıyor olabilir.";
-    }
-
-    if (kind === "resource-block") {
-      return "Bu iç kaynak için aynı zaman aralığında mevcut bir blok var.";
     }
 
     return "Bu randevu artık aynı şekilde güncellenemiyor. Liste yenileniyor.";
