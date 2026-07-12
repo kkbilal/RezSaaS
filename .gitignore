@@ -43,3 +43,8 @@ schemas.txt
 git_status.txt
 *_output.txt
 
+# PowerShell'de tirnaksiz ">" yonlendirmesinden olusan kaza dosyalari
+# ornek: cmd > "$($found.Count)"  -> "$($found.Count)" adinda dosya yaratir
+$(*
+
+
