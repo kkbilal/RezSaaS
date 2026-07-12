@@ -5158,6 +5158,8 @@ export interface components {
             seoTitle?: string | null;
             seoDescription?: string | null;
             staffDisplayPolicy?: string | null;
+            /** Format: int32 */
+            cancellationCutoffHours?: number;
         };
         BusinessResourceCreateRequest: {
             /** Format: uuid */

@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import { getCustomerAppointmentHistory } from "@/features/customer/api/get-appointment-history";
-import { CustomerRequestsPage } from "@/features/customer/components/customer-requests-page";
-import { CustomerShell } from "@/features/customer/components/customer-shell";
-import { PrivateRouteState } from "@/features/session/components/private-route-state";
-import { requireSession } from "@/features/session/lib/guards";
+import { redirect } from "next/navigation";
 import { routes } from "@/shared/config/routes";
 
 export const dynamic = "force-dynamic";
@@ -12,43 +8,12 @@ export const metadata: Metadata = {
   robots: {
     index: false
   },
-  title: "Taleplerim"
+  title: "Randevularıma yönlendiriliyorsunuz"
 };
 
-export default async function CustomerRequestsRoute() {
-  const sessionState = await requireSession(routes.customer.requests);
-
-  if (sessionState.kind === "unavailable") {
-    return (
-      <PrivateRouteState
-        actionHref={routes.auth.login}
-        actionLabel="Giriş ekranına git"
-        description={`${sessionState.reason} Lütfen yeniden giriş yapmayı dene.`}
-        title="Oturum doğrulanamadı"
-      />
-    );
-  }
-
-  const history = await getCustomerAppointmentHistory();
-
-  if (history.kind === "unavailable") {
-    return (
-      <PrivateRouteState
-        actionHref={routes.public.discover}
-        actionLabel="Keşfe dön"
-        description={history.reason}
-        eyebrow="Taleplerim"
-        title="Rezervasyon geçmişi yüklenemedi"
-      />
-    );
-  }
-
-  return (
-    <CustomerShell
-      activeNav="requests"
-      sessionEmail={sessionState.session.account?.email ?? "Hesabım"}
-    >
-      <CustomerRequestsPage items={history.items} />
-    </CustomerShell>
-  );
+// ESKI LINKLER icin duruyor. Yon TERSINE cevrildi: gercek sayfa artik /hesabim/randevular.
+// "Talep" musterinin kelimesi degil -- URL'de de gorunmemeli. Yer imlenmis/paylasilmis eski
+// /hesabim/talepler linkleri kirilmasin diye sayfa dosyasi silinmedi, yonlendiriyor.
+export default function CustomerLegacyRequestsRoute() {
+  redirect(routes.customer.appointments);
 }

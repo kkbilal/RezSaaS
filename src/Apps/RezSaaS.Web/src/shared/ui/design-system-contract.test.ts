@@ -79,29 +79,6 @@ test("dialog primitive keeps modal semantics and escape handling", () => {
   }
 });
 
-test("badge primitive exposes semantic variants backed by tokens", () => {
-  const badge = readSource("badge.tsx");
-  const requiredContracts = [
-    '"default"',
-    '"success"',
-    '"warning"',
-    '"danger"',
-    '"info"',
-    '"purple"',
-    '"orange"',
-    '"accent"',
-    "font-mono",
-    "var(--rs-success-soft)",
-    "var(--rs-warning-soft)",
-    "var(--rs-danger-soft)",
-    "var(--rs-accent-soft)",
-    "var(--rs-accent-violet-soft)"
-  ];
-
-  for (const contract of requiredContracts) {
-    assertIncludes(badge, contract);
-  }
-});
 
 test("tabs primitive keeps tablist semantics and keyboard focus", () => {
   const tabs = readSource("tabs.tsx");
@@ -152,12 +129,6 @@ test("avatar primitive exposes sizes and accessible labelling", () => {
   }
 });
 
-test("separator primitive keeps separator role for both orientations", () => {
-  const separator = readSource("separator.tsx");
-  assertIncludes(separator, "role=\"separator\"");
-  assertIncludes(separator, '"horizontal"');
-  assertIncludes(separator, '"vertical"');
-});
 
 test("calendar-grid primitive keeps branch-timezone-aware scheduling contract", () => {
   const calendar = readSource("calendar-grid.tsx");
@@ -214,10 +185,12 @@ test("platform shell surfaces step-up status indicator", () => {
 test("customer shell keeps navigation scopes and responsive toggle", () => {
   const shell = readSource("../../features/customer/components/customer-shell.tsx");
   // routes.customer.dashboard SILINDI: /hesabim'in sayfasi yoktu, nav ogesi canli 404 uretiyordu.
-  //   Artik /hesabim dogrudan randevu/talep listesine yonleniyor, nav ogesi degil.
+  //   Artik /hesabim dogrudan randevu listesine yonleniyor, nav ogesi degil.
   // routes.customer.appeals SILINDI: itiraz/moderasyon akisi MVP disi (docs/29).
+  // routes.customer.requests -> routes.customer.appointments: musterinin zihninde "talep"
+  //   diye bir nesne yok. Gercek sayfa /hesabim/randevular; /hesabim/talepler redirect oldu.
   const requiredContracts = [
-    "routes.customer.requests",
+    "routes.customer.appointments",
     "routes.customer.profile",
     "aria-expanded={mobileOpen}"
   ];

@@ -34,8 +34,8 @@ export default async function CustomerAppealsRoute() {
   if (abuseOverview.kind === "unavailable") {
     return (
       <PrivateRouteState
-        actionHref={routes.customer.requests}
-        actionLabel="Taleplerime dön"
+        actionHref={routes.customer.appointments}
+        actionLabel="Randevularıma dön"
         description={abuseOverview.reason}
         eyebrow="İtirazlarım"
         title="İtiraz bilgileri yüklenemedi"

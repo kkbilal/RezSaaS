@@ -416,7 +416,9 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
               <p>{submitState.message}</p>
               {submitState.kind === "success" ? (
                 <Button asChild className="mt-4" variant="secondary">
-                  <Link href={routes.customer.requests}>Taleplerime git</Link>
+                  <Link href={routes.customer.appointments}>
+                    Randevularıma git
+                  </Link>
                 </Button>
               ) : null}
             </div>

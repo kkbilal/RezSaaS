@@ -9099,6 +9099,10 @@
           "staffDisplayPolicy": {
             "type": "string",
             "nullable": true
+          },
+          "cancellationCutoffHours": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

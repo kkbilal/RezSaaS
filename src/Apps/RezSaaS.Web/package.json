@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "generate:api": "openapi-typescript ../../../artifacts/openapi/rezsaas-api-v1.json --output src/shared/api/rezsaas-api.generated.ts",
     "start": "next start",
-    "test": "node --test --experimental-strip-types src/shared/lib/date-time.test.ts src/shared/lib/idempotency.test.ts src/shared/ui/design-system-contract.test.ts src/shared/config/routes.contract.test.ts src/shared/navigation/nav-manifest.test.ts src/features/public-discovery/lib/discovery-search.test.ts src/features/public-booking/lib/booking-draft.test.ts src/features/business/lib/business-request-conflicts.test.ts src/features/platform/lib/platform-action-policy.test.ts",
+    "test": "node --test --experimental-strip-types src/shared/lib/date-time.test.ts src/shared/lib/idempotency.test.ts src/shared/ui/design-system-contract.test.ts src/shared/config/routes.contract.test.ts src/shared/navigation/nav-manifest.test.ts src/features/public-discovery/lib/discovery-search.test.ts src/features/public-booking/lib/booking-draft.test.ts src/features/business/lib/business-request-conflicts.test.ts src/features/customer/lib/appointment-view.test.ts src/features/platform/lib/platform-action-policy.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

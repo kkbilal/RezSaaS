@@ -49,7 +49,7 @@ function routeForRole(target: RoleTarget): string {
     case "business":
       return routes.business.panel;
     case "customer":
-      return routes.customer.requests;
+      return routes.customer.appointments;
   }
 }
 

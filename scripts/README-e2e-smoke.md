@@ -103,25 +103,107 @@ Test gectiginde su zincirin **gercekten** calistigi kanitlanmis olur:
 17. **Randevu talebi** (`POST .../appointment-requests`, `Idempotency-Key` ile)
 18. **Onay** (`POST /api/business/appointment-requests/{id}/approve`)
 19. **Randevunun dogdugunun dogrulanmasi** (`GET /api/business/appointments`)
+20. **Musteri kendi randevusunu goruyor** (`GET /api/customer/appointment-history`)
+21. **[GUVENLIK] BASKA bir musteri o randevuyu iptal EDEMEZ** -> `404 APPOINTMENT_NOT_FOUND`
+    (403 **degil**: 403 randevunun var oldugunu sizdirirdi) + randevu **bozulmamis** kalir
+22. **[POLITIKA] Cutoff penceresinde iptal reddedilir** -> `409 APPOINTMENT_CANCEL_TOO_LATE`,
+    govdede `cancellationCutoffHours` **dolu**
+23. **Musteri KENDI randevusunu iptal eder** (`POST .../appointments/{id}/cancel`) -> `Cancelled`
+24. **[IDEMPOTENT]** ayni iptal tekrar cagrilir -> yine 200, **mukerrer etki yok**
+25. **Isletme takviminde de `Cancelled` gorunur**
+26. **[REGRESYON]** `appointment-history?status=` filtresi randevulara uygulaniyor mu
 
 Yani slot motorunun personel + kaynak + yetkinlik + calisma saati + zaman dilimi
-eslestirmesinin **gercekten** slot urettigi ve talebin randevuya donustugu kanitlanir.
+eslestirmesinin **gercekten** slot urettigi, talebin randevuya donustugu ve musterinin o
+randevuyu **yalnizca kendisinin** ve **yalnizca politika izin verdiginde** iptal edebildigi
+kanitlanir.
+
+**Iptal politikasi nasil test ediliyor (kurulum secimi):** randevu ~**3 gun (72 saat)**
+ileride secilir. Adim 29'da isletmenin `cancellationCutoffHours` degeri **168 saate**
+(7 gun = `Business.MaxCancellationCutoffHours`) cekilir -> randevu **kesinlikle** pencerenin
+icine duser -> iptal reddedilmeli. Sonra deger **0**'a (kural yok) geri cekilip gercek iptal
+yapilir. Boylece ne randevuyu gecmise cekmek ne de sunucu saatini oynatmak gerekir; kural
+tamamen **urun akisi uzerinden** (`PATCH /api/business/settings/profile`) sinanir.
 
 ---
 
-## 3.1 Bulunan hatalar (canli API'ye karsi kosuldu — 24/25 gecti)
+## 3.1 Bulunan hatalar (canli API'ye karsi kosuldu — **35/36 gecti**)
 
-Test **gercek API'ye karsi kosuldu** ve **iki gercek urun hatasi** buldu. Cekirdek dongu
-(talep -> onay -> **RANDEVU**) **calisiyor**: 39 slot dondu, talep olustu, onaylandi,
-randevu `status=Confirmed` olarak dogdu.
+Test **gercek API'ye karsi kosuldu**. Cekirdek dongu (talep -> onay -> **RANDEVU** ->
+**musteri iptali**) **calisiyor**: 39 slot dondu, talep olustu, onaylandi, randevu
+`status=Confirmed` olarak dogdu, musteri onu iptal etti, iki taraf da `Cancelled` gordu.
 
-### Hata 1 — `Business` kaydini kimse olusturmuyor (LANSMAN BLOKAJI)
+**Hata 1 ve Hata 2 DUZELTILDI** (commit `f757cee` ve `adcbd96`); ilgili adimlar artik
+birer **regresyon testi**. **Hata 3 ACIK** — adim 36 onu yakaliyor ve test `exit 1` doner.
 
-Detay icin bkz. bolum 4. Ozet: tenant acildiktan sonra owner **sube bile acamiyor**
+### Hata 3 (ACIK) — `appointment-history?status=` randevu statuslerini **kabul etmiyor**
+
+**Yer:** `src/Apps/RezSaaS.Api/Customer/CustomerAppointmentHistoryComposer.cs:47`
+
+```csharp
+if (!AppointmentRequestStatusFilter.IsValidOrEmpty(status))   // -> 400
+```
+
+Bu kapi `status`'u **`AppointmentRequestStatus`** enum'una gore dogruluyor
+(`PendingApproval|Approved|Declined|Expired|Superseded|CancelledByCustomer`). Ama ayni
+`status` degeri, `ConfirmedAppointmentQueryService.GetOwnAsync` icinde
+(`src/Modules/RezSaaS.Modules.Booking/Application/ConfirmedAppointmentQueryService.cs:75`)
+**`AppointmentStatus`** olarak parse ediliyor
+(`Confirmed|Cancelled|Completed|NoShow|Rebooked`).
+
+**Iki enum'un KESISIMI BOS.** Sonuc:
+
+| `?status=` | Sonuc |
+|---|---|
+| `Confirmed`, `Cancelled`, `Completed`, `NoShow`, `Rebooked` | **400** `CUSTOMER_APPOINTMENT_HISTORY_INVALID_STATUS` — kapiyi gecemez |
+| `PendingApproval`, `Approved`, `Declined`, `Expired`, `Superseded`, `CancelledByCustomer` | 200, ama randevu sorgusu bu degeri taniyamaz -> **fail-closed BOS liste** |
+
+Yani **hangi degeri verirseniz verin, randevular gecmiste GORUNMEZ.** `c7c9245`'te eklenen
+"status artik randevulara da uygulaniyor" duzeltmesi **ULASILAMAZ** durumda: filtreyi
+gercekten calistiracak degerler 400'e takiliyor, 400'u gecen degerler ise randevu listesini
+her zaman bosaltiyor.
+
+**Yan etki:** `?status=Approved`'da, randevuya donusmus TALEP tekrar ortaya cikiyor
+(`talep=1 ['Approved']`) — cunku "randevusu olan talebi gizle" dedup'i
+(`CustomerAppointmentHistoryComposer.cs:93`) **randevu listesinden** besleniyor ve o liste
+filtre altinda bos. Filtresiz cagride ayni talep dogru sekilde gizleniyor.
+
+**Etkisi:** `/hesabim` sekmelerinde musteri **hicbir filtrede randevusunu goremez**;
+"Gecmis randevularim" / "Iptal ettiklerim" gibi her sekme ya 400 ya da bos doner.
+
+**Onerilen duzeltme:** ucun `status`'u **her iki enum'un birlesimine** gore dogrulamasi
+(ya da talep/randevu icin ayri parametreler); iki sorgu servisi taninmayan degeri zaten
+kendi icinde bos liste donerek ele aliyor.
+
+### Hata 4 (ACIK, dusuk siddet) — iptal politikasi **geri okunamiyor** (write-only)
+
+**Yer:** `src/Apps/RezSaaS.Api/Business/BusinessSettingsComposer.cs:127` (`ToResponse`)
+
+`BusinessProfileSettingsView` **`CancellationCutoffHours`'u tasiyor**, ama
+`BusinessProfileSettingsResponse` (`BusinessProfileSettingsRequest.cs` yanindaki record)
+bu alani **icermiyor** — `ToResponse` onu haritalamiyor. Yani:
+
+- `GET /api/business/settings/profile` iptal politikasini **dondurmuyor**.
+- `PATCH .../profile` de guncellenmis degeri **dondurmuyor**.
+- Alan `PATCH` ile **yazilabiliyor** ama **hicbir sekilde okunamiyor**.
+
+Isletme "iptal politikam kac saat?" sorusunu API'den **yanitlayamaz**; `PATCH`'in
+"davranisi PUT" oldugu bir ucta, istemcinin GET->PATCH turu (round-trip) yapmasi imkansiz.
+(Alan nullable oldugu icin veri kaybi olmuyor — bu yuzden dusuk siddet.) Web formu
+(`business-profile-settings-form.tsx`) alani hic bilmiyor: **UI'dan da ayarlanamiyor.**
+
+> Bu yuzden adim 29-31 politikayi **davranissal** dogruluyor: `PATCH` sonrasi degeri geri
+> okuyamadigimiz icin, 409 `APPOINTMENT_CANCEL_TOO_LATE` yanitindaki
+> `cancellationCutoffHours=168` alanina bakiyoruz.
+
+### Hata 1 (DUZELTILDI) — `Business` kaydini kimse olusturmuyor (LANSMAN BLOKAJI)
+
+Detay icin bkz. bolum 4. Ozet: tenant acildiktan sonra owner **sube bile acamiyordu**
 (`BUSINESS_NOT_FOUND`), cunku `Organization.Business` kaydini olusturan **hicbir uretim
-kod yolu yok**. `--seed-business` bunu gecici olarak asar.
+kod yolu yoktu**. Artik `POST /api/admin/tenants` Business'i da olusturuyor; adim 11 bunun
+regresyon testi.
 
-### Hata 2 — `GET /api/business/appointments` parametresiz cagrida **500** veriyor
+### Hata 2 (DUZELTILDI) — `GET /api/business/appointments` parametresiz cagrida **500** veriyordu
 
 **Yer:** `src/Apps/RezSaaS.Api/Business/BusinessAppointmentComposer.cs:78`
 

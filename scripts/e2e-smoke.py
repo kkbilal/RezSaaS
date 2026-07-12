@@ -8,6 +8,9 @@ Urunun cekirdek dongusunu GERCEK bir API'ye karsi bastan sona kosturur:
     (sube, calisma saati, kaynak, personel, yetkinlik, hizmet, varyant)
     -> musteri kaydi -> slot arama -> randevu TALEBI -> salon ONAYI
     -> RANDEVU dogar -> dogrulanir
+    -> musteri randevusunu GORUR -> BASKASI iptal EDEMEZ (404) -> iptal politikasi
+       penceresinde iptal REDDEDILIR (409) -> musteri KENDI randevusunu IPTAL EDER
+    -> iptal idempotenttir -> hem musteri hem isletme "Cancelled" gorur
 
 Bagimlilik YOK: sadece Python 3 standart kutuphanesi (urllib + hmac/hashlib/base64).
 
@@ -63,12 +66,16 @@ DEFAULT_ADMIN_EMAIL = "e2e-smoke-admin@rezsaas.test"
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Identity:AuthenticationWindowMinutes = 1 (IP basina dakikada 10 kimlik istegi).
+# 429 yiyen kimlik cagrilarinda pencerenin kapanmasini bu kadar bekleriz.
+RATE_LIMIT_WINDOW_SECONDS = 62
+
 
 # --------------------------------------------------------------------------------------
 # Cikti yardimcilari
 # --------------------------------------------------------------------------------------
 
-TOTAL_STEPS = 25
+TOTAL_STEPS = 36
 
 
 class Reporter:
@@ -168,7 +175,17 @@ class Session:
         query: dict[str, object] | None = None,
         headers: dict[str, str] | None = None,
         expect: tuple[int, ...] = (200, 201, 204),
+        retry_on_rate_limit: int = 0,
     ) -> tuple[int, object]:
+        """
+        retry_on_rate_limit: beklenmeyen 429'da kac kez bekleyip yeniden denesin.
+
+        Identity:AuthenticationPermitLimit = IP basina DAKIKADA 10 istek. Bu kosum tek
+        akista ~8 kimlik cagrisi yapiyor (admin/owner/customer/intruder icin register+login),
+        yani art arda kosuldugunda tavana CARPIYOR. 429 URUN HATASI DEGIL -- kasitli bir
+        koruma. Bu yuzden kimlik cagrilarinda pencereyi bekleyip TEKRAR deniyoruz.
+        Beklemeyi SESSIZCE yapmiyoruz: ekrana yaziyoruz ki gecikme gizli kalmasin.
+        """
         url = self.base_url + path
         if query:
             clean = {k: str(v) for k, v in query.items() if v is not None}
@@ -190,6 +207,7 @@ class Session:
             req_headers.update(headers)
 
         req = urllib.request.Request(url, data=data, method=method, headers=req_headers)
+        retry_after: str | None = None
 
         try:
             with self.opener.open(req, timeout=30) as response:
@@ -198,10 +216,28 @@ class Session:
         except urllib.error.HTTPError as error:
             status = error.code
             raw = error.read().decode("utf-8", errors="replace")
+            retry_after = error.headers.get("Retry-After")
         except urllib.error.URLError as error:
             raise StepFailed(
                 f"API'ye baglanilamadi ({url}): {error.reason}. API kosuyor mu?"
             ) from error
+
+        if status == 429 and status not in expect and retry_on_rate_limit > 0:
+            delay = RATE_LIMIT_WINDOW_SECONDS
+            if retry_after and retry_after.strip().isdigit():
+                delay = int(retry_after.strip()) + 2
+            print(f"\n      (HTTP 429 hiz siniri -- {delay}sn beklenip yeniden denenecek) ", end="")
+            sys.stdout.flush()
+            time.sleep(delay)
+            return self.request(
+                method,
+                path,
+                body=body,
+                query=query,
+                headers=headers,
+                expect=expect,
+                retry_on_rate_limit=retry_on_rate_limit - 1,
+            )
 
         payload: object
         try:
@@ -222,6 +258,9 @@ class Session:
 
     def put(self, path: str, body: object | None = None, **kwargs) -> tuple[int, object]:
         return self.request("PUT", path, body=body, **kwargs)
+
+    def patch(self, path: str, body: object | None = None, **kwargs) -> tuple[int, object]:
+        return self.request("PATCH", path, body=body, **kwargs)
 
 
 def _short(raw: str, limit: int = 600) -> str:
@@ -384,6 +423,8 @@ def run(
 
     owner_email = f"owner+{tag}@rezsaas.test"
     customer_email = f"customer+{tag}@rezsaas.test"
+    # Sahiplik kontrolunu sinayan IKINCI musteri (adim 27): randevu ONUN DEGIL.
+    attacker_email = f"intruder+{tag}@rezsaas.test"
     tenant_slug = f"salon-{tag}"
     branch_slug = f"merkez-{tag}"
     business_slug = tenant_slug  # seed edilen Business ayni slug'i kullanir
@@ -425,7 +466,11 @@ def run(
 
     def try_login() -> tuple[int, object]:
         return admin.post(
-            "/api/auth/login", login_body, query={"useCookies": "true"}, expect=(200, 401)
+            "/api/auth/login",
+            login_body,
+            query={"useCookies": "true"},
+            expect=(200, 401),
+            retry_on_rate_limit=2,
         )
 
     REPORT.start("Platform admin hazir (gerekirse bootstrap)")
@@ -492,7 +537,11 @@ def run(
             return False
         login_body["twoFactorCode"] = totp_fresh(saved_secret)
         admin.post(
-            "/api/auth/login", login_body, query={"useCookies": "true"}, expect=(200,)
+            "/api/auth/login",
+            login_body,
+            query={"useCookies": "true"},
+            expect=(200,),
+            retry_on_rate_limit=2,
         )
         REPORT.ok("HTTP 200 (TOTP ile), cookie alindi")
     else:
@@ -556,6 +605,7 @@ def run(
         "/api/auth/register",
         {"email": owner_email, "password": PASSWORD},
         expect=(200,),
+        retry_on_rate_limit=2,
     )
     REPORT.ok(owner_email)
 
@@ -566,6 +616,7 @@ def run(
         {"email": owner_email, "password": PASSWORD},
         query={"useCookies": "true"},
         expect=(200,),
+        retry_on_rate_limit=2,
     )
     _, payload = owner.get("/api/session/bootstrap", expect=(200,))
     owner_user_id = payload["account"]["userAccountId"]
@@ -731,6 +782,7 @@ def run(
         "/api/auth/register",
         {"email": customer_email, "password": PASSWORD},
         expect=(200,),
+        retry_on_rate_limit=2,
     )
     # E-POSTA DOGRULAMA TUZAGI: Identity:RequireConfirmedEmail=true + DeliveryMode=Unconfigured
     # olsaydi musteri e-postasini DOGRULAYAMAZ ve buraya kadar bile gelemezdi.
@@ -741,6 +793,7 @@ def run(
             {"email": customer_email, "password": PASSWORD},
             query={"useCookies": "true"},
             expect=(200,),
+            retry_on_rate_limit=2,
         )
     except ApiError as error:
         REPORT.fail(
@@ -873,6 +926,330 @@ def run(
         )
         return False
     REPORT.ok(f"HTTP 200 ({len(payload.get('appointments') or [])} randevu)")
+
+    # ==================================================================================
+    # MUSTERI IPTALI (adim 26-36)
+    #
+    # Buraya kadar: randevu DOGDU. Simdi urunun ikinci yarisi: musteri onu IPTAL
+    # edebiliyor mu, ve iptal EDEMEMESI gereken durumlarda GERCEKTEN engelleniyor mu?
+    # ==================================================================================
+
+    def cancel_appointment(
+        session: Session,
+        idempotency_key: str,
+        expect: tuple[int, ...] = (200, 400, 401, 403, 404, 409, 422),
+    ) -> tuple[int, object]:
+        """POST .../appointments/{id}/cancel -- govde YOK, Idempotency-Key destekli."""
+        return session.request(
+            "POST",
+            f"/api/public/businesses/{business_slug}/appointments/{appointment_id}/cancel",
+            headers={"Idempotency-Key": idempotency_key},
+            expect=expect,
+        )
+
+    def history_items(
+        session: Session,
+        status_filter: str | None = None,
+        expect: tuple[int, ...] = (200,),
+    ) -> tuple[int, object, list[dict]]:
+        code, body = session.get(
+            "/api/customer/appointment-history",
+            query={"status": status_filter} if status_filter else None,
+            expect=expect,
+        )
+        items = body.get("items") if isinstance(body, dict) else None
+        return code, body, list(items or [])
+
+    def find_appointment(items: list[dict]) -> dict | None:
+        return next(
+            (
+                item
+                for item in items
+                if item.get("appointmentId") == appointment_id
+                and item.get("itemType") == "Appointment"
+            ),
+            None,
+        )
+
+    def owner_appointments() -> list[dict]:
+        """Randevuyu ISLETME gozunden oku -- musterinin yanitina GUVENMIYORUZ."""
+        moment = datetime.now(timezone.utc)
+        _, body = owner.get(
+            "/api/business/appointments",
+            query={
+                "fromUtc": (moment - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "toUtc": (moment + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            },
+            expect=(200,),
+        )
+        return [
+            row
+            for row in (body.get("appointments") or [])
+            if row.get("appointmentId") == appointment_id
+        ]
+
+    def patch_cutoff(hours: int) -> None:
+        """
+        Isletmenin iptal politikasini degistirir.
+
+        DIKKAT: /api/business/settings/profile "PATCH ama davranisi PUT" -- displayName ve
+        staffDisplayPolicy gelmezse dogrulama duser (BUSINESS_PROFILE_SETTINGS_INVALID_REQUEST).
+        Bu yuzden ONCE GET ile mevcut profili okuyup TUM alanlari geri gonderiyoruz.
+        """
+        _, current = owner.get("/api/business/settings/profile", expect=(200,))
+        if not isinstance(current, dict):
+            raise StepFailed(f"GET settings/profile beklenmeyen yanit: {current}")
+        owner.patch(
+            "/api/business/settings/profile",
+            {
+                "displayName": current.get("displayName"),
+                "description": current.get("description") or "",
+                "publicRules": current.get("publicRules") or "",
+                "seoTitle": current.get("seoTitle") or "",
+                "seoDescription": current.get("seoDescription") or "",
+                "staffDisplayPolicy": current.get("staffDisplayPolicy") or "ShowNames",
+                "cancellationCutoffHours": hours,
+            },
+            expect=(200,),
+        )
+
+    # -- 26 --------------------------------------- (A) musteri KENDI randevusunu goruyor
+    REPORT.start("Musteri randevu gecmisinde randevu var mi")
+    _, _, items = history_items(customer)
+    mine = find_appointment(items)
+    if not mine:
+        REPORT.fail(
+            f"appointmentId={appointment_id} GET /api/customer/appointment-history icinde YOK "
+            f"({len(items)} kayit dondu) -- musteri KENDI randevusunu goremiyor."
+        )
+        return False
+    if mine.get("status") != "Confirmed":
+        REPORT.fail(f"status='{mine.get('status')}' -- 'Confirmed' bekleniyordu: {mine}")
+        return False
+    REPORT.ok(
+        f"itemType=Appointment status=Confirmed salon={mine.get('businessDisplayName')} "
+        f"({len(items)} kayit)"
+    )
+
+    # -- 27 ------------------------------------ (B) [GUVENLIK] BASKA musteri iptal EDEMEZ
+    # BU ADIM EN ONEMLISI: sahiplik kontrolu gercekten calisiyor mu?
+    # Beklenen 404 -- 403 DEGIL. 403 "bu randevu VAR ama senin degil" bilgisini SIZDIRIR.
+    REPORT.start("[GUVENLIK] Baska musteri randevuyu iptal EDEMEZ (404 bekleniyor)")
+    attacker = Session(api_url, "attacker")
+    attacker.post(
+        "/api/auth/register",
+        {"email": attacker_email, "password": PASSWORD},
+        expect=(200,),
+        retry_on_rate_limit=2,
+    )
+    attacker.post(
+        "/api/auth/login",
+        {"email": attacker_email, "password": PASSWORD},
+        query={"useCookies": "true"},
+        expect=(200,),
+        retry_on_rate_limit=2,
+    )
+    status, body = cancel_appointment(attacker, str(uuid.uuid4()))
+    error_code = body.get("errorCode") if isinstance(body, dict) else None
+    if status == 200:
+        REPORT.fail(
+            "GUVENLIK ACIGI: HTTP 200 -- BASKA bir musteri bu randevuyu IPTAL ETTI. "
+            f"Sahiplik kontrolu CALISMIYOR. Yanit: {body}"
+        )
+        return False
+    if status == 403:
+        REPORT.fail(
+            f"HTTP 403 ({error_code}) -- iptal engellendi AMA YANLIS kodla: 403, randevunun "
+            "VAR OLDUGUNU sizdirir (numaralandirma). Sozlesme: 404 APPOINTMENT_NOT_FOUND."
+        )
+        return False
+    if status != 404 or error_code != "APPOINTMENT_NOT_FOUND":
+        REPORT.fail(
+            f"HTTP {status} (errorCode={error_code}) -- 404 APPOINTMENT_NOT_FOUND "
+            f"bekleniyordu. Govde: {body}"
+        )
+        return False
+    REPORT.ok(f"HTTP 404 APPOINTMENT_NOT_FOUND ({attacker_email} reddedildi)")
+
+    # -- 28 ------------------------- (B2) saldiridan sonra randevu BOZULMAMIS olmali
+    REPORT.start("[GUVENLIK] Randevu saldiri sonrasi saglam (Confirmed)")
+    survivors = owner_appointments()
+    if not survivors:
+        REPORT.fail(f"appointmentId={appointment_id} isletme listesinden KAYBOLDU")
+        return False
+    if survivors[0].get("status") != "Confirmed":
+        REPORT.fail(
+            f"GUVENLIK ACIGI: 404 donuldu AMA randevunun statusu DEGISTI "
+            f"('{survivors[0].get('status')}') -- yan etki var."
+        )
+        return False
+    REPORT.ok("status=Confirmed (yan etki yok)")
+
+    # -- 29 ----------------------------- (C) iptal politikasi: cutoff'u 168 saate cikar
+    # KURULUM SECIMI (acikca): randevu ~3 GUN (72 saat) ileride. Cutoff'u 168 saat yaparsak
+    # (7 gun = Business.MaxCancellationCutoffHours) randevu KESINLIKLE pencerenin icine duser
+    # (now + 168sa > startUtc) -> iptal REDDEDILMELI. Boylece ne randevuyu gecmise cekmek ne
+    # de sunucu saatini oynatmak gerekir; kural API uzerinden, urun akisiyla test edilir.
+    REPORT.start("Iptal politikasi cutoff=168sa yapiliyor (owner)")
+    patch_cutoff(168)
+    REPORT.ok("cancellationCutoffHours=168 (randevu 72sa ileride -> pencere ICINDE)")
+
+    # -- 30 ------------------------------ (C2) pencere icindeki randevu IPTAL EDILEMEZ
+    REPORT.start("[POLITIKA] Cutoff penceresinde iptal reddediliyor (409 TOO_LATE)")
+    status, body = cancel_appointment(customer, str(uuid.uuid4()))
+    error_code = body.get("errorCode") if isinstance(body, dict) else None
+    if status == 200:
+        REPORT.fail(
+            "URUN HATASI: HTTP 200 -- iptal politikasi ZORLANMIYOR. cutoff=168sa iken "
+            f"randevu saatine 72 saat kala iptal edildi. Yanit: {body}"
+        )
+        return False
+    if status != 409 or error_code != "APPOINTMENT_CANCEL_TOO_LATE":
+        REPORT.fail(
+            f"HTTP {status} (errorCode={error_code}) -- 409 APPOINTMENT_CANCEL_TOO_LATE "
+            f"bekleniyordu. Govde: {body}"
+        )
+        return False
+    cutoff_hours = body.get("cancellationCutoffHours") if isinstance(body, dict) else None
+    if cutoff_hours != 168:
+        REPORT.fail(
+            f"409 dogru AMA cancellationCutoffHours={cutoff_hours!r} -- 168 bekleniyordu. "
+            "Bu alan bos gelirse UI 'neden iptal edemiyorum' sorusunu YANITLAYAMAZ. "
+            f"Govde: {body}"
+        )
+        return False
+    REPORT.ok("HTTP 409 APPOINTMENT_CANCEL_TOO_LATE, cancellationCutoffHours=168")
+
+    # -- 31 ------------------------------------- (C3) politikayi 0'a (kural yok) geri cek
+    REPORT.start("Iptal politikasi cutoff=0 (kural yok) yapiliyor")
+    patch_cutoff(0)
+    REPORT.ok("cancellationCutoffHours=0")
+
+    # -- 32 ------------------------------ (D) musteri KENDI randevusunu IPTAL EDEBILIYOR
+    REPORT.start("Musteri KENDI randevusunu iptal ediyor")
+    cancel_key = str(uuid.uuid4())  # adim 34'te AYNI anahtarla tekrar cagrilacak
+    status, body = cancel_appointment(customer, cancel_key)
+    if status != 200:
+        REPORT.fail(
+            f"HTTP {status} -- iptal BASARISIZ. Govde: {body}\n"
+            "      -> cutoff=0, randevu Confirmed ve cagiran musteri SAHIBI: iptal edilebilmeliydi."
+        )
+        return False
+    if body.get("status") != "Cancelled" or body.get("appointmentId") != appointment_id:
+        REPORT.fail(f"HTTP 200 AMA govde beklenmedik: {body}")
+        return False
+    REPORT.ok(f"HTTP 200 status=Cancelled appointmentId={appointment_id}")
+
+    # -- 33 ---------------------------- (D2) randevu gecmisinde artik Cancelled gorunuyor
+    REPORT.start("Musteri gecmisinde randevu Cancelled gorunuyor")
+    _, _, items = history_items(customer)
+    mine = find_appointment(items)
+    if not mine:
+        REPORT.fail(
+            f"appointmentId={appointment_id} gecmisten KAYBOLDU -- iptal SILME degildir, "
+            "musteri gecmisini gormeye devam etmeli."
+        )
+        return False
+    if mine.get("status") != "Cancelled":
+        REPORT.fail(f"status='{mine.get('status')}' -- 'Cancelled' bekleniyordu: {mine}")
+        return False
+    REPORT.ok("itemType=Appointment status=Cancelled")
+
+    # -- 34 -------------------------------------------------------- (E) IDEMPOTENT iptal
+    # Iki senaryo birden:
+    #   a) AYNI Idempotency-Key -> kayitli sonuc REPLAY edilir
+    #   b) YENI anahtar + zaten iptal edilmis randevu -> yine BASARILI (cift tiklama)
+    # Sonra MUKERRER ETKI olmadigini isletme listesinden dogruluyoruz.
+    REPORT.start("[IDEMPOTENT] Ayni iptal tekrar cagriliyor")
+    status, replay = cancel_appointment(customer, cancel_key)
+    if status != 200:
+        REPORT.fail(
+            f"AYNI Idempotency-Key ile tekrar -> HTTP {status} (200 bekleniyordu). "
+            f"Govde: {replay}"
+        )
+        return False
+    status, retry = cancel_appointment(customer, str(uuid.uuid4()))
+    if status != 200:
+        REPORT.fail(
+            f"YENI anahtar + zaten iptal edilmis randevu -> HTTP {status} (200 bekleniyordu; "
+            f"sozlesme: zaten iptal edilmis randevu icin de BASARILI doner). Govde: {retry}"
+        )
+        return False
+    if (
+        replay.get("appointmentId") != appointment_id
+        or retry.get("appointmentId") != appointment_id
+    ):
+        REPORT.fail(f"Idempotent cagrilar BASKA randevu dondu: replay={replay} retry={retry}")
+        return False
+    duplicates = owner_appointments()
+    if len(duplicates) != 1:
+        REPORT.fail(
+            f"MUKERRER ETKI: randevu isletme listesinde {len(duplicates)} kez var (1 bekleniyordu)"
+        )
+        return False
+    if duplicates[0].get("status") != "Cancelled":
+        REPORT.fail(f"Tekrar iptal sonrasi status bozuldu: {duplicates[0].get('status')}")
+        return False
+    REPORT.ok("iki tekrar cagri da HTTP 200; tek kayit, status=Cancelled (mukerrer etki yok)")
+
+    # -- 35 ---------------------------------- (F) isletme tarafinda da Cancelled gorunuyor
+    REPORT.start("Isletme takviminde randevu Cancelled gorunuyor")
+    business_rows = owner_appointments()
+    if not business_rows:
+        REPORT.fail(f"appointmentId={appointment_id} isletme listesinde YOK")
+        return False
+    if business_rows[0].get("status") != "Cancelled":
+        REPORT.fail(
+            f"ISLETME HALA '{business_rows[0].get('status')}' goruyor -- musteri iptal etti ama "
+            "salonun takvimi guncellenmedi. Salon bos yere bekler (no-show)."
+        )
+        return False
+    REPORT.ok("status=Cancelled (salon takvimi guncel)")
+
+    # -- 36 ------------ (G) [BUG FIX REGRESYONU] ?status filtresi RANDEVULARA da uygulaniyor
+    #
+    # Eskiden status YALNIZCA taleplere uygulaniyordu; randevulara HIC uygulanmiyordu
+    # -> ?status=X gonderilse bile TUM randevular donuyordu.
+    #
+    # DIKKAT -- IKI YONLU dogrulama sart:
+    #   G1: ?status=Confirmed -> iptal edilmis randevu GORUNMEMELI
+    #   G2: ?status=Cancelled -> iptal edilmis randevu GORUNMELI
+    # G1 TEK BASINA YETMEZ: filtre her status icin BOS liste donse bile G1 GECERDI.
+    # Ozelligin gercekten calistigini kanitlayan sey G2'dir.
+    REPORT.start("Regresyon: appointment-history ?status filtresi randevulara uygulaniyor")
+    status, body, confirmed_items = history_items(customer, "Confirmed", expect=(200, 400, 422))
+    if status != 200:
+        REPORT.fail(
+            f"GET /api/customer/appointment-history?status=Confirmed -> HTTP {status}: {body}\n"
+            "      -> URUN HATASI (ayrinti icin asagiya bakin): status,"
+            " AppointmentRequestStatus enum'una gore dogrulaniyor; 'Confirmed' bir RANDEVU"
+            " statusudur (AppointmentStatus) ve o kapidan GECEMEZ."
+        )
+        return False
+    if find_appointment(confirmed_items):
+        REPORT.fail(
+            "?status=Confirmed IPTAL EDILMIS randevuyu donuyor -- status filtresi randevulara "
+            "UYGULANMIYOR (eski bug geri geldi)."
+        )
+        return False
+    status, body, cancelled_items = history_items(customer, "Cancelled", expect=(200, 400, 422))
+    if status != 200:
+        REPORT.fail(
+            f"GET /api/customer/appointment-history?status=Cancelled -> HTTP {status}: {body}"
+        )
+        return False
+    cancelled = find_appointment(cancelled_items)
+    if not cancelled:
+        REPORT.fail(
+            "?status=Cancelled iptal edilmis randevuyu DONMUYOR. Filtre randevulara "
+            "'fail-closed' uygulaniyor olabilir (her status icin BOS liste) -- bu durumda "
+            "musteri iptal ettigi randevuyu HICBIR filtrede goremez."
+        )
+        return False
+    if cancelled.get("status") != "Cancelled":
+        REPORT.fail(f"?status=Cancelled YANLIS status dondu: {cancelled}")
+        return False
+    REPORT.ok("Confirmed'da YOK, Cancelled'da VAR -- filtre randevulara da uygulaniyor")
 
     return True
 

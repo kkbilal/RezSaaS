@@ -7,7 +7,7 @@ import { routes } from "@/shared/config/routes";
 import { cn } from "@/shared/lib/cn";
 import { Avatar } from "@/shared/ui/avatar";
 
-type CustomerNavValue = "dashboard" | "requests" | "appeals" | "profile";
+type CustomerNavValue = "dashboard" | "appointments" | "appeals" | "profile";
 
 type CustomerShellProps = {
   children: ReactNode;
@@ -21,7 +21,7 @@ type CustomerShellProps = {
 // "Itirazlar" SILINDI: moderasyon/itiraz akisi MVP disi (bkz. docs/29, Karar K1 kapsami).
 // Sayfa dosyasi duruyor ama menude gorunmuyor.
 const navItems: Array<{ href: string; label: string; value: CustomerNavValue }> = [
-  { href: routes.customer.requests, label: "Randevularım", value: "requests" },
+  { href: routes.customer.appointments, label: "Randevularım", value: "appointments" },
   { href: routes.customer.profile, label: "Profil", value: "profile" }
 ];
 
@@ -37,7 +37,7 @@ export function CustomerShell({
   const resolvedActive =
     activeNav ??
     navItems.find((item) => pathname === item.href)?.value ??
-    "requests";
+    "appointments";
 
   return (
     <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">

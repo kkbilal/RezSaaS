@@ -2081,6 +2081,67 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// REGRESYON: musteri gecmisi status filtresi IKI aggregate'in status'lerini de kabul eder.
+    /// </summary>
+    /// <remarks>
+    /// BULUNAN BUG (uctan uca duman testi ortaya cikardi -- derleyici goremezdi):
+    /// GET /api/customer/appointment-history TEK listede IKI aggregate donuyor ve bu ikisinin
+    /// status enum'larinin KESISIMI BOS:
+    ///     Talep   : PendingApproval, Approved, Declined, Expired, Superseded, CancelledByCustomer
+    ///     Randevu : Confirmed, Cancelled, Completed, NoShow, Rebooked
+    ///
+    /// Uc, status'u YALNIZCA talep enum'una gore doğruluyordu. Sonuc:
+    ///   ?status=Confirmed       -> 400 (randevu statusu reddediliyordu)
+    ///   ?status=PendingApproval -> 200 ama randevu sorgusu tanimadigi icin randevular BOS
+    /// Yani HANGI DEGERI VERIRSENIZ VERIN randevular gecmiste HIC GORUNMUYORDU.
+    ///
+    /// Iki enum da ayri ayri gecerliydi; hata BIRLESIMLERININ dusunulmemis olmasindaydi.
+    /// </remarks>
+    [Fact]
+    public void CustomerHistoryStatusFilterAcceptsBothAggregateStatuses()
+    {
+        // Talep statusleri
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("PendingApproval"));
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("Superseded"));
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("CancelledByCustomer"));
+
+        // Randevu statusleri -- BUNLAR 400 ILE REDDEDILIYORDU.
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("Confirmed"));
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("Cancelled"));
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("Completed"));
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("NoShow"));
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("Rebooked"));
+
+        // Bos/null = filtre yok
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty(null));
+        Assert.True(CustomerHistoryStatusFilter.IsValidOrEmpty("   "));
+
+        // Uydurma degerler HALA reddedilir (fail-closed korunuyor).
+        Assert.False(CustomerHistoryStatusFilter.IsValidOrEmpty("Uydurma"));
+        Assert.False(CustomerHistoryStatusFilter.IsValidOrEmpty("Onaylandi"));
+    }
+
+    /// <summary>
+    /// REGRESYON: iki status enum'unun kesisimi BOS olmali.
+    /// </summary>
+    /// <remarks>
+    /// Bu testin amaci filtreyi degil, VARSAYIMI korumak. Ileride biri iki enum'a ortak bir
+    /// deger eklerse (or. her ikisine de "Cancelled"), tek bir ?status degeri HEM talebi HEM
+    /// randevuyu eslestirir ve gecmis listesi ayni kaydi IKI KEZ gosterebilir. O gun bu test
+    /// kirilir ve mesele fark edilir.
+    /// </remarks>
+    [Fact]
+    public void AppointmentAndRequestStatusEnumsDoNotOverlap()
+    {
+        HashSet<string> requestStatuses = Enum.GetNames<AppointmentRequestStatus>().ToHashSet();
+        HashSet<string> appointmentStatuses = Enum.GetNames<AppointmentStatus>().ToHashSet();
+
+        requestStatuses.IntersectWith(appointmentStatuses);
+
+        Assert.Empty(requestStatuses);
+    }
+
+    /// <summary>
     /// LANSMAN BLOKAJI REGRESYONU: musteri KENDI onaylanmis randevusunu iptal edebilir.
     /// </summary>
     /// <remarks>

@@ -133,7 +133,8 @@ public sealed class BusinessSettingsComposer
             settings.PublicRules,
             settings.SeoTitle,
             settings.SeoDescription,
-            settings.StaffDisplayPolicy);
+            settings.StaffDisplayPolicy,
+            settings.CancellationCutoffHours);
     }
 
     private static bool TryGetUserAccountId(

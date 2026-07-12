@@ -187,7 +187,7 @@ export const CUSTOMER_NAV: readonly NavGroup[] = [
         icon: ClipboardList,
         id: "hesabim-randevular",
         label: "Randevularım",
-        path: routes.customer.requests,
+        path: routes.customer.appointments,
         permission: "auth"
       },
       {
@@ -260,8 +260,10 @@ export const HIDDEN_ROUTES: readonly NavNode[] = [
 
   // Musteri -- /hesabim randevu listesine yonlenen bir redirect.
   { hidden: true, id: "hesabim-kok", label: "Hesabım", path: routes.customer.dashboard, permission: "auth" },
-  // Eski linkler icin /hesabim/talepler'e yonlenen stub. Adim 3'te gercek sayfa olacak.
-  { hidden: true, id: "hesabim-randevular-stub", label: "Randevularım", path: "/hesabim/randevular", permission: "auth" },
+  // YON TERSINE CEVRILDI: gercek sayfa artik /hesabim/randevular. /hesabim/talepler
+  // yalnizca ESKI LINKLER icin oraya yonlenen bir redirect. Sayfa dosyasi durdugu icin
+  // izin tablosunda KAYITLI olmak zorunda (yoksa nav-manifest testi haklı olarak kirilir).
+  { hidden: true, id: "hesabim-talepler-stub", label: "Randevularım", path: "/hesabim/talepler", permission: "auth" },
   // Itiraz/moderasyon MVP disi: sayfa duruyor ama menude YOK. Yine de izin tablosunda olmali.
   { hidden: true, id: "hesabim-itirazlar", label: "İtirazlar", path: routes.customer.appeals, permission: "auth" },
 

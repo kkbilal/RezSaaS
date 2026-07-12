@@ -44,7 +44,14 @@ public sealed class CustomerAppointmentHistoryComposer
                 Unauthorized);
         }
 
-        if (!AppointmentRequestStatusFilter.IsValidOrEmpty(status))
+        // BUG FIX: burada AppointmentRequestStatusFilter kullaniliyordu -- yani yalnizca TALEP
+        // statuleri gecerli sayiliyordu. Bu uc TEK listede IKI aggregate donuyor ve iki status
+        // enum'unun KESISIMI BOS:
+        //   Talep    : PendingApproval, Approved, Declined, Expired, Superseded, CancelledByCustomer
+        //   Randevu  : Confirmed, Cancelled, Completed, NoShow, Rebooked
+        // Sonuc: ?status=Confirmed -> 400; ?status=PendingApproval -> 200 ama randevular BOS.
+        // Yani HANGI DEGERI VERIRSENIZ VERIN randevular gecmiste HIC GORUNMUYORDU.
+        if (!CustomerHistoryStatusFilter.IsValidOrEmpty(status))
         {
             return CustomerAppointmentHistoryResult.Failure(
                 CustomerAppointmentHistoryOutcome.BadRequest,

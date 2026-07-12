@@ -25,13 +25,16 @@ export const routes = {
   },
   customer: {
     appeals: "/hesabim/itirazlar",
+    // Musterinin BIRINCIL sayfasi. GET /api/customer/appointment-history hem talepleri
+    // hem randevulari doner; ekran bunlari "Yaklasan | Gecmis" olarak gosterir.
+    //
+    // "talepler" ANAHTARI KALDIRILDI: musterinin zihninde "talep" diye bir nesne yok --
+    // "randevu aldim, onay bekliyorum" var. Talep/randevu ayrimi artik bir ROZET, rota degil.
+    // /hesabim/talepler eski linkler icin buraya yonlenen bir redirect olarak duruyor
+    // (sayfasi var ama routes'ta anahtari yok; nav-manifest'te hidden kayitli).
+    appointments: "/hesabim/randevular",
     dashboard: "/hesabim",
-    profile: "/hesabim/profil",
-    // Musterinin TEK gercek listesi burasi: GET /api/customer/appointment-history
-    // hem talepleri hem randevulari birlikte donuyor (ItemType ile ayrisiyor).
-    // /hesabim/randevular sadece eski linkler icin buraya yonlenen bir stub.
-    // Adim 3'te bu sayfa "Randevularim" olarak yeniden adlandirilip sekmeli hale gelecek.
-    requests: "/hesabim/talepler"
+    profile: "/hesabim/profil"
   },
   platform: {
     abuse: "/platform/abuse",
