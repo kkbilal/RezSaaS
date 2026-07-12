@@ -97,7 +97,7 @@ export default async function BusinessWorkingHoursRoute({
             <CardTitle>Hazırlık durumu</CardTitle>
             <CardDescription>
               Şube çalışma saatleri, slot aralığı ve public slot ayarları Phase
-              5a backend endpoint'leriyle birlikte açılır. Şube saati halihazırda
+              5a backend endpoint&apos;leriyle birlikte açılır. Şube saati halihazırda
               her randevuda korunur.
             </CardDescription>
           </CardHeader>

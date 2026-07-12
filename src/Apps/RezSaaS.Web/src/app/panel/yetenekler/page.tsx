@@ -95,7 +95,7 @@ export default async function BusinessSkillsRoute({ searchParams }: Props) {
             <CardTitle>Hazırlık durumu</CardTitle>
             <CardDescription>
               Yetenek tanımlama ve personele atama akışları Phase 5a backend
-              endpoint'leriyle birlikte açılır.
+              endpoint&apos;leriyle birlikte açılır.
             </CardDescription>
           </CardHeader>
           <EmptyState

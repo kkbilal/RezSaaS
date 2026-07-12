@@ -97,7 +97,7 @@ export default async function BusinessResourceTypesRoute({
             <CardTitle>Hazırlık durumu</CardTitle>
             <CardDescription>
               Kaynak türü (chair, room, bed, station vb.) yönetimi Phase 5a
-              backend endpoint'leriyle birlikte açılır.
+              backend endpoint&apos;leriyle birlikte açılır.
             </CardDescription>
           </CardHeader>
           <EmptyState

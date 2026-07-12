@@ -95,7 +95,7 @@ export default async function BusinessStaffRoute({ searchParams }: Props) {
             <CardTitle>Hazırlık durumu</CardTitle>
             <CardDescription>
               Personel CRUD, yetkinlik atama ve müsaitlik yönetimi Phase 5a
-              backend endpoint'leriyle birlikte açılır.
+              backend endpoint&apos;leriyle birlikte açılır.
             </CardDescription>
           </CardHeader>
           <EmptyState

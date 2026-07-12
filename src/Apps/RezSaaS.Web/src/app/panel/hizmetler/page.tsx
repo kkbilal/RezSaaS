@@ -95,7 +95,7 @@ export default async function BusinessServicesRoute({ searchParams }: Props) {
             <CardTitle>Hazırlık durumu</CardTitle>
             <CardDescription>
               Hizmet ve varyant CRUD, fiyat/süre yönetimi ve gerekli yetkinlik
-              atama akışları Phase 5a backend endpoint'leriyle birlikte açılır.
+              atama akışları Phase 5a backend endpoint&apos;leriyle birlikte açılır.
             </CardDescription>
           </CardHeader>
           <EmptyState

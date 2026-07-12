@@ -95,7 +95,7 @@ export default async function BusinessResourcesRoute({ searchParams }: Props) {
             <CardTitle>Hazırlık durumu</CardTitle>
             <CardDescription>
               Kaynak (koltuk, oda, istasyon vb.) CRUD ve out-of-service akışları
-              Phase 5a backend endpoint'leriyle birlikte açılır. Kaynak ataması
+              Phase 5a backend endpoint&apos;leriyle birlikte açılır. Kaynak ataması
               müşteriye gösterilmez (AGENTS.md §5.4).
             </CardDescription>
           </CardHeader>
