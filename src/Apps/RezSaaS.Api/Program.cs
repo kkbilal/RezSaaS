@@ -8,6 +8,7 @@ using RezSaaS.Api.Customer;
 using RezSaaS.Api.PublicApi;
 using RezSaaS.Api.Session;
 using RezSaaS.BuildingBlocks.Modularity;
+using RezSaaS.BuildingBlocks.Persistence;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Admin;
 using RezSaaS.Modules.Availability;
@@ -76,6 +77,13 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddModules(modules, builder.Configuration);
+
+// Bekleyen migration'lari acilista uygular. AddModules'tan SONRA cagrilmali:
+// DbContext'ler servis koleksiyonu taranarak bulunuyor, once kaydedilmis olmalilar.
+// Coklu instance guvenli (session-level advisory lock). Kapatmak icin:
+// Database:AutoMigrateOnStartup = false
+builder.Services.AddDatabaseMigration(builder.Configuration);
+
 builder.Services.AddOptions<PublicSlotSearchOptions>()
     .Bind(builder.Configuration.GetSection(PublicSlotSearchOptions.SectionName))
     .Validate(

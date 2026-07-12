@@ -9,6 +9,9 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <!-- DatabaseMigrator icin: MigrateAsync / GetPendingMigrationsAsync / ExecuteSqlInterpolatedAsync
+         (advisory lock) hepsi Relational paketinde yasiyor. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
   </ItemGroup>
 
 </Project>
