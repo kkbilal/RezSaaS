@@ -691,7 +691,7 @@ Frontend bu uçlar olmadan ilerleyemez veya kullanıcıya yalan söyler. Önceli
 
 | # | İş | Tahmin | Neden |
 |---|---|---|---|
-| B1 | `StaffMember.Rename()` domain metodu + `StaffManagementService.UpdateAsync` içinde çağrılması | 0.5 gün | **Bugün 200 OK dönüp hiçbir şey yapmıyor.** Personel adı düzeltilemiyor → MVP'nin "elemanlarını yönetebilmesi" maddesi delik. |
+| ~~B1~~ | ~~`StaffMember.Rename()` domain metodu~~ **✅ YAPILDI** (commit `f6ca844`) — domain metodu + servis çağrısı + validasyon + audit düzeltmesi + 2 regresyon testi. | 0.5 gün | ~~Bugün 200 OK dönüp hiçbir şey yapmıyor.~~ |
 | B2 | `POST .../appointments/{id}/cancel` (müşteri iptali) — K2 | 2 gün | MVP'nin "müşteri de rezervasyonlarını yönetebilmesi" maddesi. |
 | B3 | `BusinessSettings.CancellationCutoffHours` — K4 | 1 gün | İptal politikası. B2 ile birlikte yapılmalı. |
 | B4 | `Branch.TimeZoneId` validasyonu + IANA normalizasyonu | 0.5 gün | "Istanbul" yazan salon **sonsuza dek 0 slot** döndürür (200 OK, hata yok) — sessizce lansman dışı kalır. |
@@ -699,6 +699,21 @@ Frontend bu uçlar olmadan ilerleyemez veya kullanıcıya yalan söyler. Önceli
 | B6 | `ConfigureApplicationCookie`: idle 8 saat, `SecurePolicy = Always` | 0.2 gün | Bugün 14 gün sliding, absolute timeout yok, `Secure=SameAsRequest`. Ortak/tezgah bilgisayarı riski. |
 | B7 | `Security:UnsafeRequestOrigins:AllowedOrigins` prod ortam değişkeni | — | **Deploy blokajı.** Boş kalırsa randevu oluşturma dahil her POST 403 döner. |
 | B8 | (Ertelenebilir) Personel arşivlemede aktif randevu kontrolü → 409 | 0.5 gün | Gelecek randevusu olan personel arşivlenip randevular sahipsiz kalıyor. |
+
+### B1 sırasında ortaya çıkan ve düzeltilen ek kırıklar
+
+Bunlar `main`'de duruyordu ve **her backend işini** bloke ediyordu:
+
+| Bulgu | Etki | Durum |
+|---|---|---|
+| `Microsoft.OpenApi 2.4.1` yüksek önem dereceli güvenlik açığı (GHSA-v5pm-xwqc-g5wc), `Swashbuckle 10.1.7`'den transitive | `TreatWarningsAsErrors` + NuGet audit → **`dotnet restore` başarısız**, CI kırmızı | ✅ Swashbuckle 10.2.3 (commit `766b997`) |
+| `PaymentsDbContext` model kayması: `PaymentPolicy`'ye iki alan eklenmiş, migration üretilmemiş. Modül `Program.cs`'te kapalı olduğu için EF context'i kuramıyor, migration **üretilemiyordu** bile. | **Phase1Core'un 31 testinin hepsi** fixture kurulumunda düşüyordu — main'de hiçbir entegrasyon testi koşmuyordu | ✅ Design-time factory + migration (commit `a1208d4`) |
+| `ReviewsDbContext` migration'ı elle yazılmış: `[Migration]` attribute'ü, Designer ve Snapshot **yok**. EF onu hiç görmüyordu (`No migrations were found`) → `reviews` şeması hiçbir ortamda oluşturulmamıştı. | Otomatik migration açılınca uygulama **hiç açılmazdı** | ✅ EF ile yeniden üretildi (commit `a1208d4`) |
+| Migration'lar elle uygulanıyordu; "şema eksik/geride" durumu sessizce oluşuyordu | Geliştiriciler arası DB ayrışması | ✅ Açılışta otomatik migration, advisory lock ile çok-instance güvenli (commit `516c95b`) |
+
+**Hâlâ açık (benim sokmadığım, ayrı ele alınacak):**
+- `ArchitectureTests`: `OrganizationModule` → `TenantManagement` modül sınırı ihlali (1 test kırık).
+- `IdentityIntegrationTests`: 55/57 kırık — test host'u `.env` yer tutucularını (`${REZSAAS_POSTGRES_PORT}`) çözemiyor. Ortam/test kurulumu sorunu.
 
 **Yapılmayacaklar (bilinçli):** anti-forgery token altyapısı (Origin doğrulama + SameSite=Lax zaten var),
 `date-fns-tz` (native `Intl` doğru çalışıyor), walk-in randevu (domain invariant'ı kırıyor, ~38 dosya),
