@@ -75,7 +75,21 @@ public sealed class BusinessAppointmentComposer
                 InvalidStatus);
         }
 
-        DateTimeOffset rangeStartUtc = fromUtc ?? DateTimeOffset.UtcNow.Date;
+        // DIKKAT -- burada `DateTimeOffset.UtcNow.Date` VARDI ve SUNUCU SAAT DILIMI UTC DEGILSE
+        // HER PARAMETRESIZ CAGRIYI 500'E DUSURUYORDU.
+        //
+        // Sebep: `.Date` bir DateTime (Kind = Unspecified) dondurur. Bunun DateTimeOffset'e
+        // ORTUK donusumu YEREL offset'i uygular -- Turkiye'de +03:00. Npgsql ise
+        // `timestamp with time zone` icin offset'in SIFIR olmasini sart kosar ve reddeder.
+        //
+        // CI UTC'de kostugu icin testlerden KACIYORDU; sadece Turkiye'deki bir sunucuda
+        // (yani uretimde) patliyordu. Frontend bu ucu fromUtc GONDERMEDEN cagiriyor
+        // (get-business-appointments.ts) -- yani /panel, /panel/randevular ve /panel/takvim
+        // randevulari HIC yukleyemiyordu.
+        //
+        // Dogrusu: gunun UTC baslangicini acikca sifir offset ile kur.
+        DateTimeOffset rangeStartUtc =
+            fromUtc ?? new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
         DateTimeOffset rangeEndUtc = toUtc ?? rangeStartUtc.AddDays(7);
 
         if (rangeEndUtc <= rangeStartUtc)
