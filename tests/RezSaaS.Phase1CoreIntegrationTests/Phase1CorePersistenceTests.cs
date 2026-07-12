@@ -2312,6 +2312,133 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         return value;
     }
 
+    /// <summary>
+    /// REGRESYON TESTI (B1): StaffManagementService.UpdateAsync personelin adini GERCEKTEN degistirir.
+    /// </summary>
+    /// <remarks>
+    /// Onceki hata: UpdateAsync entity'yi cekip DisplayName'i HIC UYGULAMADAN SaveChangesAsync
+    /// cagiriyordu. Istek 200 OK donuyor, servis "basarili" diyor, hatta
+    /// "organization.staff.updated" audit kaydi bile yaziliyordu -- ama isim degismiyordu.
+    /// StaffMember domain'inde Rename metodu HIC YOKTU (sadece Create + Archive).
+    ///
+    /// Bu yuzden test servisin DONUS DEGERINE GUVENMEZ (eski kod da "basarili" donuyordu);
+    /// veritabanindan YENIDEN OKUYARAK dogrular.
+    /// </remarks>
+    [Fact]
+    public async Task StaffUpdatePersistsTheNewDisplayName()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        await using OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>(), tenantContextAccessor);
+
+        Business business = Business.Create(tenantId, "atlas-hair", "Atlas Hair", "hair", testTime);
+        Branch branch = Branch.Create(
+            tenantId,
+            business.Id,
+            "kadikoy",
+            "Kadıköy",
+            "Europe/Istanbul",
+            testTime,
+            "İstanbul",
+            "Kadıköy",
+            "Caferağa Mahallesi");
+
+        dbContext.Businesses.Add(business);
+        dbContext.Branches.Add(branch);
+        await dbContext.SaveChangesAsync();
+
+        StaffManagementService service = new(
+            dbContext,
+            tenantContextAccessor,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new FixedTimeProvider(testTime));
+
+        // Isim yanlis yazilarak eklendi -- tipik ilk-kullanim senaryosu.
+        StaffManagementResult created = await service.CreateAsync(
+            new CreateStaffCommand(actorUserAccountId, branch.Id, "Mehmt Yilmz", null));
+
+        Assert.True(created.Succeeded);
+        Guid staffId = created.Staff!.Id;
+
+        // Duzeltme.
+        StaffManagementResult updated = await service.UpdateAsync(
+            new UpdateStaffCommand(actorUserAccountId, branch.Id, staffId, "Mehmet Yılmaz"));
+
+        Assert.True(updated.Succeeded);
+        Assert.Equal("Mehmet Yılmaz", updated.Staff!.DisplayName);
+
+        // ASIL KONTROL: veritabanina yazildi mi? Eski kod burada "Mehmt Yilmz" birakiyordu.
+        StaffMember persisted = await dbContext.StaffMembers
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == staffId);
+
+        Assert.Equal("Mehmet Yılmaz", persisted.DisplayName);
+    }
+
+    /// <summary>
+    /// UpdateAsync'in HIC validasyonu yoktu (zaten hicbir sey de uygulamiyordu).
+    /// Artik CreateAsync ile ayni kurallar geciyor: isim 2-200 karakter.
+    /// </summary>
+    [Fact]
+    public async Task StaffUpdateRejectsInvalidDisplayName()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        await using OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>(), tenantContextAccessor);
+
+        Business business = Business.Create(tenantId, "atlas-hair", "Atlas Hair", "hair", testTime);
+        Branch branch = Branch.Create(
+            tenantId,
+            business.Id,
+            "kadikoy",
+            "Kadıköy",
+            "Europe/Istanbul",
+            testTime,
+            "İstanbul",
+            "Kadıköy",
+            "Caferağa Mahallesi");
+
+        dbContext.Businesses.Add(business);
+        dbContext.Branches.Add(branch);
+        await dbContext.SaveChangesAsync();
+
+        StaffManagementService service = new(
+            dbContext,
+            tenantContextAccessor,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new FixedTimeProvider(testTime));
+
+        StaffManagementResult created = await service.CreateAsync(
+            new CreateStaffCommand(actorUserAccountId, branch.Id, "Mehmet Yılmaz", null));
+        Guid staffId = created.Staff!.Id;
+
+        // Bos isim reddedilmeli...
+        StaffManagementResult blank = await service.UpdateAsync(
+            new UpdateStaffCommand(actorUserAccountId, branch.Id, staffId, "   "));
+
+        Assert.False(blank.Succeeded);
+        Assert.Equal(StaffManagementService.InvalidRequest, blank.ErrorCode);
+
+        // ...ve isim BOZULMAMIS olmali.
+        StaffMember persisted = await dbContext.StaffMembers
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == staffId);
+
+        Assert.Equal("Mehmet Yılmaz", persisted.DisplayName);
+    }
+
     private sealed class FixedTimeProvider : TimeProvider
     {
         private readonly DateTimeOffset utcNow;

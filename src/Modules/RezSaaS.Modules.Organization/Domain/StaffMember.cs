@@ -57,6 +57,23 @@ public sealed class StaffMember
             createdAtUtc);
     }
 
+    /// <summary>
+    /// Personelin görünen adını değiştirir.
+    /// </summary>
+    /// <remarks>
+    /// Bu metot uzun süre EKSİKTİ. StaffManagementService.UpdateAsync entity'yi çekip
+    /// DisplayName'i hiç uygulamadan SaveChangesAsync çağırıyordu: istek 200 OK dönüyor,
+    /// isim DEĞİŞMİYOR, üstelik "organization.staff.updated" audit kaydı da yazılıyordu.
+    /// Yani hem kullanıcıya hem denetim günlüğüne yalan söyleniyordu.
+    ///
+    /// Yanlış yazılmış bir personel adını düzeltmek tipik bir ilk-kullanım senaryosudur;
+    /// bu boşluk ürünün "elemanlarını yönetebilme" vaadini doğrudan deliyordu.
+    /// </remarks>
+    public void Rename(string displayName)
+    {
+        DisplayName = NormalizeRequiredText(displayName, nameof(displayName));
+    }
+
     public void Archive()
     {
         Status = StaffMemberStatus.Archived;

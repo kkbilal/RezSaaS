@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RezSaaS.BuildingBlocks.Auditing;
 using RezSaaS.BuildingBlocks.Tenancy;
@@ -126,6 +127,11 @@ public sealed class StaffManagementService
             return StaffManagementResult.Failure(MissingTenantContext);
         }
 
+        if (!IsUpdateValid(command))
+        {
+            return StaffManagementResult.Failure(InvalidRequest);
+        }
+
         StaffMember? staff = await dbContext.StaffMembers
             .FirstOrDefaultAsync(entity => entity.Id == command.StaffId
                 && entity.BranchId == command.BranchId,
@@ -136,6 +142,12 @@ public sealed class StaffManagementService
             return StaffManagementResult.Failure(StaffNotFound);
         }
 
+        // BUG FIX: burada HICBIR SEY UYGULANMIYORDU. Entity cekiliyor, SaveChangesAsync
+        // cagriliyor ve "guncellendi" audit'i yaziliyordu -- ama DisplayName hic degismiyordu.
+        // Istek 200 OK donuyor, isim eski kaliyordu.
+        string previousDisplayName = staff.DisplayName;
+        staff.Rename(command.DisplayName);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         DateTimeOffset now = timeProvider.GetUtcNow();
@@ -144,7 +156,9 @@ public sealed class StaffManagementService
                 tenantId,
                 command.ActorUserAccountId,
                 "organization.staff.updated",
-                $$"""{"tenantId":"{{tenantId}}","staffId":"{{staff.Id}}"}""",
+                // Audit kaydi artik NE DEGISTIGINI soyluyor. Eskiden sadece "guncellendi"
+                // diyordu -- ustelik hicbir sey guncellenmedigi halde.
+                $$"""{"tenantId":"{{tenantId}}","staffId":"{{staff.Id}}","previousDisplayName":{{JsonSerializer.Serialize(previousDisplayName)}},"displayName":{{JsonSerializer.Serialize(staff.DisplayName)}}}""",
                 now),
             cancellationToken);
 
@@ -189,6 +203,16 @@ public sealed class StaffManagementService
     {
         return command.ActorUserAccountId != Guid.Empty
             && command.BranchId != Guid.Empty
+            && IsLength(command.DisplayName, minLength: 2, maxLength: 200);
+    }
+
+    // UpdateAsync'in HIC validasyonu yoktu (zaten hicbir sey de uygulamiyordu).
+    // Ayni kurallar: isim 2-200 karakter.
+    private static bool IsUpdateValid(UpdateStaffCommand command)
+    {
+        return command.ActorUserAccountId != Guid.Empty
+            && command.BranchId != Guid.Empty
+            && command.StaffId != Guid.Empty
             && IsLength(command.DisplayName, minLength: 2, maxLength: 200);
     }
 
