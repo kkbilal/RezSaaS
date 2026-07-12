@@ -4794,6 +4794,7 @@ export interface components {
             displayName?: string | null;
             /** Format: uuid */
             ownerUserAccountId?: string;
+            categoryKey?: string | null;
         };
         AdminTenantProvisioningResponse: {
             /** Format: uuid */
@@ -4802,6 +4803,8 @@ export interface components {
             displayName?: string | null;
             /** Format: uuid */
             ownerUserAccountId?: string;
+            /** Format: uuid */
+            businessId?: string;
         };
         AdminUserAbuseOverviewResponse: {
             /** Format: uuid */

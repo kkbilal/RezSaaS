@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using RezSaaS.Modules.Admin.Application;
 using RezSaaS.Modules.Identity.Application;
+using RezSaaS.Modules.Organization.Application;
 using RezSaaS.Modules.TenantManagement.Application;
 using RezSaaS.Modules.TenantManagement.Domain;
 
@@ -16,6 +17,7 @@ public sealed class AdminTenantProvisioningComposer
     private const string Unauthorized = "ADMIN_TENANT_PROVISIONING_UNAUTHORIZED";
 
     private readonly AddTenantMembershipService addTenantMembershipService;
+    private readonly BusinessProvisioningService businessProvisioningService;
     private readonly AbuseWorkflowQueryService abuseWorkflowQueryService;
     private readonly ChangeTenantLifecycleService changeTenantLifecycleService;
     private readonly ChangeTenantMembershipStatusService changeTenantMembershipStatusService;
@@ -30,7 +32,8 @@ public sealed class AdminTenantProvisioningComposer
         ChangeTenantLifecycleService changeTenantLifecycleService,
         ChangeTenantMembershipStatusService changeTenantMembershipStatusService,
         UserAccountExistenceService userAccountExistenceService,
-        AbuseWorkflowQueryService abuseWorkflowQueryService)
+        AbuseWorkflowQueryService abuseWorkflowQueryService,
+        BusinessProvisioningService businessProvisioningService)
     {
         this.createTenantWithOwnerService = createTenantWithOwnerService;
         this.queryService = queryService;
@@ -39,6 +42,7 @@ public sealed class AdminTenantProvisioningComposer
         this.changeTenantMembershipStatusService = changeTenantMembershipStatusService;
         this.userAccountExistenceService = userAccountExistenceService;
         this.abuseWorkflowQueryService = abuseWorkflowQueryService;
+        this.businessProvisioningService = businessProvisioningService;
     }
 
     public async Task<AdminTenantAccessResult> GetTenantsAsync(
@@ -116,6 +120,7 @@ public sealed class AdminTenantProvisioningComposer
 
         if (string.IsNullOrWhiteSpace(request.Slug)
             || string.IsNullOrWhiteSpace(request.DisplayName)
+            || string.IsNullOrWhiteSpace(request.CategoryKey)
             || request.OwnerUserAccountId == Guid.Empty)
         {
             return AdminTenantProvisioningResult.Failure(
@@ -155,12 +160,47 @@ public sealed class AdminTenantProvisioningComposer
             return MapFailure(result.ErrorCode ?? InvalidRequest);
         }
 
+        // ISLETMENIN PUBLIC KIMLIGINI (Business) BURADA OLUSTUR.
+        //
+        // Bu adim EKSIKTI ve urunun en buyuk lansman blokajiydi: tenant aciliyordu ama
+        // Business hicbir zaman olusturulmuyordu. Sonucta owner sube bile acamiyordu
+        // (BranchManagementService -> BUSINESS_NOT_FOUND) ve salon /kesfet'te hic
+        // gorunmuyordu. Yani urun tek bir salonu bile onboard edemiyordu.
+        //
+        // Neden BURADA: Tenant = faturalama/guvenlik siniri; Business = salonun public
+        // kimligi. Bu urunde 1 tenant = 1 isletme (BusinessProfileSettings tenant basina).
+        // Ayrica /api/business/settings/profile'da bir GUNCELLEME ucu vardi ama YARATMA
+        // ucu yoktu -- yani Business'in provisioning aninda dogmasi zaten amaclanmisti.
+        //
+        // Idempotent: tenant yaratildi ama Business yaratilamadiysa ayni istek tekrar
+        // denenebilir; mevcut Business varsa yeniden yaratilmaz.
+        BusinessProvisioningResult businessResult =
+            await businessProvisioningService.CreateAsync(
+                new CreateBusinessCommand(
+                    actorUserAccountId,
+                    result.TenantId!.Value,
+                    request.Slug,
+                    request.DisplayName,
+                    request.CategoryKey),
+                cancellationToken);
+
+        if (!businessResult.Succeeded)
+        {
+            // Tenant olustu ama isletme olusmadi. Bu bir YARIM DURUM; sessizce "basarili"
+            // demek, owner'i sube acamayacagi bir panele sokmak demektir. Acikca hata don.
+            // Cagiran taraf ayni istegi tekrar deneyebilir (islem idempotent).
+            return AdminTenantProvisioningResult.Failure(
+                AdminTenantProvisioningOutcome.Unprocessable,
+                businessResult.ErrorCode ?? BusinessProvisioningService.InvalidRequest);
+        }
+
         return AdminTenantProvisioningResult.Created(
             new AdminTenantProvisioningResponse(
                 result.TenantId!.Value,
                 request.Slug.Trim(),
                 request.DisplayName.Trim(),
-                request.OwnerUserAccountId));
+                request.OwnerUserAccountId,
+                businessResult.BusinessId!.Value));
     }
 
     public async Task<AdminTenantAccessResult> AddMembershipAsync(

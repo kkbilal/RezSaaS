@@ -8170,6 +8170,10 @@
           "ownerUserAccountId": {
             "type": "string",
             "format": "uuid"
+          },
+          "categoryKey": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8190,6 +8194,10 @@
             "nullable": true
           },
           "ownerUserAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "businessId": {
             "type": "string",
             "format": "uuid"
           }

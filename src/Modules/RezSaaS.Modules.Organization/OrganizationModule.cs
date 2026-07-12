@@ -35,6 +35,7 @@ public sealed class OrganizationModule : ModuleBase
         services.AddScoped<PublicBusinessDirectoryService>();
         services.AddScoped<BusinessEntityLabelQueryService>();
         services.AddScoped<BusinessProfileSettingsService>();
+        services.AddScoped<BusinessProvisioningService>();
         services.AddScoped<BranchManagementService>();
         services.AddScoped<StaffManagementService>();
         services.AddScoped<SkillManagementService>();

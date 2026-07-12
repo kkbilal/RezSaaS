@@ -2313,6 +2313,82 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// REGRESYON TESTI (LANSMAN BLOKAJI): tenant provisioning Business'i GERCEKTEN olusturur.
+    /// </summary>
+    /// <remarks>
+    /// Onceki hata: `Business.Create(...)` YALNIZCA TESTLERDEN cagriliyordu -- hicbir uretim
+    /// kodu yolu (API ucu, seeder, provisioning) onu yaratmiyordu.
+    ///
+    /// Sonuc: platform admin tenant acar, owner giris yapar, ama SUBE BILE ACAMAZ
+    /// (BranchManagementService aktif bir Business arar -> BUSINESS_NOT_FOUND) ve salon
+    /// /kesfet'te HIC GORUNMEZ. Yani urun tek bir salonu bile onboard edemiyordu.
+    ///
+    /// Entegrasyon testleri Business'i DOGRUDAN seed ettigi icin bosluk hic fark edilmemisti.
+    /// Bu test tam da o seed'i YAPMAZ: provisioning servisinin isini yapmasini bekler.
+    /// </remarks>
+    [Fact]
+    public async Task BusinessProvisioningCreatesTheBusinessAndIsIdempotent()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            // Platform admin baglami: hedef tenant'in context'i SET EDILMEMISTIR.
+            // Servis IgnoreQueryFilters kullanmazsa hicbir satiri goremez ve mukerrer kayit uretir.
+            TenantId = null,
+        };
+
+        await using OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>(), tenantContextAccessor);
+
+        BusinessProvisioningService service = new(
+            dbContext,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new FixedTimeProvider(testTime));
+
+        BusinessProvisioningResult created = await service.CreateAsync(
+            new CreateBusinessCommand(
+                actorUserAccountId,
+                tenantId,
+                "atlas-hair",
+                "Atlas Hair",
+                "hair"));
+
+        Assert.True(created.Succeeded);
+        Assert.NotNull(created.BusinessId);
+
+        // Business GERCEKTEN yazildi mi?
+        Business persisted = await dbContext.Businesses
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .SingleAsync(entity => entity.TenantId == tenantId);
+
+        Assert.Equal("atlas-hair", persisted.Slug);
+        Assert.Equal("Atlas Hair", persisted.DisplayName);
+        Assert.Equal("hair", persisted.CategoryKey);
+        Assert.Equal(BusinessStatus.Active, persisted.Status);
+
+        // IDEMPOTENT: provisioning yarida kalirsa istek tekrar denenebilmeli.
+        // Ayni tenant icin ikinci cagri MUKERRER kayit URETMEMELI.
+        BusinessProvisioningResult again = await service.CreateAsync(
+            new CreateBusinessCommand(
+                actorUserAccountId,
+                tenantId,
+                "atlas-hair",
+                "Atlas Hair",
+                "hair"));
+
+        Assert.True(again.Succeeded);
+        Assert.Equal(created.BusinessId, again.BusinessId);
+
+        int count = await dbContext.Businesses
+            .IgnoreQueryFilters()
+            .CountAsync(entity => entity.TenantId == tenantId);
+
+        Assert.Equal(1, count);
+    }
+
+    /// <summary>
     /// REGRESYON TESTI (B1): StaffManagementService.UpdateAsync personelin adini GERCEKTEN degistirir.
     /// </summary>
     /// <remarks>

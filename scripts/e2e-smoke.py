@@ -579,6 +579,10 @@ def run(
             "slug": tenant_slug,
             "displayName": f"Duman Salon {tag}",
             "ownerUserAccountId": owner_user_id,
+            # Provisioning artik salonun public kimligini (Business) de olusturuyor.
+            # Kategori zorunlu: Business.CategoryKey bir domain invariant'i ve /kesfet
+            # filtresi buna dayaniyor.
+            "categoryKey": "hair",
         },
         expect=(201,),
     )
@@ -586,15 +590,21 @@ def run(
     owner.tenant_id = tenant_id  # tum /api/business/* cagrilarinda X-RezSaaS-Tenant
     REPORT.ok(f"tenantId={tenant_id}")
 
-    # -- 11 ------------------------------------- URUN BOSLUGU: Organization.Business yok
-    REPORT.start("Organization Business kaydi")
-    if do_seed:
-        business_id = seed_business(tenant_id, business_slug, f"Duman Salon {tag}")
-        REPORT.ok(f"SEED EDILDI (harness kestirmesi) businessId={business_id}")
-        print("      !! UYARI: Business kaydi DOGRUDAN VERITABANINA yazildi.")
-        print("      !! Bunu yapan bir URUN KOD YOLU YOK -- bu gercek bir LANSMAN BLOKAJI.")
-    else:
-        REPORT.skip("--seed-business verilmedi; sonraki adimin BUSINESS_NOT_FOUND ile dusmesi BEKLENIR")
+    # -- 11 ------------------- Business provisioning tarafindan OLUSTURULDU mu? (regresyon)
+    #
+    # Eskiden burada bir HARNESS KESTIRMESI vardi (--seed-business): Business satirini
+    # DOGRUDAN Postgres'e yaziyorduk, cunku onu olusturan HICBIR URETIM KODU YOLU YOKTU.
+    # Bu, urunun tek bir salonu bile onboard edemedigi anlamina geliyordu (owner sube bile
+    # acamiyordu: BUSINESS_NOT_FOUND) -- ve bu testin ortaya cikardigi EN BUYUK bosluktu.
+    #
+    # Artik POST /api/admin/tenants Business'i da olusturuyor. Kestirme SILINDI.
+    # Bu adim artik bir REGRESYON TESTI: yanitta businessId GELMEZSE bosluk geri gelmis demektir.
+    REPORT.start("Business provisioning ile olusturuldu mu (regresyon)")
+    business_id = payload.get("businessId")
+    if not business_id:
+        REPORT.fail("Yanitta businessId YOK -- Business provisioning'de olusturulmuyor (LANSMAN BLOKAJI geri geldi)")
+        raise SystemExit(1)
+    REPORT.ok(f"businessId={business_id} (API tarafindan olusturuldu, seed YOK)")
 
     # -- 12 ---------------------------------------------------------------- sube acma
     REPORT.start("Sube olusturma (owner)")

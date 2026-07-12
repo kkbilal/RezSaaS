@@ -9,6 +9,19 @@ import { DialogFormPanel, DialogOverlay } from "@/shared/ui/dialog";
 const slugMaxLength = 100;
 const nameMaxLength = 200;
 
+// Business.CategoryKey backend'de serbest metin (whitelist yok), ama public kesif buna gore
+// filtreliyor. Serbest metin birakirsak her salon farkli bir kategori yazar ve /kesfet
+// filtresi ise yaramaz hale gelir. Bu yuzden UI'da KURATORLU liste sunuyoruz.
+const businessCategories = [
+  { key: "hair", label: "Kuaför / Berber" },
+  { key: "beauty", label: "Güzellik merkezi" },
+  { key: "nail", label: "Tırnak / Nail" },
+  { key: "lash", label: "Kaş / Kirpik" },
+  { key: "spa", label: "Spa / Masaj" },
+  { key: "barber", label: "Erkek kuaförü" },
+  { key: "tattoo", label: "Dövme / Piercing" }
+] as const;
+
 type PlatformTenantProvisionDialogProps = {
   onDismiss: () => void;
 };
@@ -19,6 +32,7 @@ export function PlatformTenantProvisionDialog({
   const router = useRouter();
   const [slug, setSlug] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [categoryKey, setCategoryKey] = useState<string>(businessCategories[0].key);
   const [ownerUserAccountId, setOwnerUserAccountId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -46,6 +60,11 @@ export function PlatformTenantProvisionDialog({
       return;
     }
 
+    if (!categoryKey.trim()) {
+      showToast("Kategori zorunludur.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -53,7 +72,10 @@ export function PlatformTenantProvisionDialog({
         body: {
           slug: slug.trim().toLowerCase(),
           displayName: displayName.trim(),
-          ownerUserAccountId: ownerUserAccountId.trim()
+          ownerUserAccountId: ownerUserAccountId.trim(),
+          // Provisioning artik salonun public kimligini (Business) de olusturuyor.
+          // Bu alan olmadan backend 400 doner: Business.CategoryKey zorunlu bir invariant.
+          categoryKey
         }
       });
 
@@ -114,6 +136,25 @@ export function PlatformTenantProvisionDialog({
               type="text"
               value={displayName}
             />
+          </label>
+
+          <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
+            Kategori
+            <select
+              className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
+              onChange={(event) => setCategoryKey(event.target.value)}
+              required
+              value={categoryKey}
+            >
+              {businessCategories.map((category) => (
+                <option key={category.key} value={category.key}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-[var(--rs-muted)]">
+              İşletmenin public keşifte (/kesfet) hangi kategoride listeleneceğini belirler.
+            </span>
           </label>
 
           <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
