@@ -92,7 +92,6 @@ public sealed class BusinessServiceComposer
             ServiceManagementService.InvalidRequest => BusinessServiceOutcome.BadRequest,
             ServiceManagementService.ServiceNotFound => BusinessServiceOutcome.NotFound,
             ServiceManagementService.NameConflict => BusinessServiceOutcome.Conflict,
-            ServiceManagementService.ServiceHasVariants => BusinessServiceOutcome.Conflict,
             _ => BusinessServiceOutcome.BadRequest,
         }, result.ErrorCode ?? "SERVICE_FAILED");
     }

@@ -75,7 +75,10 @@ public sealed class ServiceVariantManagementService
         if (trimmedName.Length < 2 || trimmedName.Length > 160
             || command.DurationMinutes <= 0 || command.DurationMinutes > 1440
             || command.PriceAmount < 0
-            || string.IsNullOrWhiteSpace(command.CurrencyCode))
+            // CreateAsync'te de WHITELIST: eskiden sadece "bos olmasin" deniyordu, yani
+            // USD (ya da herhangi bir 3-karakter string) ile varyant yaratilabiliyordu ve
+            // ayni isletmenin katalogu KARISIK PARA BIRIMINE dusuyordu.
+            || !ServiceVariant.IsSupportedCurrency(command.CurrencyCode))
             return ServiceVariantManagementResult.Failure(InvalidRequest);
 
         bool serviceExists = await dbContext.Services
@@ -121,7 +124,9 @@ public sealed class ServiceVariantManagementService
         if (trimmedName.Length < 2 || trimmedName.Length > 160
             || command.DurationMinutes <= 0 || command.DurationMinutes > 1440
             || command.PriceAmount < 0
-            || string.IsNullOrWhiteSpace(command.CurrencyCode))
+            // Para birimi artik WHITELIST'e karsi dogrulaniyor (eskiden sadece "bos olmasin"
+            // deniyordu -> katalog karisik para birimine dusebiliyordu).
+            || !ServiceVariant.IsSupportedCurrency(command.CurrencyCode))
             return ServiceVariantManagementResult.Failure(InvalidRequest);
 
         ServiceVariant? variant = await dbContext.ServiceVariants
@@ -142,7 +147,9 @@ public sealed class ServiceVariantManagementService
 
         variant.Rename(trimmedName);
         variant.UpdateDuration(command.DurationMinutes);
-        variant.UpdatePricing(command.PriceAmount);
+        // BUG FIX: CurrencyCode dogrulaniyordu ama UYGULANMIYORDU (domain'de metot yoktu).
+        // Istek 200 OK donuyor, para birimi degismiyordu -- sozlesme yalan soyluyordu.
+        variant.UpdatePricing(command.PriceAmount, command.CurrencyCode);
         variant.UpdateResourceType(command.RequiredResourceTypeId);
         await dbContext.SaveChangesAsync(cancellationToken);
 

@@ -12,7 +12,6 @@ public sealed class ServiceManagementService
     public const string MissingTenantContext = "MISSING_TENANT_CONTEXT";
     public const string ServiceNotFound = "SERVICE_NOT_FOUND";
     public const string NameConflict = "SERVICE_NAME_CONFLICT";
-    public const string ServiceHasVariants = "SERVICE_HAS_VARIANTS";
 
     private readonly IAuditLogRecorder auditLogRecorder;
     private readonly CatalogDbContext dbContext;
@@ -146,13 +145,22 @@ public sealed class ServiceManagementService
         if (service is null)
             return ServiceManagementResult.Failure(ServiceNotFound);
 
-        bool hasVariants = await dbContext.ServiceVariants
-            .AnyAsync(entity => entity.ServiceId == serviceId, cancellationToken);
-
-        if (hasVariants)
-            return ServiceManagementResult.Failure(ServiceHasVariants);
-
-        dbContext.Services.Remove(service);
+        // BUG FIX: burada `dbContext.Services.Remove(service)` VARDI -- yani "arsivle" adli
+        // uc aslinda KALICI SILME yapiyordu. Domain'de calisan bir Archive() metodu vardi
+        // (Status = Archived) ama HIC CAGRILMIYORDU. Ustelik audit kaydi "catalog.service.archived"
+        // diyordu; hem kullaniciya hem denetim gunlugune yalan soyleniyordu.
+        // (Personel Rename bug'inin birebir aynisi: domain metodu var, servis cagirmiyor.)
+        //
+        // Ayrica "varyanti varsa arsivleme" (SERVICE_HAS_VARIANTS -> 409) engeli KALDIRILDI.
+        // O engel hard-delete'in FK artigiydi. Fiyat ve sure ZATEN varyantta yasiyor, yani
+        // GERCEK HER HIZMETIN varyanti var -- engel, arsivlemeyi pratikte TAMAMEN kullanilamaz
+        // kiliyordu. Soft archive'da gereksiz: varyantlar DB'de kalir, hizmet Archived olur.
+        //
+        // Arsivlenmis hizmet public yuzeylerden OTOMATIK dusuyor; altyapi zaten hazirdi:
+        //   PublicCatalogMenuService       -> Where(Status == Active)   (profil menusu)
+        //   PublicCatalogSchedulingService -> Where(Status == Active)   (SLOT ARAMA)
+        // Mevcut randevular etkilenmez: isim/fiyat line'larda snapshot'lanmis durumda.
+        service.Archive();
         await dbContext.SaveChangesAsync(cancellationToken);
 
         DateTimeOffset now = timeProvider.GetUtcNow();

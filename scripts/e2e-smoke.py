@@ -75,7 +75,15 @@ RATE_LIMIT_WINDOW_SECONDS = 62
 # Cikti yardimcilari
 # --------------------------------------------------------------------------------------
 
-TOTAL_STEPS = 36
+TOTAL_STEPS = 46
+
+# Kosum sirasinda ortaya cikan URUN BULGULARI. FAIL olmayan (INFO) bulgular da buraya
+# girer: testi dusurmeyen ama urun kararini etkileyen gercekler kaybolmasin.
+FINDINGS: list[str] = []
+
+
+def finding(text: str) -> None:
+    FINDINGS.append(text)
 
 
 class Reporter:
@@ -98,6 +106,17 @@ class Reporter:
         print(f"SKIP{(' (' + detail + ')') if detail else ''}")
         self.results.append((self._current, "SKIP", detail))
 
+    def info(self, detail: str = "") -> None:
+        """
+        Bilgi toplama adimi: bir GERCEGI kayda gecirir ama testi DUSURMEZ.
+
+        Neden ayri bir statu: bu adimlarin sonucu "dogru/yanlis" degil, "sunucu ne yapiyor".
+        PASS deseydik bulgu yesil satirlarin arasinda KAYBOLURDU; FAIL deseydik cekirdek
+        dongu saglamken test kirmizi yanardi. INFO, bulguyu GORUNUR tutar.
+        """
+        print(f"INFO{(' (' + detail + ')') if detail else ''}")
+        self.results.append((self._current, "INFO", detail))
+
     def fail(self, detail: str = "") -> None:
         print("FAIL")
         if detail:
@@ -118,9 +137,23 @@ class Reporter:
         failed = [r for r in self.results if r[1] == "FAIL"]
         passed = [r for r in self.results if r[1] == "PASS"]
         skipped = [r for r in self.results if r[1] == "SKIP"]
+        infos = [r for r in self.results if r[1] == "INFO"]
         print("-" * 78)
-        print(f"  gecti={len(passed)}  kaldi={len(failed)}  atlandi={len(skipped)}")
+        print(
+            f"  gecti={len(passed)}  kaldi={len(failed)}  "
+            f"atlandi={len(skipped)}  bilgi={len(infos)}"
+        )
         print("=" * 78)
+
+        if FINDINGS:
+            print()
+            print("=" * 78)
+            print("URUN BULGULARI")
+            print("=" * 78)
+            for number, text in enumerate(FINDINGS, start=1):
+                print(f"  {number}. {text}")
+            print("=" * 78)
+
         return not failed
 
 
@@ -895,9 +928,27 @@ def run(
             f"({len(appointments)} randevu dondu)"
         )
         return False
+    # FIYAT SNAPSHOT'ININ BASLANGIC DEGERI (adim 39 bunu kullanir).
+    # Randevu DOGDUGU ANDAKI line fiyatini burada, HENUZ HICBIR SEY DEGISMEDEN yakaliyoruz.
+    # Iddia: bu deger, katalogdaki fiyat sonradan degisse bile SABIT kalmali.
+    booked_lines = list(match.get("lines") or [])
+    booked_line = next(
+        (line for line in booked_lines if line.get("serviceVariantId") == variant_id), None
+    )
+    if not booked_line:
+        REPORT.fail(
+            f"Randevunun lines[] dizisinde variantId={variant_id} YOK ({booked_lines}). "
+            "Fiyat snapshot'i dogrulanamaz -- line, hangi varyanttan dogduğunu tasimali."
+        )
+        return False
+    booked_price = booked_line.get("priceAmount")
+    booked_duration = booked_line.get("durationMinutes")
+    booked_currency = booked_line.get("currencyCode")
+
     REPORT.ok(
         f"status={match.get('status')} start={match.get('startUtc')} "
-        f"staff={match.get('staffMemberDisplayName')} kaynak={match.get('resourceDisplayName')}"
+        f"staff={match.get('staffMemberDisplayName')} kaynak={match.get('resourceDisplayName')} "
+        f"line={booked_price} {booked_currency}/{booked_duration}dk"
     )
 
     global CORE_LOOP_PROVEN
@@ -1250,6 +1301,469 @@ def run(
         REPORT.fail(f"?status=Cancelled YANLIS status dondu: {cancelled}")
         return False
     REPORT.ok("Confirmed'da YOK, Cancelled'da VAR -- filtre randevulara da uygulaniyor")
+
+    # ==================================================================================
+    # FIYAT YONETIMI (adim 37-46)
+    #
+    # Salonun EN SIK yaptigi is: fiyat/sure guncellemek. Bu bolum uc soruyu sinar:
+    #   1. Guncelleme GERCEKTEN kaliyor mu? (200 OK YALAN SOYLEYEBILIR -- yeniden oku)
+    #   2. Fiyat degisimi MEVCUT randevulari BOZUYOR mu? (snapshot iddiasinin kaniti)
+    #   3. "PATCH ama davranisi PUT" ucu, KISMI gonderimde veriyi SIFIRLIYOR mu?
+    #
+    # SOZLESME NOTU (artifacts/openapi/rezsaas-api-v1.json'dan dogrulandi):
+    #   BusinessVariantUpdateRequest.durationMinutes ve .priceAmount NULLABLE DEGIL
+    #   (int32 / double). Yani gonderilmezlerse .NET onlari 0'a DUSURUR -- alan "atlanmis"
+    #   olmaz, SIFIR olur. Bu yuzden kismi gonderim yapisal olarak TEHLIKELIDIR.
+    # ==================================================================================
+
+    def read_variant(target_service_id: str, target_variant_id: str) -> dict:
+        """Varyanti SUNUCUDAN yeniden okur. PATCH'in 200 donmesine ASLA guvenmiyoruz."""
+        _, body = owner.get(
+            f"/api/business/services/{target_service_id}/variants/{target_variant_id}",
+            expect=(200,),
+        )
+        if not isinstance(body, dict):
+            raise StepFailed(f"GET variant beklenmeyen yanit: {body}")
+        return body
+
+    def patch_variant(
+        target_service_id: str,
+        target_variant_id: str,
+        body: dict,
+        expect: tuple[int, ...] = (200,),
+    ) -> tuple[int, object]:
+        return owner.patch(
+            f"/api/business/services/{target_service_id}/variants/{target_variant_id}",
+            body,
+            expect=expect,
+        )
+
+    def full_variant_body(
+        name: str, duration: int, price: float, currency: str, resource_type: str | None
+    ) -> dict:
+        """TUZAK 2: bu ucun adi PATCH ama davranisi PUT -- 5 alanin HEPSI her istekte gider."""
+        return {
+            "name": name,
+            "durationMinutes": duration,
+            "priceAmount": price,
+            "currencyCode": currency,
+            "requiredResourceTypeId": resource_type,
+        }
+
+    def public_services() -> list[dict]:
+        _, body = customer.get(
+            f"/api/public/businesses/{business_slug}/profile", expect=(200,)
+        )
+        return list((body or {}).get("services") or []) if isinstance(body, dict) else []
+
+    variant_name = "Sac Kesimi (30dk)"
+
+    # -- 37 ------------------------------- (A) [SESSIZ NO-OP AVI] fiyat guncellemesi KALICI mi
+    # Personel adi guncellemesi TAM OLARAK boyle sessizce calismiyordu: 200 OK donuyor,
+    # veritabaninda hicbir sey degismiyordu. Ayni tuzak burada da olabilir -> YENIDEN OKU.
+    REPORT.start("[A] Varyant FIYATI guncelleniyor ve kaliyor mu (PATCH -> GET)")
+    new_price = 750.0
+    status, patched = patch_variant(
+        service_id,
+        variant_id,
+        full_variant_body(variant_name, 30, new_price, "TRY", resource_type_id),
+    )
+    echoed_price = patched.get("priceAmount") if isinstance(patched, dict) else None
+    reread = read_variant(service_id, variant_id)
+    if reread.get("priceAmount") != new_price:
+        REPORT.fail(
+            f"SESSIZ NO-OP: PATCH HTTP {status} (yanitta priceAmount={echoed_price!r}) AMA "
+            f"YENIDEN OKUNDUGUNDA priceAmount={reread.get('priceAmount')!r} -- "
+            f"{new_price} bekleniyordu. Fiyat guncellemesi KALICI DEGIL: salon fiyati "
+            "degistirdigini saniyor, katalog eski fiyatta kaliyor."
+        )
+        finding(
+            "Varyant fiyat guncellemesi kalici degil (PATCH 200 doner, GET eski fiyati verir)."
+        )
+        return False
+    if echoed_price != new_price:
+        REPORT.fail(
+            f"PATCH yaniti priceAmount={echoed_price!r} dondu ama GET {new_price} veriyor -- "
+            "yanit govdesi kaydedilen veriyle TUTARSIZ (istemci yanlis fiyat gosterir)."
+        )
+        return False
+    REPORT.ok(f"500 -> {new_price} TRY; GET ile dogrulandi (yanit ve kayit tutarli)")
+
+    # -- 38 -------------------------------------------- (C) SURE guncellemesi KALICI mi
+    # Sure fiyattan BAGIMSIZ dogrulanir: biri calisip digeri sessizce dusebilir.
+    # Ayrica fiyatin (750) bu PATCH'te BOZULMADIGINI da kontrol ediyoruz.
+    REPORT.start("[C] Varyant SURESI guncelleniyor ve kaliyor mu (PATCH -> GET)")
+    new_duration = 45
+    patch_variant(
+        service_id,
+        variant_id,
+        full_variant_body(variant_name, new_duration, new_price, "TRY", resource_type_id),
+    )
+    reread = read_variant(service_id, variant_id)
+    if reread.get("durationMinutes") != new_duration:
+        REPORT.fail(
+            f"SESSIZ NO-OP: sure guncellenmedi -- GET durationMinutes="
+            f"{reread.get('durationMinutes')!r}, {new_duration} bekleniyordu."
+        )
+        finding("Varyant sure guncellemesi kalici degil (PATCH 200 doner, GET eski sureyi verir).")
+        return False
+    if reread.get("priceAmount") != new_price:
+        REPORT.fail(
+            f"SURE guncellenirken FIYAT BOZULDU: priceAmount={reread.get('priceAmount')!r} "
+            f"({new_price} bekleniyordu). Tam govde gonderildigi halde alanlar birbirini eziyor."
+        )
+        return False
+    REPORT.ok(f"30 -> {new_duration}dk; GET ile dogrulandi (fiyat {new_price} bozulmadi)")
+
+    # -- 39 --------------------- (B) [SNAPSHOT] fiyat degisimi MEVCUT randevuyu ETKILEMEMELI
+    # Adim 24'te randevunun line fiyatini (500 TRY / 30dk) DOGDUGU ANDA yakalamistik.
+    # O gunden beri katalog fiyatini 750'ye, sureyi 45dk'ya cektik.
+    # IDDIA: AppointmentLine kendi PriceAmount/CurrencyCode/DurationMinutes alanini TASIR
+    #        (talep aninda sunucuda snapshot'lanir) -> randevu DEGISMEMIS olmali.
+    # Bu adim o iddianin CANLI KANITI. Degisiyorsa: gecmis randevular retroaktif olarak
+    # yeniden fiyatlaniyor demektir -- musteri 500'e aldigi randevunun 750 oldugunu gorur.
+    REPORT.start("[B] [SNAPSHOT] Fiyat degisimi MEVCUT randevuyu etkilemedi mi")
+    rows = owner_appointments()
+    if not rows:
+        REPORT.fail(f"appointmentId={appointment_id} isletme listesinde YOK -- snapshot okunamiyor")
+        return False
+    current_lines = rows[0].get("lines") or []
+    current_line = next(
+        (line for line in current_lines if line.get("serviceVariantId") == variant_id), None
+    )
+    if not current_line:
+        REPORT.fail(f"Randevunun lines[] icinde variantId={variant_id} YOK: {current_lines}")
+        return False
+    drifted: list[str] = []
+    if current_line.get("priceAmount") != booked_price:
+        drifted.append(
+            f"priceAmount {booked_price} -> {current_line.get('priceAmount')}"
+        )
+    if current_line.get("durationMinutes") != booked_duration:
+        drifted.append(
+            f"durationMinutes {booked_duration} -> {current_line.get('durationMinutes')}"
+        )
+    if current_line.get("currencyCode") != booked_currency:
+        drifted.append(
+            f"currencyCode {booked_currency} -> {current_line.get('currencyCode')}"
+        )
+    if drifted:
+        REPORT.fail(
+            "URUN HATASI -- SNAPSHOT YOK: katalog fiyati/suresi degisince MEVCUT randevunun "
+            f"line'i DA degisti ({'; '.join(drifted)}). AppointmentLine katalogdan CANLI "
+            "okuyor demektir. Sonuc: gecmis randevular retroaktif yeniden fiyatlanir; "
+            "musteri 500 TRY'ye aldigi randevunun 750 TRY oldugunu gorur."
+        )
+        finding(
+            "Fiyat snapshot'i YOK: katalog fiyati degisince mevcut randevunun line fiyati da degisiyor."
+        )
+        return False
+    REPORT.ok(
+        f"katalog 500->750 TRY / 30->45dk oldu; randevu line'i {booked_price} "
+        f"{booked_currency}/{booked_duration}dk olarak SABIT kaldi (snapshot DOGRULANDI)"
+    )
+
+    # -- 40 ------------------------ (D) [PUT-GIBI-PATCH TUZAGI] KISMI gonderim ne yapiyor?
+    # SADECE priceAmount gonderiyoruz; name/durationMinutes/currencyCode/requiredResourceTypeId YOK.
+    # Sozlesmede durationMinutes ve priceAmount NULLABLE DEGIL -> .NET onlari 0'a dusurur.
+    # BEKLENEN: 400 (name bos + duration 0 dogrulamayi gecemez).
+    # KORKULAN: 200 + varyantin adi/suresi/kaynak tipi SIFIRLANMIS -> SESSIZ VERI KAYBI.
+    REPORT.start("[D] KISMI PATCH (sadece priceAmount) reddediliyor mu (400 bekleniyor)")
+    before = read_variant(service_id, variant_id)
+    status, body = patch_variant(
+        service_id,
+        variant_id,
+        {"priceAmount": 1234.0},
+        expect=(200, 400, 409, 422),
+    )
+    after = read_variant(service_id, variant_id)
+
+    if status != 200:
+        # Reddedildi. Yine de veriye DOKUNULMADIGINI kanitlayalim -- 400 donup yan etki
+        # birakan uclar gordük; "reddedildi" ile "degismedi" AYNI SEY DEGIL.
+        if after != before:
+            changed = {
+                key: (before.get(key), after.get(key))
+                for key in before
+                if before.get(key) != after.get(key)
+            }
+            REPORT.fail(
+                f"HTTP {status} ile REDDEDILDI ama varyant YINE DE DEGISTI: {changed}. "
+                "Basarisiz dogrulama yan etki birakiyor."
+            )
+            return False
+        error_code = body.get("errorCode") if isinstance(body, dict) else None
+        REPORT.ok(
+            f"HTTP {status} (errorCode={error_code}) -- kismi gonderim reddedildi, veri saglam. "
+            "Not: alanlar nullable OLMADIGI icin eksik alanlar 0/null'a duser ve dogrulamaya "
+            "TAKILIR; koruma bu kazadan geliyor. UI yine de 5 alani HER ZAMAN gondermeli."
+        )
+    else:
+        # 200 DONDU -> alanlar sifirlanmis mi? Bu bir VERI KAYBI bug'idir.
+        corrupted = {
+            key: (before.get(key), after.get(key))
+            for key in ("name", "durationMinutes", "currencyCode", "requiredResourceTypeId")
+            if before.get(key) != after.get(key)
+        }
+        if corrupted:
+            details = "; ".join(
+                f"{key}: {old!r} -> {new!r}" for key, (old, new) in corrupted.items()
+            )
+            REPORT.fail(
+                "CIDDI VERI KAYBI BUG'I: kismi PATCH (sadece priceAmount) HTTP 200 dondu ve "
+                f"GONDERILMEYEN alanlari EZDI -> {details}. "
+                "Sebep: BusinessVariantUpdateRequest'te durationMinutes/priceAmount nullable "
+                "DEGIL; gonderilmeyen alanlar 0/null'a duser ve dogrudan yazilir "
+                "(ServiceVariantManagementService.cs:143-146 Rename/UpdateDuration/UpdatePricing/"
+                "UpdateResourceType kosulsuz cagriliyor). Tek alan guncellemek isteyen her "
+                "istemci varyanti SESSIZCE bozar."
+            )
+            finding(
+                "Kismi PATCH varyant alanlarini eziyor (VERI KAYBI): "
+                f"{details}"
+            )
+            return False
+        REPORT.fail(
+            "HTTP 200 -- kismi gonderim KABUL EDILDI (400 bekleniyordu). Alanlar bu sefer "
+            "bozulmadi ama uc, eksik govdeyi sessizce kabul ediyor: sozlesme belirsiz."
+        )
+        return False
+
+    # -- 41 ---------------------- (F) [PARA BIRIMI] PATCH ile currencyCode DEGISTIRILEBILIYOR mu
+    # Bilgi toplama adimi -- testi DUSURMEZ.
+    REPORT.start("[F] Varyantin para birimi PATCH ile degistirilebiliyor mu")
+    status, body = patch_variant(
+        service_id,
+        variant_id,
+        full_variant_body(variant_name, new_duration, new_price, "USD", resource_type_id),
+        expect=(200, 400, 409, 422),
+    )
+    after = read_variant(service_id, variant_id)
+    stored_currency = after.get("currencyCode")
+    if status == 200 and stored_currency == "USD":
+        REPORT.info(
+            "PATCH currencyCode='USD' -> HTTP 200 ve KAYDEDILDI. ISO whitelist YOK: ayni "
+            "isletmede varyantlar farkli para biriminde olabilir -> KATALOG TUTARSIZLIGI riski."
+        )
+        finding(
+            "Varyant para birimi serbestce degistirilebiliyor (whitelist yok) -> katalog "
+            "tutarsizligi riski. UI'da para birimi secici KOYULMAMALI; her zaman TRY gonderilmeli."
+        )
+    elif status == 200 and stored_currency != "USD":
+        REPORT.info(
+            f"SESSIZ NO-OP: PATCH currencyCode='USD' -> HTTP 200 AMA kayitli deger hala "
+            f"'{stored_currency}'. Uc, currencyCode'u DOGRULUYOR (bos olamaz) ama HIC UYGULAMIYOR "
+            "-- ServiceVariantManagementService.cs:143-146 yalnizca Rename/UpdateDuration/"
+            "UpdatePricing/UpdateResourceType cagiriyor; ServiceVariant'ta CurrencyCode'u "
+            "degistiren bir metot YOK (setter private, sadece ctor'da atanir)."
+        )
+        finding(
+            "SESSIZ NO-OP -- PATCH .../variants/{id} 'currencyCode' alanini kabul edip DOGRULUYOR "
+            "ama ASLA UYGULAMIYOR (200 OK, deger degismez). "
+            "src/Modules/RezSaaS.Modules.Catalog/Application/ServiceVariantManagementService.cs:124 "
+            "dogrular, :143-146 uygulamaz; Domain/ServiceVariant.cs'te UpdateCurrency yok. "
+            "Sozlesme yalan soyluyor: alan zorunlu ama etkisiz."
+        )
+    else:
+        error_code = body.get("errorCode") if isinstance(body, dict) else None
+        REPORT.info(
+            f"PATCH currencyCode='USD' -> HTTP {status} (errorCode={error_code}) REDDEDILDI. "
+            f"Kayitli deger: '{stored_currency}' (degismedi)."
+        )
+
+    # Katalogu TEMIZ birak: para birimini TRY'ye geri cek (tuzak 3 -- her zaman TRY).
+    patch_variant(
+        service_id,
+        variant_id,
+        full_variant_body(variant_name, new_duration, new_price, "TRY", resource_type_id),
+        expect=(200, 400),
+    )
+
+    # -- 42 -------------------- (F2) YENI varyant "USD" ile OLUSTURULABILIYOR mu (whitelist var mi)
+    # PATCH currency'yi uygulamiyor olabilir; ama CREATE yolu uyguluyor. Asil tutarsizlik
+    # riski ORADA. Bilgi toplama adimi -- testi DUSURMEZ.
+    REPORT.start("[F] YENI varyant 'USD' para birimiyle olusturulabiliyor mu")
+    status, body = owner.post(
+        f"/api/business/services/{service_id}/variants",
+        full_variant_body("Para Birimi Testi", 30, 99.0, "USD", resource_type_id),
+        expect=(201, 400, 409, 422),
+    )
+    if status == 201 and isinstance(body, dict):
+        usd_variant_id = body["id"]
+        created = read_variant(service_id, usd_variant_id)
+        if created.get("currencyCode") == "USD":
+            REPORT.info(
+                "HTTP 201 -- 'USD' KABUL EDILDI ve kaydedildi. ISO whitelist YOK "
+                "(ServiceVariant.cs:40 sadece trim+upper yapiyor). Ayni isletmede varyant A "
+                "'TRY', varyant B 'USD' olabilir -> KATALOG TUTARSIZLIGI. Public profil ve "
+                "randevu line'lari bu kodu oldugu gibi tasir."
+            )
+            finding(
+                "CurrencyCode'da ISO whitelist YOK: yeni varyant 'USD' (veya herhangi bir 3-karakter "
+                "string) ile olusturulabiliyor -> ayni isletmenin katalogu karisik para birimine "
+                "dusebilir. UI para birimi secici ACMAMALI; sabit 'TRY' gondermeli."
+            )
+        else:
+            REPORT.info(
+                f"HTTP 201 ama kayitli para birimi '{created.get('currencyCode')}' "
+                "-- gonderilen 'USD' degildi."
+            )
+        # Katalogu temiz birak -- Variant'ta DELETE VAR (Service'te yok).
+        owner.request(
+            "DELETE",
+            f"/api/business/services/{service_id}/variants/{usd_variant_id}",
+            expect=(200, 204),
+        )
+    else:
+        error_code = body.get("errorCode") if isinstance(body, dict) else None
+        REPORT.info(
+            f"HTTP {status} (errorCode={error_code}) -- 'USD' REDDEDILDI. Para birimi "
+            "dogrulamasi VAR; katalog tutarsizligi riski yok."
+        )
+
+    # ==================================================================================
+    # (E) ARSIVLEME (adim 43-46)
+    #
+    # DIKKAT: ana hizmeti (service_id) ARSIVLEMIYORUZ -- onun uzerinde dogmus bir randevu ve
+    # onceki 36 adimin durumu var. Task geregi AYRI bir hizmet acip ONU arsivliyoruz.
+    # ==================================================================================
+
+    # -- 43 ------------------- (E1) arsiv testi icin AYRI hizmet + varyant; public'te GORUNUYOR
+    # Once "arsivlemeden ONCE GORUNUYOR" olmasini kanitlamaliyiz: yoksa adim 46'nin
+    # "gorunmuyor" sonucu HICBIR SEY ISPATLAMAZ (hic gorunmemis de olabilir).
+    REPORT.start("[E] Arsiv testi icin ayri hizmet+varyant; public profilde GORUNUYOR mu")
+    _, body = owner.post(
+        "/api/business/services",
+        {"name": f"Arsiv Testi {unique}", "categoryKey": "hair"},
+        expect=(201,),
+    )
+    archive_service_id = body["id"]
+    _, body = owner.post(
+        f"/api/business/services/{archive_service_id}/variants",
+        full_variant_body("Arsiv Varyanti", 30, 250.0, "TRY", resource_type_id),
+        expect=(201,),
+    )
+    archive_variant_id = body["id"]
+    listed = public_services()
+    if not any(item.get("id") == archive_service_id for item in listed):
+        REPORT.fail(
+            f"Yeni hizmet (id={archive_service_id}) public profilde GORUNMUYOR "
+            f"({len(listed)} hizmet dondu) -- arsivleme testi anlamsizlasir."
+        )
+        return False
+    REPORT.ok(f"serviceId={archive_service_id} public profilde gorunuyor ({len(listed)} hizmet)")
+
+    # -- 44 --------------------------- (E2) VARYANTLI hizmet arsivlenebiliyor mu
+    # Fiyat ve sure VARYANTTA yasar -> GERCEK bir hizmetin varyanti HER ZAMAN vardir.
+    # Eger arsivleme "once tum varyantlari sil" diyorsa, ozellik pratikte KULLANILAMAZ.
+    REPORT.start("[E] VARYANTLI hizmet arsivlenebiliyor mu")
+    status, body = owner.post(
+        f"/api/business/services/{archive_service_id}/archive",
+        expect=(200, 400, 404, 409, 422),
+    )
+    error_code = body.get("errorCode") if isinstance(body, dict) else None
+    variants_block_archive = status != 200
+    if variants_block_archive:
+        REPORT.fail(
+            f"URUN HATASI: HTTP {status} (errorCode={error_code}) -- varyanti OLAN hizmet "
+            "ARSIVLENEMIYOR. Ama fiyat/sure VARYANTTA yasar: gercek bir hizmetin varyanti "
+            "HER ZAMAN vardir. Yani 'Arsivle' pratikte HICBIR gercek hizmette calismaz; "
+            "salonun once TUM varyantlari (yani fiyat gecmisini) SILMESI gerekir. "
+            "Kaynak: ServiceManagementService.cs:149-153 -- hasVariants ise ServiceHasVariants "
+            "donuyor. Duzeltme: arsivleme varyantlari da ARSIVLEMELI (silmemeli)."
+        )
+        finding(
+            "'Arsivle' varyanti olan hizmette CALISMIYOR (409 SERVICE_HAS_VARIANTS). "
+            "ServiceManagementService.cs:149-153. Fiyat/sure varyantta yasadigi icin her gercek "
+            "hizmetin varyanti vardir -> ozellik pratikte kullanilamaz; once tum varyantlari "
+            "silmek gerekir (fiyat gecmisi yok olur)."
+        )
+    else:
+        REPORT.ok(f"HTTP 200 -- varyantli hizmet dogrudan arsivlendi (status={body.get('status')})")
+
+    # -- 45 ------------------------- (E3) Arsivleme SOFT mu, yoksa HARD DELETE mi?
+    # Uc'un adi 'archive'. Adi 'archive' olan bir uc, kaydi KALICI OLARAK SILIYORSA bu
+    # geri alinamaz bir veri kaybidir ve UI'daki "Arsivle" butonu YALAN SOYLER.
+    # Ayirt edici test: arsivden SONRA GET /api/business/services/{id}
+    #    200 + status='Archived'  -> DOGRU (soft archive)
+    #    404                      -> HARD DELETE (kayit YOK OLDU)
+    REPORT.start("[E] Arsivleme SOFT mu HARD DELETE mi (arsiv sonrasi GET)")
+    if variants_block_archive:
+        # Arsivleyebilmek icin varyanti silmek ZORUNDAYIZ (E2'nin ta kendisi olan bug).
+        owner.request(
+            "DELETE",
+            f"/api/business/services/{archive_service_id}/variants/{archive_variant_id}",
+            expect=(200, 204),
+        )
+        status, body = owner.post(
+            f"/api/business/services/{archive_service_id}/archive",
+            expect=(200, 400, 404, 409, 422),
+        )
+        if status != 200:
+            error_code = body.get("errorCode") if isinstance(body, dict) else None
+            REPORT.fail(
+                f"Varyantlar SILINDIKTEN sonra bile arsivleme basarisiz: HTTP {status} "
+                f"(errorCode={error_code}). Hizmet HICBIR SEKILDE arsivlenemiyor. Govde: {body}"
+            )
+            return False
+
+    status, body = owner.get(
+        f"/api/business/services/{archive_service_id}", expect=(200, 404)
+    )
+    if status == 404:
+        REPORT.fail(
+            "URUN HATASI -- 'ARSIVLEME' ASLINDA KALICI SILME: arsivden sonra "
+            f"GET /api/business/services/{archive_service_id} -> HTTP 404. Kayit YOK OLDU. "
+            "Kaynak: ServiceManagementService.cs:155 `dbContext.Services.Remove(service)` "
+            "(hard delete). Oysa domain'de Service.Archive() VAR "
+            "(Domain/Service.cs:51-54, Status=ServiceStatus.Archived) ama HIC CAGRILMIYOR -- "
+            "OLU KOD. Karsilastirma: StaffManagementService.cs:186 staff.Archive() dogru sekilde "
+            "cagiriyor, Catalog cagirmiyor. SONUC: (1) arsivleme GERI ALINAMAZ; "
+            "(2) ServiceStatus.Archived asla olusamayacagi icin PublicCatalogMenuService.cs:31 "
+            "'Status == Active' filtresi OLU; (3) UI'daki 'Arsivle' butonu kullaniciya YALAN "
+            "soyler -- aslinda 'Kalici Sil'dir. Duzeltme: Remove yerine service.Archive() cagirin."
+        )
+        finding(
+            "'Arsivle' ucu ASLINDA HARD DELETE: ServiceManagementService.cs:155 "
+            "`dbContext.Services.Remove(service)`. Domain'deki Service.Archive() "
+            "(Domain/Service.cs:51) HIC cagrilmiyor -- olu kod; ServiceStatus.Archived asla "
+            "olusmaz; PublicCatalogMenuService.cs:31'deki 'Status == Active' filtresi bu yuzden "
+            "olu. Geri alinamaz veri kaybi + UI'da yaniltici buton."
+        )
+        # DUSTUK ama devam ediyoruz: adim 46 (public profilde gorunmuyor mu) yine de
+        # calisabilir ve BAGIMSIZ bir gercegi olcer. Sonuc yine exit 1 olacak.
+        archive_is_hard_delete = True
+    else:
+        service_status = body.get("status") if isinstance(body, dict) else None
+        if service_status != "Archived":
+            REPORT.fail(
+                f"Arsivden sonra GET 200 dondu ama status='{service_status}' -- 'Archived' "
+                f"bekleniyordu. Govde: {body}"
+            )
+            return False
+        archive_is_hard_delete = False
+        REPORT.ok("HTTP 200 status='Archived' -- dogru soft archive (kayit korunuyor)")
+
+    # -- 46 ------------------------- (E4) arsivlenen hizmet public profilde GORUNMEMELI
+    # Bu adim, arsivin HARD DELETE olmasindan BAGIMSIZ olarak anlamli: musteri arsivlenen
+    # hizmeti gormemeli. (Hard delete'te de gorunmez -- ama yanlis sebeple.)
+    REPORT.start("[E] Arsivlenen hizmet public profilde GORUNMUYOR mu")
+    listed = public_services()
+    still_there = next((i for i in listed if i.get("id") == archive_service_id), None)
+    if still_there:
+        REPORT.fail(
+            f"URUN HATASI: arsivlenen hizmet (id={archive_service_id}) public profilde HALA "
+            f"GORUNUYOR: {still_there}. Musteri artik sunulmayan bir hizmeti secip randevu "
+            "talep edebilir."
+        )
+        finding("Arsivlenen hizmet public profilde gorunmeye devam ediyor.")
+        return False
+    reason = (
+        "(ama KAYIT SILINDIGI icin -- bkz. adim 45)"
+        if archive_is_hard_delete
+        else "(soft archive filtresi calisiyor)"
+    )
+    REPORT.ok(f"public profilde YOK {reason} ({len(listed)} hizmet kaldi)")
 
     return True
 

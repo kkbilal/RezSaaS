@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { getBusinessServicesServer } from "@/features/business/api/get-business-services-server";
+import { BusinessServicesPage } from "@/features/business/components/business-services-page";
+import { PanelShell } from "@/features/business/components/panel-shell";
 import {
   firstSearchParam,
   selectBusinessTenant
 } from "@/features/business/lib/business-tenant-selection";
-import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { EmptyState } from "@/shared/ui/empty-state";
-import { PanelShell } from "@/features/business/components/panel-shell";
-import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false },
-  title: "Hizmet Yönetimi — İşletme Paneli"
+  title: "Hizmetler ve Fiyatlar — İşletme Paneli"
 };
 
 type Props = {
@@ -73,37 +73,31 @@ export default async function BusinessServicesRoute({ searchParams }: Props) {
     );
   }
 
+  const catalog = await getBusinessServicesServer(tenant);
   const sessionEmail = sessionState.session.account?.email ?? "Oturum";
-    return (
+
+  return (
     <PanelShell
       capabilities={tenant.capabilities ?? []}
       currentTenantId={tenant.tenantId}
       sessionEmail={sessionEmail}
       tenants={buildPanelTenants(context.tenants)}
     >
-      <div className="space-y-6">
-        <section>
-          <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--rs-accent-strong)]">
-            Hizmet yönetimi
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-5xl">
-            Hizmetler
-          </h1>
-        </section>
-        <Card className="p-6 sm:p-8">
-          <CardHeader>
-            <CardTitle>Hazırlık durumu</CardTitle>
-            <CardDescription>
-              Hizmet ve varyant CRUD, fiyat/süre yönetimi ve gerekli yetkinlik
-              atama akışları Phase 5a backend endpoint&apos;leriyle birlikte açılır.
-            </CardDescription>
-          </CardHeader>
-          <EmptyState
-            description="Hizmet oluşturma, varyant yönetimi ve yetkinlik atama akışları Phase 5a kapsamında yayınlanacak."
-            title="Hizmet yönetimi yakında"
-          />
-        </Card>
-      </div>
+      {catalog.kind === "unavailable" ? (
+        <PrivateRouteState
+          actionHref={routes.business.panel}
+          actionLabel="Panele dön"
+          description={`${catalog.reason} Hizmet listesi render edilmedi.`}
+          eyebrow="İşletme paneli"
+          title="Hizmetler alınamadı"
+        />
+      ) : (
+        <BusinessServicesPage
+          initialServices={catalog.services}
+          resourceTypes={catalog.resourceTypes}
+          tenantId={catalog.tenantId}
+        />
+      )}
     </PanelShell>
   );
 }

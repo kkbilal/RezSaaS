@@ -16,6 +16,8 @@ using RezSaaS.Modules.Availability.Infrastructure.Persistence;
 using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Booking.Domain;
 using RezSaaS.Modules.Booking.Infrastructure.Persistence;
+using RezSaaS.Modules.Catalog.Application;
+using RezSaaS.Modules.Catalog.Domain;
 using RezSaaS.Modules.Catalog.Infrastructure.Persistence;
 using RezSaaS.Modules.Integrations.Application;
 using RezSaaS.Modules.Integrations.Domain;
@@ -2078,6 +2080,151 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
             .Where(entity => entity.Id == appointmentId)
             .Select(entity => entity.Status)
             .SingleAsync();
+    }
+
+    /// <summary>
+    /// REGRESYON: varyant para birimi GERCEKTEN uygulanir ve WHITELIST'e karsi dogrulanir.
+    /// </summary>
+    /// <remarks>
+    /// IKI BUG BIRDEN (uctan uca duman testi ortaya cikardi):
+    ///
+    /// 1) SESSIZ NO-OP: ServiceVariantManagementService.UpdateAsync CurrencyCode'u DOGRULUYOR
+    ///    ("bos olamaz") ama UYGULAYACAK BIR DOMAIN METODU OLMADIGI ICIN ASLA YAZMIYORDU.
+    ///    Istek 200 OK donuyor, para birimi degismiyordu. Sozlesme "bu alan zorunlu" diyordu
+    ///    ama alan ETKISIZDI.
+    ///    Bu, kod tabanindaki UCUNCU ayni tur sessiz no-op idi (StaffMember.Rename yoktu;
+    ///    Service.Archive() cagrilmiyordu -- onun yerine KALICI SILINIYORDU).
+    ///
+    /// 2) WHITELIST YOKTU: CurrencyCode serbest 3-karakter string'di. Ayni isletmenin katalogu
+    ///    "Sac Kesimi 400 TRY" + "Boya 800 USD" gibi KARISIK PARA BIRIMINE dusebiliyordu.
+    ///    "UI'da secici koymayiz" bir kural kontrolu DEGILDIR -- API dogrudan cagrilabilir.
+    ///    Kisit artik DOMAIN'de.
+    /// </remarks>
+    [Fact]
+    public async Task VariantCurrencyIsAppliedAndRestrictedToSupportedCodes()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        await using CatalogDbContext dbContext =
+            new(CreateOptions<CatalogDbContext>(), tenantContextAccessor);
+
+        Service service = Service.Create(tenantId, "Saç Kesimi", "hair", testTime);
+        dbContext.Services.Add(service);
+        await dbContext.SaveChangesAsync();
+
+        ServiceVariantManagementService variantService = new(
+            dbContext,
+            tenantContextAccessor,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new FixedTimeProvider(testTime));
+
+        // USD ile YARATMA artik REDDEDILIR (eskiden kabul ediliyordu -> karisik katalog).
+        ServiceVariantManagementResult usdCreate = await variantService.CreateAsync(
+            new CreateServiceVariantCommand(
+                actorUserAccountId, service.Id, "Kısa Saç", 30, 400m, "USD", null));
+
+        Assert.False(usdCreate.Succeeded);
+        Assert.Equal(ServiceVariantManagementService.InvalidRequest, usdCreate.ErrorCode);
+
+        // TRY ile yaratma calisir.
+        ServiceVariantManagementResult created = await variantService.CreateAsync(
+            new CreateServiceVariantCommand(
+                actorUserAccountId, service.Id, "Kısa Saç", 30, 400m, "TRY", null));
+
+        Assert.True(created.Succeeded);
+        Guid variantId = created.Variant!.Id;
+
+        // USD'ye GUNCELLEME de reddedilir.
+        ServiceVariantManagementResult usdUpdate = await variantService.UpdateAsync(
+            new UpdateServiceVariantCommand(
+                actorUserAccountId, service.Id, variantId, "Kısa Saç", 30, 400m, "USD", null));
+
+        Assert.False(usdUpdate.Succeeded);
+
+        // Kucuk harf "try" kabul edilir ve NORMALIZE edilir (TRY olarak yazilir).
+        ServiceVariantManagementResult ok = await variantService.UpdateAsync(
+            new UpdateServiceVariantCommand(
+                actorUserAccountId, service.Id, variantId, "Kısa Saç", 45, 550m, "try", null));
+
+        Assert.True(ok.Succeeded);
+
+        // ASIL KONTROL: DB'den yeniden oku. Para birimi GERCEKTEN yazildi mi?
+        ServiceVariant persisted = await dbContext.ServiceVariants
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == variantId);
+
+        Assert.Equal("TRY", persisted.CurrencyCode);
+        Assert.Equal(550m, persisted.PriceAmount);
+        Assert.Equal(45, persisted.DurationMinutes);
+    }
+
+    /// <summary>
+    /// REGRESYON: hizmet "arsivleme" GERCEKTEN arsivler -- KALICI SILMEZ.
+    /// </summary>
+    /// <remarks>
+    /// BULUNAN BUG (uctan uca duman testi ortaya cikardi):
+    /// ServiceManagementService.ArchiveAsync `dbContext.Services.Remove(service)` cagiriyordu --
+    /// yani "arsivle" adli uc KALICI SILME yapiyordu. Domain'de calisan bir Archive() metodu
+    /// vardi (Status = Archived) ama HIC CAGRILMIYORDU. Ustelik audit kaydi
+    /// "catalog.service.archived" diyordu: hem kullaniciya hem denetim gunlugune yalan.
+    /// (Personel Rename bug'inin birebir aynisi.)
+    ///
+    /// Ayrica "varyanti varsa arsivleme" engeli vardi (409). Fiyat ve sure ZATEN varyantta
+    /// yasadigi icin GERCEK HER HIZMETIN varyanti var -- yani arsivleme pratikte HIC
+    /// CALISMIYORDU. O engel hard-delete'in FK artigiydi; soft archive'da gereksiz.
+    /// </remarks>
+    [Fact]
+    public async Task ServiceArchiveSetsStatusInsteadOfDeletingAndWorksWithVariants()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid actorUserAccountId = Guid.CreateVersion7();
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        await using CatalogDbContext dbContext =
+            new(CreateOptions<CatalogDbContext>(), tenantContextAccessor);
+
+        Service service = Service.Create(tenantId, "Saç Kesimi", "hair", testTime);
+        dbContext.Services.Add(service);
+        await dbContext.SaveChangesAsync();
+
+        // VARYANT EKLE: eski kod bu yuzden 409 doner ve arsivlemeyi TAMAMEN reddederdi.
+        // Fiyat/sure zaten varyantta yasiyor, yani gercek her hizmetin varyanti vardir.
+        dbContext.ServiceVariants.Add(
+            ServiceVariant.Create(tenantId, service.Id, "Kısa Saç", 30, 400m, "TRY", testTime));
+        await dbContext.SaveChangesAsync();
+
+        ServiceManagementService managementService = new(
+            dbContext,
+            tenantContextAccessor,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new FixedTimeProvider(testTime));
+
+        ServiceManagementResult result =
+            await managementService.ArchiveAsync(actorUserAccountId, service.Id);
+
+        Assert.True(result.Succeeded);
+
+        // ASIL KONTROL: kayit HALA VAR MI (silinmedi mi) ve statusu Archived mi?
+        // Eski kod burada satiri KALICI OLARAK SILIYORDU.
+        Service persisted = await dbContext.Services
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == service.Id);
+
+        Assert.Equal(ServiceStatus.Archived, persisted.Status);
+
+        // Varyantlar da DB'de kalir (arsivlenmis hizmetin varyantlari silinmez).
+        Assert.True(
+            await dbContext.ServiceVariants
+                .AsNoTracking()
+                .AnyAsync(entity => entity.ServiceId == service.Id));
     }
 
     /// <summary>
