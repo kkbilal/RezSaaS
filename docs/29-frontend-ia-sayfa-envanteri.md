@@ -118,7 +118,9 @@ Talep iptali sadece `PendingApproval`'da çalışıyor; onaydan sonra `APPOINTME
 
 **Kanıt:** src/Apps/RezSaaS.Api/Business/ altındaki 11 composer (BusinessBranchComposer, BusinessResourceComposer, BusinessResourceTypeComposer, BusinessReviewComposer, BusinessServiceComposer, BusinessSettingsComposer, BusinessSkillComposer, BusinessStaffComposer, BusinessStaffUnavailableComposer, BusinessVariantComposer, BusinessWorkingHoursComposer) CanManageBusinessSettingsAsync çağırıyor; TenantBookingAuthorizationService.cs:74-96 bu metotta yalnızca Role == TenantMembershipRole.BusinessOwner üyeliğini kabul ediyor. BusinessContextComposer.cs:55-59 BranchManager'a sadece [business.appointmentRequests.manage, business.appointmentRequests.reportAbuse] veriyor; business.settings.manage YOK. panel-shell.tsx:81-92 ise Personel/Hizmetler/Şubeler/Kaynaklar/Yetenekler/Kaynak türleri/Çalışma saatleri/Ayarlar öğelerini role bakmadan herkese basıyor.
 
-**Çözüm:** Nav-manifest'e capability alanı eklenip fail-closed can() ile filtrelenir: business.settings.manage gerektiren tüm öğeler BranchManager'da menüde HİÇ görünmez. Sunucu tarafında da her /panel/* sayfası requireCapability() ile korunur. BranchManager'ın MVP'de gördüğü tek şerit: Bugün, Talepler, Takvim, Randevular.
+**Çözüm (Karar K1 ile güncellendi):** BranchManager rolü **V2'ye bırakıldı** → MVP'de bu role kimse atanmıyor, dolayısıyla 403 duvarı **oluşmuyor**. Bunun **zorunlu** koşulu: `/platform/tenantlar/[id]/uyeler` rol seçicisi MVP'de **sadece `BusinessOwner`** sunacak (`BranchManager` ve `Staff` seçenekleri listeden çıkarılacak — `Staff`'ın capability listesi backend'de zaten boş dizi).
+
+Buna rağmen **nav-manifest yine de tipli kurulur**: `permission` alanı zorunlu union, `can()` fail-closed, sunucu tarafında her `/panel/*` sayfası `requireCapability()` ile korunur. Amacı bugünkü 403'ü çözmek değil — V2'de rol eklenirken "izin yazmayı unuttum → herkese açıldı" hatasını **derleme zamanında** yakalamaktır.
 
 #### 2. [Backend] Müşteri onaylanmış (Confirmed) randevusunu iptal edemiyor — endpoint yok
 
@@ -192,8 +194,9 @@ Talep iptali sadece `PendingApproval`'da çalışıyor; onaydan sonra `APPOINTME
 PANEL (İşletme kabuğu) — shadcn Sidebar, tablette kalıcı, telefonda Sheet
 ═══════════════════════════════════════════════════════════════════════
 
-[İşletme değiştirici — Select]   ← birden fazla tenant üyeliği varsa
-[Şube değiştirici — Select]      ← birden fazla şube varsa; BranchManager'da KİLİTLİ ve zorunlu
+[İşletme değiştirici — Select]   ← SADECE birden fazla tenant üyeliği varsa render edilir
+[Şube değiştirici — Select]      ← SADECE birden fazla şube varsa render edilir
+                                    (tek tenant / tek şube = seçici HİÇ çizilmez, sadece isim metni)
 
 GÜNLÜK İŞ                                   (capability: business.appointmentRequests.manage)
 ├── Bugün                        /panel
@@ -217,13 +220,15 @@ GÖRÜNMEYEN AMA MANİFESTTE (hidden: true — yetki tablosunda VARLAR):
   /panel/hizmetler/[serviceId]               → business.settings.manage
   /panel/personel/[staffId]                  → business.settings.manage
 
-BRANCHMANAGER'IN GÖRDÜĞÜ AĞAÇ (kanıt: 11 composer CanManageBusinessSettingsAsync → Owner-only):
-GÜNLÜK İŞ
-├── Bugün
-├── Talepler (3)
-├── Takvim
-└── Randevular
-    → "İŞLETMEM" grubu KOMPLE YOK. Başlık bile render edilmez.
+MVP'DE TEK İŞLETME ROLÜ VAR: BusinessOwner  (bkz. Karar K1)
+  → BranchManager ve Staff rolleri V2'ye bırakıldı.
+  → Yukarıdaki ağacın TAMAMINI tek rol görür; koşullu dal yok.
+  → ZORUNLU: /platform/tenantlar/[id]/uyeler rol seçicisi SADECE "BusinessOwner" sunacak.
+    BranchManager/Staff atanırsa o kullanıcı her öğede 403 duvarına çarpar
+    (Staff'ın capability listesi backend'de zaten BOŞ DİZİ).
+  → Nav yine de capability'den türetilir ve can() fail-closed kalır: amacı,
+    V2'de rol eklerken "izin yazmayı unuttum → herkese açıldı" hatasını
+    DERLEME ZAMANINDA yakalamaktır.
 
 BACKEND ENTITY İSİMLERİ ÜST SEVİYEDEN KALDIRILDI:
   "Kaynak türleri"  → "Koltuklar ve ekipman" sayfasının 2. sekmesi
@@ -250,7 +255,7 @@ PUBLIC kabuğu (üst navbar)
 
 ## 5. Rol bazlı navigasyon — nasıl çalışır
 
-## 1. Capability union — BACKEND'İN GERÇEK DEĞERLERİ
+### 1. Capability union — BACKEND'İN GERÇEK DEĞERLERİ
 
 Backend `BusinessCapabilityNames.cs`'te 3 sabit var ve `BusinessContextComposer.CreateCapabilities` role göre dağıtıyor. Bunu birebir kopyalıyoruz, UYDURMUYORUZ:
 
@@ -271,7 +276,7 @@ export type Gate = Capability | "public.anon" | "customer.self" | "platform.admi
 
 KRİTİK GERÇEK: `business.settings.manage` yalnızca BusinessOwner'da. Katalog, personel, şube, kaynak, kaynak-tipi, çalışma-saati, ayar ve review composer'larının **11'i birden** `CanManageBusinessSettingsAsync` çağırıyor ve o metot `Role == BusinessOwner` şartını arıyor (TenantBookingAuthorizationService.cs:74-96). Yani BranchManager bu 8 sayfanın hepsinde 403 alır.
 
-## 2. Nav-manifest tipi — DİNAMİK DETAY ROTALARI DAHİL (hidden: true)
+### 2. Nav-manifest tipi — DİNAMİK DETAY ROTALARI DAHİL (hidden: true)
 
 ```ts
 // src/shared/nav/manifest.ts
@@ -327,7 +332,7 @@ export const NAV: readonly NavNode[] = [
 
 Manifest bir TEST ile kilitlenir: `src/app` altındaki her `page.tsx`'in rota kalıbı NAV içinde bir düğümle eşleşmek ZORUNDA. Eşleşmeyen sayfa = build kırılır. Bugünkü hata (12 rota manifest dışında, 3'ü canlı 404) böyle bir testle bir daha oluşamaz.
 
-## 3. Fail-closed can()
+### 3. Fail-closed can()
 
 ```ts
 // src/shared/auth/can.ts
@@ -362,7 +367,7 @@ export function visibleNav(viewer: Viewer, shell: NavNode["shell"]) {
 ```
 `capabilities` dizisi UYDURULMAZ — `GET /api/business/context` yanıtındaki `tenants[].capabilities` aynen kullanılır. Frontend "BusinessOwner mı?" diye role bakmaz; capability'ye bakar. Böylece backend rol→capability haritasını değiştirdiğinde frontend kendiliğinden doğru kalır.
 
-## 4. Guard katmanları (4 kat, hepsi zorunlu)
+### 4. Guard katmanları (4 kat, hepsi zorunlu)
 
 1. **middleware.ts** — `.AspNetCore.Identity.Application` cookie'si yoksa `/panel/*`, `/hesabim/*`, `/platform/*` → `/giris?returnTo=...`. Sadece "oturum var mı" der, yetki bilmez. (Bugün zaten var.)
 2. **Sunucu sayfa guard'ı** — her korumalı `page.tsx`'in İLK satırı:
@@ -374,7 +379,7 @@ export function visibleNav(viewer: Viewer, shell: NavNode["shell"]) {
 3. **Nav filtresi** — `visibleNav()`. Yetkisi olmayan öğe MENÜDE HİÇ ÇİZİLMEZ (soluk/pasif değil, YOK). `hidden: true` düğümler zaten hiç çizilmez.
 4. **Aksiyon seviyesi** — her buton kendi capability'sini sorar: `can(viewer, "business.settings.manage") && <Button>Fiyatı düzenle</Button>`. Endpoint'i olmayan aksiyon (walk-in randevu oluştur, randevuyu müşteri iptal et, yetkinlik ata) hiçbir koşulda render EDİLMEZ.
 
-## 5. Şube kapsamı (branchScoped) — 403'ten korunma sözleşmesi
+### 5. Şube kapsamı (branchScoped) — 403'ten korunma sözleşmesi
 
 `GET /api/business/context` → `membership.branchId` DOLU ise (şube-scoped BranchManager), tüm business listeleme çağrılarına `branchId` ZORUNLU eklenmeli; yoksa `TenantBookingAuthorizationService.cs:42-46` false döner ve backend **403** verir (boş liste değil, hata). Bu bir backend bug'ı değil, fail-closed tasarım.
 
@@ -393,7 +398,7 @@ export function createBusinessClient(viewer: Extract<Viewer, { kind: "business" 
 }
 ```
 
-## 6. Yetkisiz erişim davranışı (backend'in gerçek yanıtlarına göre)
+### 6. Yetkisiz erişim davranışı (backend'in gerçek yanıtlarına göre)
 
 | Durum | Backend | Frontend |
 |---|---|---|
@@ -408,7 +413,7 @@ Yetkisiz öğe için **pasif buton + tooltip YAPILMAZ** (kural 8): dokunmatikte 
 
 ---
 
-## Sayfa envanteri (27)
+## 6. Sayfa envanteri (27)
 
 ### Public (3)
 
@@ -463,7 +468,7 @@ Yetkisiz öğe için **pasif buton + tooltip YAPILMAZ** (kural 8): dokunmatikte 
 | `/platform/tenantlar/[tenantId]/uyeler` | İşletme üyeleri (platform admin) | MEVCUT-KORUNUR | PlatformAdmin | Masaüstü birincil. Telefonda kart listesi fallback'i yeterli, ek yatırım yapılmaz. |
 
 
-## Aksiyon x Capability matrisi
+## 7. Aksiyon x Capability matrisi
 
 | Sayfa | Aksiyon | Gerekli capability | Backend ucu |
 |---|---|---|---|
@@ -625,13 +630,76 @@ Yetkisiz öğe için **pasif buton + tooltip YAPILMAZ** (kural 8): dokunmatikte 
 **Toplam frontend tahmini: ~29 iş günü.** Backend blokaj işleri hariç (müşteri iptal ucu ~2 gün, personel `Rename` fix ~0.5 gün).
 
 ---
+## 10. Kararlar (KAPANDI — 2026-07-12)
 
-## 10. Açık kararlar — kullanıcı onayı bekliyor
+Dört açık karar da kullanıcı tarafından verildi. Bunlar artık **bağlayıcıdır**.
 
-1. BranchManager (şube müdürü) rolü MVP'de olacak mı? Kod şunu söylüyor: şube müdürü backend'de hizmet/fiyat/personel/şube/koltuk/saat/ayar uçlarının HİÇBİRİNE dokunamıyor (11 composer da BusinessOwner şartı arıyor) — sadece talep onay/red ve randevu operasyonu yapabiliyor. Lansmanda SADECE BusinessOwner ile çıkarsak nav %60 basitleşir, capability filtreleme ve şube-scope enjeksiyonu şimdilik gereksizleşir (~2 gün kazanç). İki rollü yapıyı şimdi mi kuralım, yoksa V2'ye mi bırakalım?
+### K1 — Şube müdürü (BranchManager) rolü: **V2'ye bırakıldı**
 
-2. Müşterinin ONAYLANMIŞ randevusunu iptal etmesi için backend'de endpoint yok (2 gün iş). Sizin MVP cümleniz 'müşteri de rezervasyonlarını yönetebilsin' diyor; bu olmadan müşteri salonu telefonla aramak zorunda kalır — yani ürünün çözmeyi vaat ettiği problem. Backend'i bekleyip mi çıkalım (frontend Adım 3'te butonu gizli bırakır, Adım 8'de açar), yoksa V1'de bu eksikle mi çıkalım?
+Lansmanda tek işletme rolü var: **BusinessOwner**. Gerekçe: kod zaten şunu söylüyordu — şube müdürü
+`/api/business` altındaki hizmet/fiyat/personel/şube/koltuk/saat/ayar uçlarının hiçbirine dokunamıyor
+(11 composer da `BusinessOwner` şartı arıyor). Rolü MVP'ye almak, ~2 günlük capability filtreleme ve
+şube-scope enjeksiyonu işini bugün yapmak demekti; karşılığında kullanıcıya sıfır değer.
 
-3. Salon onboarding'i nasıl olacak? Backend'de self-servis işletme kaydı YOK — bir salonun var olabilmesi için platform admin'in (sizin) tenant açıp BusinessOwner üyeliği vermesi gerekiyor. Bu, /platform/tenantlar ve /platform/tenantlar/[id]/uyeler sayfalarını MVP'nin zorunlu parçası yapıyor (2 sayfa, mevcut ve çalışıyor). İlk müşterileri elle mi onboard edeceksiniz (bu 2 sayfa kalır, dokunmayız), yoksa self-servis kayıt bir lansman gereksinimi mi (o zaman backend'de yeni bir tenant-provisioning akışı gerekir, kapsam büyür)?
+**⚠️ ZORUNLU SONUÇ — bu atlanırsa tuzak kurulur:**
+`/platform/tenantlar/[tenantId]/uyeler` sayfasındaki rol seçicisi MVP'de **sadece `BusinessOwner`** sunacak.
+`BranchManager` ve `Staff` seçenekleri **listeden çıkarılacak**. Aksi halde bu rollerden biri atanan kullanıcı
+panele girer ve her öğede 403 duvarına çarpar (`Staff`'ın capability listesi backend'de zaten **boş dizi**).
 
-4. İptal politikası: backend'de 'X saat kala iptal edilemez' kuralı HİÇ YOK (0 eşleşme). Müşteri, randevu saatinden 5 dakika önce bile bekleyen talebini iptal edebiliyor. Üç seçenek: (a) kuralsız çıkalım — salon son dakika iptallerine açık kalır; (b) sabit 2 saat kuralı kodlayalım — migration borcu yok, ama işletme değiştiremez; (c) BusinessSettings'e CancellationCutoffHours alanı ekleyelim (migration + /panel/ayarlar'da bir alan, ~1 gün) — sonradan eklemek daha pahalı olur. Hangisi?
+**Yine de kurulacak olan:** `nav-manifest` tipli kalır, `permission` alanı **zorunlu union** olur ve `can()`
+**fail-closed** çalışır. Tek capability seti ile bile bu altyapı kurulur — çünkü asıl amacı, V2'de rol
+eklerken "izin yazmayı unuttum → herkese açıldı" hatasını **derleme zamanında** yakalamaktır. Bu, referans
+projelerdeki gerçek fail-open zaafının (`buildFallbackNavigation()`) yapısal karşılığıdır. Maliyeti düşük,
+sonradan eklemek pahalı.
+
+### K2 — Müşterinin onaylanmış randevuyu iptali: **backend açılacak, MVP'ye giriyor**
+
+Yeni uç: `POST /api/public/businesses/{slug}/appointments/{appointmentId}/cancel`
+- Mevcut `CancelAppointmentRequestService` deseninin **birebir kopyası** (idempotency + audit dahil).
+- Sahiplik: `Appointment.CustomerUserAccountId == sub` claim. Sadece `Status == Confirmed` iptal edilebilir.
+- Domain metodu `Appointment.Cancel(...)` **zaten var** — sıfırdan domain yazılmayacak.
+- Tahmin: ~2 gün.
+
+**Frontend sözleşmesi:** Adım 3'te (`/hesabim/randevular`) `Confirmed` satırlarda iptal butonu
+**gösterilmez**; uç merge edilince Adım 8'de açılır. (Sahte ekran üretme yasağı.)
+
+### K3 — Salon onboarding: **elle (concierge)**
+
+Self-servis işletme kaydı **yapılmayacak**. İlk salonları platform admin (kurucu) elle kuruyor.
+
+**Sonuç:** `/platform/tenantlar` ve `/platform/tenantlar/[tenantId]/uyeler` sayfaları MVP'nin **zorunlu**
+parçasıdır (2 sayfa, mevcut ve çalışıyor — dokunulmuyor). Backend'de yeni bir tenant-provisioning akışı
+**gerekmiyor**, kapsam büyümüyor.
+
+### K4 — İptal politikası: **ayarlanabilir alan eklenecek**
+
+`BusinessSettings`'e `CancellationCutoffHours` (int) alanı eklenir.
+- Kural: `now + CutoffHours > StartUtc` ise `APPOINTMENT_CANCEL_TOO_LATE`.
+- Varsayılan: `2` (0 = her zaman iptal edilebilir).
+- `/panel/ayarlar`'da tek bir sayı alanı olarak açılır.
+- K2'deki yeni iptal ucunda **ve** mevcut talep-iptal ucunda uygulanır.
+- Tahmin: ~1 gün (migration + alan + kontrol + UI).
+
+Gerekçe: sabit kural her salona uymaz (kimi 24 saat ister, kimi hiç istemez) ve migration borcunu
+sonra ödemek daha pahalı.
+
+---
+
+## 11. Backend iş listesi (bu doküman kaynaklı)
+
+Frontend bu uçlar olmadan ilerleyemez veya kullanıcıya yalan söyler. Öncelik sırasıyla:
+
+| # | İş | Tahmin | Neden |
+|---|---|---|---|
+| B1 | `StaffMember.Rename()` domain metodu + `StaffManagementService.UpdateAsync` içinde çağrılması | 0.5 gün | **Bugün 200 OK dönüp hiçbir şey yapmıyor.** Personel adı düzeltilemiyor → MVP'nin "elemanlarını yönetebilmesi" maddesi delik. |
+| B2 | `POST .../appointments/{id}/cancel` (müşteri iptali) — K2 | 2 gün | MVP'nin "müşteri de rezervasyonlarını yönetebilmesi" maddesi. |
+| B3 | `BusinessSettings.CancellationCutoffHours` — K4 | 1 gün | İptal politikası. B2 ile birlikte yapılmalı. |
+| B4 | `Branch.TimeZoneId` validasyonu + IANA normalizasyonu | 0.5 gün | "Istanbul" yazan salon **sonsuza dek 0 slot** döndürür (200 OK, hata yok) — sessizce lansman dışı kalır. |
+| B5 | `ConfirmedAppointmentQueryService.GetOwnAsync`'e `status` parametresi | 0.5 gün | Müşteri geçmişinde status filtresi randevulara uygulanmıyor. |
+| B6 | `ConfigureApplicationCookie`: idle 8 saat, `SecurePolicy = Always` | 0.2 gün | Bugün 14 gün sliding, absolute timeout yok, `Secure=SameAsRequest`. Ortak/tezgah bilgisayarı riski. |
+| B7 | `Security:UnsafeRequestOrigins:AllowedOrigins` prod ortam değişkeni | — | **Deploy blokajı.** Boş kalırsa randevu oluşturma dahil her POST 403 döner. |
+| B8 | (Ertelenebilir) Personel arşivlemede aktif randevu kontrolü → 409 | 0.5 gün | Gelecek randevusu olan personel arşivlenip randevular sahipsiz kalıyor. |
+
+**Yapılmayacaklar (bilinçli):** anti-forgery token altyapısı (Origin doğrulama + SameSite=Lax zaten var),
+`date-fns-tz` (native `Intl` doğru çalışıyor), walk-in randevu (domain invariant'ı kırıyor, ~38 dosya),
+yetkinlik okuma uçları (yetkinlik UI'ı MVP dışı).
