@@ -16,10 +16,12 @@ type CustomerShellProps = {
   activeNav?: CustomerNavValue;
 };
 
+// "Genel bakis" (/hesabim) SILINDI: sayfasi yoktu, canli 404 uretiyordu.
+// /hesabim artik dogrudan buraya (randevu/talep listesine) yonleniyor.
+// "Itirazlar" SILINDI: moderasyon/itiraz akisi MVP disi (bkz. docs/29, Karar K1 kapsami).
+// Sayfa dosyasi duruyor ama menude gorunmuyor.
 const navItems: Array<{ href: string; label: string; value: CustomerNavValue }> = [
-  { href: routes.customer.dashboard, label: "Genel bakış", value: "dashboard" },
-  { href: routes.customer.requests, label: "Taleplerim", value: "requests" },
-  { href: routes.customer.appeals, label: "İtirazlar", value: "appeals" },
+  { href: routes.customer.requests, label: "Randevularım", value: "requests" },
   { href: routes.customer.profile, label: "Profil", value: "profile" }
 ];
 
@@ -35,7 +37,7 @@ export function CustomerShell({
   const resolvedActive =
     activeNav ??
     navItems.find((item) => pathname === item.href)?.value ??
-    "dashboard";
+    "requests";
 
   return (
     <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">

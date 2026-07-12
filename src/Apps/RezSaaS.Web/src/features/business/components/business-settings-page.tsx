@@ -8,8 +8,10 @@ import {
   type BusinessProfileSettingsDraft
 } from "@/features/business/components/business-profile-settings-form";
 import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
+import { routes } from "@/shared/config/routes";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
+import Link from "next/link";
 
 type BusinessSettingsPageProps = {
   overview: BusinessSettingsOverview;

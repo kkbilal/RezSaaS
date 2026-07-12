@@ -178,10 +178,14 @@ test("calendar-grid primitive keeps branch-timezone-aware scheduling contract", 
 
 test("panel shell keeps tenant switcher behind controlled props", () => {
   const shell = readSource("../../features/business/components/panel-shell.tsx");
+  // NOT: "onTenantChange" diye bir prop hic olmadi -- assertion BAYATTI ve test bu yuzden
+  // kirmizi kaliyordu. Gercek sozlesme: TenantSwitcher'a onSelect={handleTenantChange}
+  // geciliyor ve secim URL query param'ina (?tenantId=) yaziliyor.
   const requiredContracts = [
     "PanelTenantOption",
     "currentTenantId",
-    "onTenantChange",
+    "handleTenantChange",
+    "TenantSwitcher",
     "pendingRequestCount",
     "routes.business.panel",
     "routes.business.settings"
@@ -209,10 +213,11 @@ test("platform shell surfaces step-up status indicator", () => {
 
 test("customer shell keeps navigation scopes and responsive toggle", () => {
   const shell = readSource("../../features/customer/components/customer-shell.tsx");
+  // routes.customer.dashboard SILINDI: /hesabim'in sayfasi yoktu, nav ogesi canli 404 uretiyordu.
+  //   Artik /hesabim dogrudan randevu/talep listesine yonleniyor, nav ogesi degil.
+  // routes.customer.appeals SILINDI: itiraz/moderasyon akisi MVP disi (docs/29).
   const requiredContracts = [
-    "routes.customer.dashboard",
     "routes.customer.requests",
-    "routes.customer.appeals",
     "routes.customer.profile",
     "aria-expanded={mobileOpen}"
   ];

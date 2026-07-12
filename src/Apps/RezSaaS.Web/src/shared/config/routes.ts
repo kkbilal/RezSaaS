@@ -1,28 +1,22 @@
+// Tek doğruluk kaynağı: buradaki her rotanın src/app altında bir page.tsx'i VARDIR.
+// Sayfası olmayan rota buraya EKLENMEZ — aksi halde sidebar/link canlı 404 üretir.
+// (Bu dosyada bir zamanlar 14 hayalet rota vardı; üçü canlı 404 olarak kullanıcıya çıkıyordu.)
 export const routes = {
   auth: {
     dispatch: "/gelis",
-    emailVerify: "/eposta-dogrula",
     forgotPassword: "/sifremi-unuttum",
     login: "/giris",
-    mfaStepUp: "/platform/adim",
     register: "/kayit",
     resetPassword: "/sifre-sifirla"
   },
   business: {
     panel: "/panel",
-    abuseReports: "/panel/abuse-raporlari",
-    appointmentDetail: (appointmentId: string) =>
-      `/panel/randevular/${encodeURIComponent(appointmentId)}`,
-    appointmentOperations: (appointmentId: string) =>
-      `/panel/randevular/${encodeURIComponent(appointmentId)}/islem`,
     appointments: "/panel/randevular",
     branches: "/panel/subeler",
     calendar: "/panel/takvim",
-    messaging: "/panel/mesajlar",
     requests: "/panel/talepler",
     resources: "/panel/kaynaklar",
     resourceTypes: "/panel/kaynak-turleri",
-    reviews: "/panel/degerlendirmeler",
     services: "/panel/hizmetler",
     settings: "/panel/ayarlar",
     skills: "/panel/yetenekler",
@@ -31,36 +25,28 @@ export const routes = {
   },
   customer: {
     appeals: "/hesabim/itirazlar",
-    appointmentDetail: (appointmentId: string) =>
-      `/hesabim/talepler?talep=${encodeURIComponent(appointmentId)}`,
-    appointments: "/hesabim/talepler",
     dashboard: "/hesabim",
     profile: "/hesabim/profil",
-    requests: "/hesabim/talepler",
-    reviews: "/hesabim/degerlendirmeler"
+    // Musterinin TEK gercek listesi burasi: GET /api/customer/appointment-history
+    // hem talepleri hem randevulari birlikte donuyor (ItemType ile ayrisiyor).
+    // /hesabim/randevular sadece eski linkler icin buraya yonlenen bir stub.
+    // Adim 3'te bu sayfa "Randevularim" olarak yeniden adlandirilip sekmeli hale gelecek.
+    requests: "/hesabim/talepler"
   },
   platform: {
     abuse: "/platform/abuse",
     abuseUser: (userAccountId: string) =>
       `/platform/abuse/kullanici/${encodeURIComponent(userAccountId)}`,
     appeals: "/platform/itirazlar",
-    auditLog: "/platform/denetim-gunlugu",
     dashboard: "/platform",
-    identities: "/platform/kimlikler",
-    sanctions: "/platform/cezalar",
-    support: "/platform/destek",
     tenants: "/platform/tenantlar",
     tenantMembers: (tenantId: string) =>
       `/platform/tenantlar/${encodeURIComponent(tenantId)}/uyeler`,
     newTenant: "/platform/tenantlar/yeni"
   },
   public: {
-    booking: (businessSlug: string) =>
-      `/isletme/${encodeURIComponent(businessSlug)}/rezervasyon`,
     businessProfile: (businessSlug: string) =>
       `/isletme/${encodeURIComponent(businessSlug)}`,
-    businessReviews: (businessSlug: string) =>
-      `/isletme/${encodeURIComponent(businessSlug)}/degerlendirmeler`,
     discover: "/kesfet",
     home: "/"
   }
