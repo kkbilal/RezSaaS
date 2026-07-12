@@ -227,23 +227,11 @@ test("customer shell keeps navigation scopes and responsive toggle", () => {
   }
 });
 
-test("animated background exposes reference-style orbs and grid overlay", () => {
-  const bg = readSource("animated-background.tsx");
-  const requiredContracts = [
-    "AnimatedBackground",
-    "orb1 22s",
-    "orb2 17s",
-    "orb3 28s",
-    "var(--rs-accent)",
-    "var(--rs-accent-violet)",
-    "var(--rs-chart-3)",
-    "backgroundSize"
-  ];
-
-  for (const contract of requiredContracts) {
-    assertIncludes(bg, contract);
-  }
-});
+// KALDIRILDI: "animated background exposes reference-style orbs and grid overlay"
+//
+// animated-background.tsx SILINDI. O component dark-glassmorphism temasinin animasyonlu
+// orb'lariydi; light-first karariyla (docs/29) tema degisti ve component olu koda dondu.
+// Testi de birlikte gitti -- artik var olmayan bir sozlesmeyi assert ediyordu.
 
 test("public navbar keeps scroll-blur and gradient logo", () => {
   const nav = readSource("public-navbar.tsx");
@@ -262,21 +250,49 @@ test("public navbar keeps scroll-blur and gradient logo", () => {
   }
 });
 
-test("global tokens keep reference dark indigo/violet palette", () => {
+test("global tokens are LIGHT-FIRST and expose the shadcn token layer", () => {
   const css = readSource("../../app/globals.css");
+
+  // Eski sozlesme dark-only bir paleti (--rs-bg: #080c14, color-scheme: dark) assert ediyordu.
+  // docs/29 karari: LIGHT-FIRST + cift tema. Hedef kullanici salon isletmecisi -- gun isiginda,
+  // camekan onunde, tablette calisiyor.
   const requiredContracts = [
-    "--rs-bg: #080c14",
-    "--rs-accent: #6366f1",
-    "--rs-accent-violet: #8b5cf6",
-    "--rs-glass:",
+    "color-scheme: light",
+    "--rs-bg: #f6f7fa", // acik zemin (eskiden #080c14)
+    "--rs-accent: #4f46e5",
+    // shadcn token katmani Tailwind utility'lerine bagli olmali (bg-background vb.)
+    "@theme inline",
+    "--color-background: var(--background)",
+    "--color-sidebar: var(--sidebar)",
+    // Dark tema kaybolmadi: acik tercih + isletim sistemi tercihi
+    '[data-theme="dark"]',
+    "@media (prefers-color-scheme: dark)",
+    // Korunan yardimci siniflar (mevcut componentler kullaniyor)
     "rs-gradient-text",
     "rs-gradient-bg",
-    "@keyframes orb1",
-    "@keyframes orb2",
-    "@keyframes orb3"
+    "pulse-warning"
   ];
 
   for (const contract of requiredContracts) {
     assertIncludes(css, contract);
   }
+});
+
+test("dark glassmorphism kaliplari geri gelmemis olmali", () => {
+  const css = readSource("../../app/globals.css");
+
+  // docs/29: gradient/blur/glass kaliplarindan kacin. Bunlarin geri sizmasini engelle.
+  for (const forbidden of ["@keyframes orb1", "#080c14", "color-scheme: dark;\n  --rs-bg: #080c14"]) {
+    assert.ok(
+      !css.includes(forbidden),
+      `Dark glassmorphism kalibi geri gelmis: "${forbidden}"`
+    );
+  }
+
+  // Harici Google Fonts @import'u: render-blocking + her ziyaretcinin IP'sini Google'a sizdirir.
+  // Fontlar next/font ile self-host ediliyor (layout.tsx).
+  assert.ok(
+    !css.includes("fonts.googleapis.com"),
+    "globals.css'te harici Google Fonts @import'u var -- next/font kullanilmali."
+  );
 });

@@ -1,72 +1,351 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/*
+  TEMA: LIGHT-FIRST + cift tema.  (bkz. docs/29 -> Tema karari)
+
+  Neden: hedef kullanici salon isletmecisi. Gun isiginda, camekan onunde, elinde
+  resepsiyon tableti ile calisiyor. Dark-only bir operasyon paneli okunabilirlik ve
+  WCAG kontrast acisindan savunulamazdi. Public kesif/profil sayfalari da tuketiciye
+  acik ve SEO'lu -- piyasa normu light.
+
+  MIGRASYON STRATEJISI (onemli):
+  --rs-* token ISIMLERI KORUNDU, sadece DEGERLERI light'a cevrildi. Mevcut 83 component
+  bu isimleri kullaniyor; tek dosya degistirerek hepsi light'a gecti. Toplu find-replace
+  yapilmadi -- o riskli olurdu.
+
+  Dark tema <html data-theme="dark"> ile veya isletim sistemi tercihiyle devreye girer.
+*/
+
+@custom-variant dark {
+  /* Acik tercih: data-theme="dark" her zaman kazanir */
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  /* Tercih belirtilmemisse isletim sistemine uy */
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   shadcn/ui token katmani -- Tailwind utility'lerine baglar (bg-background vb.)
+   --------------------------------------------------------------------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--rs-font-sans);
+  --font-display: var(--rs-font-display);
+  --font-mono: var(--rs-font-mono);
+
+  --radius-sm: calc(var(--rs-radius) - 4px);
+  --radius-md: calc(var(--rs-radius) - 2px);
+  --radius-lg: var(--rs-radius);
+  --radius-xl: calc(var(--rs-radius) + 4px);
+}
+
+/* ---------------------------------------------------------------------------
+   LIGHT (varsayilan)
+   --------------------------------------------------------------------------- */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Dark glassmorphism background — matches reference theme.css */
-  --rs-bg: #080c14;
-  --rs-bg-deep: #050810;
-  --rs-surface: #0d1120;
-  --rs-surface-strong: #111626;
-  --rs-surface-muted: rgba(255, 255, 255, 0.06);
+  /* --- shadcn tokenlari --- */
+  --background: #ffffff;
+  --foreground: #14161c;
+  --card: #ffffff;
+  --card-foreground: #14161c;
+  --popover: #ffffff;
+  --popover-foreground: #14161c;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f3f7;
+  --secondary-foreground: #14161c;
+  --muted: #f1f3f7;
+  --muted-foreground: #64708a;
+  --accent: #eef1fb;
+  --accent-foreground: #3730a3;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e3e6ec;
+  --input: #e3e6ec;
+  --ring: #4f46e5;
 
-  /* Glassmorphism surfaces */
-  --rs-glass: rgba(255, 255, 255, 0.04);
-  --rs-glass-strong: rgba(255, 255, 255, 0.08);
+  --chart-1: #4f46e5;
+  --chart-2: #7c3aed;
+  --chart-3: #0891b2;
+  --chart-4: #d97706;
+  --chart-5: #059669;
 
-  /* Borders — translucent white */
-  --rs-border: rgba(255, 255, 255, 0.08);
-  --rs-border-strong: rgba(255, 255, 255, 0.16);
+  --sidebar: #fbfbfd;
+  --sidebar-foreground: #14161c;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1fb;
+  --sidebar-accent-foreground: #3730a3;
+  --sidebar-border: #e3e6ec;
+  --sidebar-ring: #4f46e5;
 
-  /* Ink / foreground — light on dark */
-  --rs-ink: #f0f2fa;
-  --rs-ink-soft: #c7cad6;
-  --rs-muted: #94a3b8;
-  --rs-muted-strong: #cbd5e1;
+  /* --- legacy --rs-* tokenlari (83 component bunlari kullaniyor) --- */
+  --rs-bg: #f6f7fa;
+  --rs-bg-deep: #eef0f5;
+  --rs-surface: #ffffff;
+  --rs-surface-strong: #ffffff;
+  --rs-surface-muted: #f1f3f7;
 
-  /* Accent: indigo (primary) + violet (secondary accent) */
-  --rs-accent: #6366f1;
-  --rs-accent-strong: #818cf8;
-  --rs-accent-soft: rgba(99, 102, 241, 0.16);
-  --rs-accent-violet: #8b5cf6;
-  --rs-accent-violet-soft: rgba(139, 92, 246, 0.16);
+  /* "glass" artik cam degil, duz yuzey. Componentlerdeki backdrop-blur zararsiz kalir. */
+  --rs-glass: #ffffff;
+  --rs-glass-strong: #ffffff;
 
-  /* Semantic */
-  --rs-success: #10b981;
-  --rs-success-soft: rgba(16, 185, 129, 0.16);
-  --rs-warning: #f59e0b;
-  --rs-warning-border: rgba(245, 158, 11, 0.28);
-  --rs-warning-soft: rgba(245, 158, 11, 0.16);
-  --rs-danger: #ef4444;
-  --rs-danger-strong: #dc2626;
-  --rs-danger-soft: rgba(239, 68, 68, 0.16);
-  --rs-neutral-soft: rgba(255, 255, 255, 0.06);
-  --rs-focus: #6366f1;
+  --rs-border: #e3e6ec;
+  --rs-border-strong: #cfd4de;
 
-  /* Radius */
+  --rs-ink: #14161c;
+  --rs-ink-soft: #3c4250;
+  --rs-muted: #64708a;
+  --rs-muted-strong: #4b5563;
+
+  --rs-accent: #4f46e5;
+  --rs-accent-strong: #4338ca;
+  --rs-accent-soft: rgba(79, 70, 229, 0.10);
+  --rs-accent-violet: #7c3aed;
+  --rs-accent-violet-soft: rgba(124, 58, 237, 0.10);
+
+  --rs-success: #059669;
+  --rs-success-soft: rgba(5, 150, 105, 0.12);
+  --rs-warning: #b45309;
+  --rs-warning-border: rgba(180, 83, 9, 0.28);
+  --rs-warning-soft: rgba(180, 83, 9, 0.12);
+  --rs-danger: #dc2626;
+  --rs-danger-strong: #b91c1c;
+  --rs-danger-soft: rgba(220, 38, 38, 0.10);
+  --rs-neutral-soft: rgba(20, 22, 28, 0.05);
+  --rs-focus: #4f46e5;
+
   --rs-radius: 0.625rem;
   --rs-radius-lg: 1rem;
   --rs-radius-xl: 1.5rem;
 
-  /* Shadows */
-  --rs-shadow-card: 0 24px 80px rgba(0, 0, 0, 0.45);
-  --rs-shadow-soft: 0 4px 30px rgba(0, 0, 0, 0.35);
-  --rs-shadow-button: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(99, 102, 241, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --rs-shadow-card: 0 1px 2px rgba(20, 22, 28, 0.04), 0 8px 24px rgba(20, 22, 28, 0.06);
+  --rs-shadow-soft: 0 1px 2px rgba(20, 22, 28, 0.04), 0 2px 8px rgba(20, 22, 28, 0.05);
+  --rs-shadow-button: 0 1px 2px rgba(20, 22, 28, 0.08), 0 2px 8px rgba(79, 70, 229, 0.18);
 
-  /* Chart palette (recharts) */
+  --rs-chart-1: #4f46e5;
+  --rs-chart-2: #7c3aed;
+  --rs-chart-3: #0891b2;
+  --rs-chart-4: #d97706;
+  --rs-chart-5: #059669;
+
+  /* next/font degiskenleri (layout.tsx'te self-host edilir) */
+  --rs-font-sans: var(--rs-font-sans-src), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --rs-font-display: var(--rs-font-display-src), var(--rs-font-sans-src), sans-serif;
+  --rs-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   DARK -- acik tercih (data-theme="dark") veya isletim sistemi tercihi
+   --------------------------------------------------------------------------- */
+/* NOT: CSS'te mixin yok ve @media bir selector listesinin icine yazilamaz.
+   Bu yuzden dark degerleri bilincli olarak IKI blokta tekrarlanir:
+     1) :root[data-theme="dark"]              -> kullanicinin acik tercihi
+     2) @media (prefers-color-scheme: dark)   -> tercih yoksa isletim sistemi
+   Ikisi ayni degerleri tasir; birini degistirirken digerini de guncelle. */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #0d1017;
+  --foreground: #eef0f6;
+  --card: #141822;
+  --card-foreground: #eef0f6;
+  --popover: #141822;
+  --popover-foreground: #eef0f6;
+  --primary: #818cf8;
+  --primary-foreground: #10121a;
+  --secondary: #1b2130;
+  --secondary-foreground: #eef0f6;
+  --muted: #1b2130;
+  --muted-foreground: #9aa4bb;
+  --accent: #1e2438;
+  --accent-foreground: #c7d2fe;
+  --destructive: #f87171;
+  --destructive-foreground: #10121a;
+  --border: #262d3d;
+  --input: #262d3d;
+  --ring: #818cf8;
+
+  --chart-1: #818cf8;
+  --chart-2: #a78bfa;
+  --chart-3: #22d3ee;
+  --chart-4: #fbbf24;
+  --chart-5: #34d399;
+
+  --sidebar: #10141d;
+  --sidebar-foreground: #eef0f6;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #10121a;
+  --sidebar-accent: #1e2438;
+  --sidebar-accent-foreground: #c7d2fe;
+  --sidebar-border: #262d3d;
+  --sidebar-ring: #818cf8;
+
+  --rs-bg: #0d1017;
+  --rs-bg-deep: #090b11;
+  --rs-surface: #141822;
+  --rs-surface-strong: #1b2130;
+  --rs-surface-muted: #1b2130;
+  --rs-glass: #141822;
+  --rs-glass-strong: #1b2130;
+  --rs-border: #262d3d;
+  --rs-border-strong: #333c50;
+  --rs-ink: #eef0f6;
+  --rs-ink-soft: #c3c9d6;
+  --rs-muted: #9aa4bb;
+  --rs-muted-strong: #c3c9d6;
+  --rs-accent: #6366f1;
+  --rs-accent-strong: #818cf8;
+  --rs-accent-soft: rgba(99, 102, 241, 0.18);
+  --rs-accent-violet: #8b5cf6;
+  --rs-accent-violet-soft: rgba(139, 92, 246, 0.18);
+  --rs-success: #34d399;
+  --rs-success-soft: rgba(52, 211, 153, 0.16);
+  --rs-warning: #fbbf24;
+  --rs-warning-border: rgba(251, 191, 36, 0.3);
+  --rs-warning-soft: rgba(251, 191, 36, 0.16);
+  --rs-danger: #f87171;
+  --rs-danger-strong: #ef4444;
+  --rs-danger-soft: rgba(248, 113, 113, 0.16);
+  --rs-neutral-soft: rgba(255, 255, 255, 0.06);
+  --rs-focus: #818cf8;
+
+  --rs-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --rs-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --rs-shadow-button: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(99, 102, 241, 0.28);
+
   --rs-chart-1: #818cf8;
   --rs-chart-2: #a78bfa;
   --rs-chart-3: #22d3ee;
   --rs-chart-4: #fbbf24;
   --rs-chart-5: #34d399;
-
-  /* Fonts */
-  --rs-font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --rs-font-display: "Plus Jakarta Sans", "Inter", sans-serif;
-  --rs-font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --background: #0d1017;
+    --foreground: #eef0f6;
+    --card: #141822;
+    --card-foreground: #eef0f6;
+    --popover: #141822;
+    --popover-foreground: #eef0f6;
+    --primary: #818cf8;
+    --primary-foreground: #10121a;
+    --secondary: #1b2130;
+    --secondary-foreground: #eef0f6;
+    --muted: #1b2130;
+    --muted-foreground: #9aa4bb;
+    --accent: #1e2438;
+    --accent-foreground: #c7d2fe;
+    --destructive: #f87171;
+    --destructive-foreground: #10121a;
+    --border: #262d3d;
+    --input: #262d3d;
+    --ring: #818cf8;
+
+    --chart-1: #818cf8;
+    --chart-2: #a78bfa;
+    --chart-3: #22d3ee;
+    --chart-4: #fbbf24;
+    --chart-5: #34d399;
+
+    --sidebar: #10141d;
+    --sidebar-foreground: #eef0f6;
+    --sidebar-primary: #818cf8;
+    --sidebar-primary-foreground: #10121a;
+    --sidebar-accent: #1e2438;
+    --sidebar-accent-foreground: #c7d2fe;
+    --sidebar-border: #262d3d;
+    --sidebar-ring: #818cf8;
+
+    --rs-bg: #0d1017;
+    --rs-bg-deep: #090b11;
+    --rs-surface: #141822;
+    --rs-surface-strong: #1b2130;
+    --rs-surface-muted: #1b2130;
+    --rs-glass: #141822;
+    --rs-glass-strong: #1b2130;
+    --rs-border: #262d3d;
+    --rs-border-strong: #333c50;
+    --rs-ink: #eef0f6;
+    --rs-ink-soft: #c3c9d6;
+    --rs-muted: #9aa4bb;
+    --rs-muted-strong: #c3c9d6;
+    --rs-accent: #6366f1;
+    --rs-accent-strong: #818cf8;
+    --rs-accent-soft: rgba(99, 102, 241, 0.18);
+    --rs-accent-violet: #8b5cf6;
+    --rs-accent-violet-soft: rgba(139, 92, 246, 0.18);
+    --rs-success: #34d399;
+    --rs-success-soft: rgba(52, 211, 153, 0.16);
+    --rs-warning: #fbbf24;
+    --rs-warning-border: rgba(251, 191, 36, 0.3);
+    --rs-warning-soft: rgba(251, 191, 36, 0.16);
+    --rs-danger: #f87171;
+    --rs-danger-strong: #ef4444;
+    --rs-danger-soft: rgba(248, 113, 113, 0.16);
+    --rs-neutral-soft: rgba(255, 255, 255, 0.06);
+    --rs-focus: #818cf8;
+
+    --rs-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --rs-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --rs-shadow-button: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(99, 102, 241, 0.28);
+
+    --rs-chart-1: #818cf8;
+    --rs-chart-2: #a78bfa;
+    --rs-chart-3: #22d3ee;
+    --rs-chart-4: #fbbf24;
+    --rs-chart-5: #34d399;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Taban
+   --------------------------------------------------------------------------- */
 * {
   box-sizing: border-box;
 }
@@ -81,12 +360,9 @@ body {
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 10% -10%, rgba(99, 102, 241, 0.18), transparent 32rem),
-    radial-gradient(circle at 88% 4%, rgba(139, 92, 246, 0.16), transparent 34rem),
-    radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.08), transparent 40rem),
-    linear-gradient(180deg, var(--rs-bg), var(--rs-bg-deep));
-  background-attachment: fixed;
+  /* Dark glassmorphism radial-gradient orb'lari KALDIRILDI (docs/29: gradient/blur/glass
+     kaliplarindan kacin). Duz, sakin bir zemin. */
+  background: var(--rs-bg);
   color: var(--rs-ink);
   font-family: var(--rs-font-sans);
   -webkit-font-smoothing: antialiased;
@@ -95,17 +371,17 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--rs-font-display);
   font-weight: 600;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
 }
 
 ::selection {
   background: var(--rs-accent);
-  color: white;
+  color: #ffffff;
 }
 
 ::-webkit-scrollbar {
-  height: 4px;
-  width: 4px;
+  height: 10px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -113,30 +389,36 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--rs-border-strong);
+  border: 2px solid transparent;
+  background-clip: content-box;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--rs-muted);
+  background-clip: content-box;
 }
 
-/* Background grid overlay — subtle white grid on dark */
+/* ---------------------------------------------------------------------------
+   Yardimci siniflar (mevcut componentler bunlari kullaniyor -- KORUNUYOR)
+   --------------------------------------------------------------------------- */
 .studio-grid {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(var(--rs-neutral-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rs-neutral-soft) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
 .fade-up {
-  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .slide-in {
-  animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* platform-shell step-up rozeti bunu kullaniyor (design-system-contract testi assert ediyor) */
 .pulse-warning {
   animation: pulse-warning 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -144,7 +426,7 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -155,7 +437,7 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes slide-in {
   from {
     opacity: 0;
-    transform: translateX(12px);
+    transform: translateX(8px);
   }
   to {
     opacity: 1;
@@ -168,30 +450,12 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 1;
   }
   50% {
-    opacity: 0.45;
+    opacity: 0.5;
   }
 }
 
-/* Reference-style animated orbs */
-@keyframes orb1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(40px, -40px) scale(1.1); }
-  66% { transform: translate(-25px, 25px) scale(0.92); }
-}
-
-@keyframes orb2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-50px, 35px) scale(1.15); }
-}
-
-@keyframes orb3 {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(25px, -25px); }
-  75% { transform: translate(-25px, 15px); }
-}
-
 .rs-gradient-text {
-  background: linear-gradient(135deg, var(--rs-accent-strong) 0%, var(--rs-accent-violet) 100%);
+  background: linear-gradient(135deg, var(--rs-accent) 0%, var(--rs-accent-violet) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -202,7 +466,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .rs-glow-accent {
-  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.28);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -216,3 +480,14 @@ h1, h2, h3, h4, h5, h6 {
     animation: none;
   }
 }
+
+/*
+  NOT: shadcn CLI buraya kendi `.dark { ... }` blogunu eklemisti; SILINDI.
+  Iki sebep:
+    1) Bu proje dark temayi `.dark` SINIFI ile degil, `[data-theme="dark"]` ile
+       yonetiyor -- o blok hicbir zaman eslesmezdi (olu kod).
+    2) Icindeki sidebar renkleri shadcn'in varsayilan MAVI paletiydi; bizim paletimiz
+       indigo. Sidebar tokenlari yukarida :root ve [data-theme="dark"] icinde tanimli.
+
+  shadcn'i tekrar `add` edersen bu blogu yeniden ekleyebilir -- yine sil.
+*/
