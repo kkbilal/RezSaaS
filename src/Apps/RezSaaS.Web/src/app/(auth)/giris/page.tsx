@@ -19,7 +19,12 @@ export const metadata: Metadata = {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const returnTo = normalizeReturnTo(params.returnTo, routes.business.panel);
+  // Only pass returnTo to the login form when it was explicitly provided by
+  // the caller (e.g. redirect after trying to access a protected page).
+  // When absent, the form will determine the destination from the session.
+  const returnTo = params.returnTo
+    ? normalizeReturnTo(params.returnTo, undefined)
+    : undefined;
 
   return (
     <AuthShell

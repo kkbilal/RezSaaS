@@ -6,15 +6,15 @@ type ApiClientOptions = {
   headers?: HeadersOptions;
 };
 
-const browserBaseUrl = process.env.NEXT_PUBLIC_REZSAAS_API_BASE_URL;
 export const tenantContextHeaderName = "X-RezSaaS-Tenant";
 
-if (!browserBaseUrl) {
-  throw new Error(
-    "NEXT_PUBLIC_REZSAAS_API_BASE_URL environment variable is not set. " +
-    "Please set it in your environment configuration."
-  );
-}
+// Browser-side API calls MUST go through the Next.js rewrite proxy
+// (relative "/api/..." → backend "http://localhost:5252/api/..."). This keeps
+// auth cookies same-origin so that Next.js server components can read them via
+// cookies() during SSR. Only set NEXT_PUBLIC_REZSAAS_API_BASE_URL if the API
+// is on a different origin in production and the cookie domain is configured
+// accordingly (cross-site cookies require SameSite=None;Secure).
+const browserBaseUrl = process.env.NEXT_PUBLIC_REZSAAS_API_BASE_URL ?? "";
 
 export function createApiClient(options: ApiClientOptions = {}) {
   return createClient<paths>({

@@ -21,7 +21,7 @@ type DialogFormPanelProps = Omit<ComponentPropsWithoutRef<"form">, "title"> & {
   title?: ReactNode;
   submitLabel?: string;
   loading?: boolean;
-  onClose: () => void;
+  onClose?: () => void;
 };
 
 export function DialogOverlay({
@@ -47,7 +47,7 @@ export function DialogOverlay({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm",
+        "fixed inset-0 z-40 grid place-items-center bg-black/70 p-4 backdrop-blur-md",
         className
       )}
       onClick={onClose}
@@ -70,7 +70,7 @@ export function DialogPanel({
       aria-labelledby={titleId}
       aria-modal="true"
       className={cn(
-        "fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]",
+        "fade-up w-full max-w-2xl rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl",
         className
       )}
       role="dialog"
@@ -98,7 +98,7 @@ export function DialogFormPanel({
       aria-labelledby={titleId}
       aria-modal="true"
       className={cn(
-        "fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]",
+        "fade-up w-full max-w-2xl rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl",
         className
       )}
       role="dialog"
@@ -106,23 +106,29 @@ export function DialogFormPanel({
     >
       {title && <h2 id={titleId} className="text-xl font-semibold text-[var(--rs-ink)]">{title}</h2>}
       <div className="mt-5">{children}</div>
-      <div className="mt-6 flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={loading}
-          className="rounded-full border border-[var(--rs-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)] disabled:pointer-events-none disabled:opacity-55"
-        >
-          İptal
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-full bg-[var(--rs-ink)] px-5 py-2.5 text-sm font-medium text-white shadow-[var(--rs-shadow-button)] hover:-translate-y-0.5 hover:bg-[var(--rs-ink-soft)] disabled:pointer-events-none disabled:opacity-55"
-        >
-          {loading ? "Kaydediliyor..." : submitLabel}
-        </button>
-      </div>
+      {(onClose || submitLabel) && (
+        <div className="mt-6 flex justify-end gap-3">
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="rounded-full border border-[var(--rs-border)] bg-[var(--rs-glass)] px-5 py-2.5 text-sm font-medium text-[var(--rs-ink)] backdrop-blur-xl hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)] disabled:pointer-events-none disabled:opacity-55"
+            >
+              İptal
+            </button>
+          )}
+          {submitLabel && (
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-full bg-[var(--rs-accent)] px-5 py-2.5 text-sm font-medium text-white shadow-[var(--rs-shadow-button)] hover:-translate-y-0.5 hover:bg-[var(--rs-accent-strong)] disabled:pointer-events-none disabled:opacity-55"
+            >
+              {loading ? "Kaydediliyor..." : submitLabel}
+            </button>
+          )}
+        </div>
+      )}
     </form>
   );
 }

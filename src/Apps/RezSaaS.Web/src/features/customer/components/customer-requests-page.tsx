@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
@@ -18,14 +18,12 @@ import { StatusBadge } from "@/shared/ui/status-badge";
 
 type CustomerRequestsPageProps = {
   items: CustomerAppointmentHistoryItem[];
-  sessionEmail: string;
 };
 
 type FilterValue = "all" | "PendingApproval" | "Confirmed" | "closed";
 
 export function CustomerRequestsPage({
-  items,
-  sessionEmail
+  items
 }: CustomerRequestsPageProps) {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterValue>("all");
@@ -124,34 +122,11 @@ export function CustomerRequestsPage({
   }
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
+    <div className="space-y-6">
       <div className="mx-auto max-w-7xl space-y-8">
-        <header className="flex items-center justify-between">
-          <Link
-            className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
-            href={routes.public.home}
-          >
-            RezSaaS
-          </Link>
-          <div className="flex items-center gap-3">
-            <Button asChild variant="ghost">
-              <Link href={routes.public.discover}>Keşfet</Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href={routes.customer.appeals}>İtirazlarım</Link>
-            </Button>
-            <Button asChild>
-              <Link href={routes.business.panel}>Panel</Link>
-            </Button>
-          </div>
-        </header>
-
-        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
+        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl space-y-5">
-              <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
-                {sessionEmail}
-              </p>
               <h1 className="text-5xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-7xl">
                 Taleplerim ve randevularım.
               </h1>
@@ -162,7 +137,7 @@ export function CustomerRequestsPage({
               </p>
             </div>
 
-            <div className="rounded-[2rem] bg-[var(--rs-ink)] p-6 text-white shadow-[var(--rs-shadow-card)]">
+            <div className="rounded-[2rem] bg-[var(--rs-accent)] p-6 text-white shadow-[var(--rs-shadow-card)]">
               <p className="text-xs uppercase tracking-[0.22em] text-white/50">
                 Toplam kayıt
               </p>
@@ -191,8 +166,8 @@ export function CustomerRequestsPage({
                 <button
                   className={
                     filter === value
-                      ? "rounded-full bg-[var(--rs-ink)] px-4 py-2 text-xs font-medium text-white"
-                      : "rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:text-[var(--rs-ink)]"
+                      ? "rounded-full bg-[var(--rs-accent)] px-4 py-2 text-xs font-medium text-white"
+                      : "rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:text-[var(--rs-ink)]"
                   }
                   key={value}
                   onClick={() => setFilter(value as FilterValue)}
@@ -206,7 +181,7 @@ export function CustomerRequestsPage({
         </Card>
 
         {visibleItems.length === 0 ? (
-          <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
+          <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
             <CardTitle>Bu filtrede kayıt yok</CardTitle>
             <CardDescription className="mx-auto mt-2 max-w-lg">
               Yeni bir işletme keşfedip onay bekleyen rezervasyon talebi
@@ -232,11 +207,11 @@ export function CustomerRequestsPage({
       </div>
 
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-white px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
           {toast}
         </div>
       ) : null}
-    </main>
+    </div>
   );
 }
 
@@ -256,14 +231,14 @@ function CustomerHistoryCard({
 
   return (
     <article
-      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-white/78 p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl"
+      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl"
       style={{ animationDelay: `${index * 45}ms` }}
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-start">
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={status} />
-            <span className="rounded-full border border-[var(--rs-border)] bg-white px-3 py-1 text-xs text-[var(--rs-muted)]">
+            <span className="rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-3 py-1 text-xs text-[var(--rs-muted)]">
               {getItemTypeCopy(item.itemType)}
             </span>
             <span className="text-xs text-[var(--rs-muted)]">
@@ -324,7 +299,7 @@ function CustomerHistoryCard({
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-2 font-medium text-[var(--rs-ink)]">{value}</p>
     </div>

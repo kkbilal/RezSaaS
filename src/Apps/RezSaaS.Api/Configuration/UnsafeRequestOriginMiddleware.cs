@@ -44,8 +44,9 @@ public sealed class UnsafeRequestOriginMiddleware
         {
             string? referer = request.Headers.Referer.FirstOrDefault();
 
-            return string.IsNullOrWhiteSpace(referer)
-                || IsAllowedOriginValue(request, referer);
+            // Fail-closed: both Origin and Referer missing → reject
+            return !string.IsNullOrWhiteSpace(referer)
+                && IsAllowedOriginValue(request, referer);
         }
 
         return IsAllowedOriginValue(request, origin);

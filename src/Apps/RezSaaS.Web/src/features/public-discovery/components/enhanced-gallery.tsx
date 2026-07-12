@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { DialogOverlay, DialogPanel } from "@/shared/ui/dialog";
@@ -103,7 +103,7 @@ export function EnhancedGallery({ images }: EnhancedGalleryProps) {
       {/* Lightbox */}
       {selectedImageIndex !== null && (
         <div 
-          className="fixed inset-0 z-50 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm"
           onClick={() => setSelectedImageIndex(null)}
         >
           <Lightbox

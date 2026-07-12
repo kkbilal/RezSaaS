@@ -4,6 +4,8 @@ import { cn } from "@/shared/lib/cn";
 export type EmptyStateProps = {
   icon?: ReactNode;
   title: ReactNode;
+  /** @deprecated Use `title` instead */
+  text?: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
   className?: string;
@@ -11,11 +13,14 @@ export type EmptyStateProps = {
 
 export function EmptyState({
   icon,
+  text,
   title,
   description,
   action,
   className
 }: EmptyStateProps) {
+  const displayTitle = title ?? text;
+  
   return (
     <div
       className={cn(
@@ -29,7 +34,7 @@ export function EmptyState({
         </div>
       )}
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-[var(--rs-ink)]">{title}</h3>
+        <h3 className="text-lg font-semibold text-[var(--rs-ink)]">{displayTitle}</h3>
         {description && (
           <p className="text-sm text-[var(--rs-muted)]">{description}</p>
         )}

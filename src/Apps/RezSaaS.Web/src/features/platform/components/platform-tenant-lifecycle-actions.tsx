@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -120,7 +120,7 @@ export function PlatformTenantLifecycleActions({
       : null;
 
   return (
-    <section className="mt-6 rounded-[1.5rem] border border-[var(--rs-border)] bg-white p-4">
+    <section className="mt-6 rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-3">
@@ -191,7 +191,7 @@ export function PlatformTenantLifecycleActions({
               <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
                 Operasyon nedeni
                 <textarea
-                  className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+                  className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
                   maxLength={tenantLifecycleReasonMaxLength}
                   onChange={(event) =>
                     setDialog({
@@ -214,7 +214,7 @@ export function PlatformTenantLifecycleActions({
               <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
                 Onay metni
                 <input
-                  className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+                  className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
                   onChange={(event) =>
                     setDialog({
                       ...dialog,
@@ -267,7 +267,7 @@ export function PlatformTenantLifecycleActions({
       ) : null}
 
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-white px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
           {toast}
         </div>
       ) : null}

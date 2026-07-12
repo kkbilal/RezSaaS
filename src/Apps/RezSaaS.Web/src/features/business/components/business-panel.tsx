@@ -1,8 +1,7 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BusinessAppointmentScheduleState } from "@/features/business/api/get-business-appointments";
 import type {
   BusinessAppointmentInboxState,
@@ -20,13 +19,13 @@ import {
   type BusinessRequestConflictSignal
 } from "@/features/business/lib/business-request-conflicts";
 import { createTenantApiClient } from "@/shared/api/client";
-import { routes, withTenant } from "@/shared/config/routes";
 import { formatBranchDateTime } from "@/shared/lib/date-time";
 import {
   clearIntentIdempotencyKey,
   getOrCreateIntentIdempotencyKey,
   type IdempotencyKeyCache
 } from "@/shared/lib/idempotency";
+import { isRequestUrgent, getRequestTtlStatus, type RequestTtlStatus } from "@/features/business/lib/request-ttl";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
@@ -44,7 +43,7 @@ type AppointmentRequestStatus =
   | "Superseded"
   | "CancelledByCustomer";
 
-type AppointmentFilter = "all" | AppointmentRequestStatus;
+type AppointmentFilter = "all" | "urgent" | AppointmentRequestStatus;
 type AppointmentDecision = "approve" | "decline";
 type AbuseReportReasonCode =
   | "SlotSpam"
@@ -103,7 +102,6 @@ type BusinessPanelProps = {
   appointmentSchedule: BusinessAppointmentScheduleState;
   context: BusinessContextState;
   inbox: BusinessAppointmentInboxState;
-  sessionEmail: string;
 };
 
 function contextStatusCopy(context: BusinessContextState) {
@@ -125,8 +123,7 @@ function contextStatusCopy(context: BusinessContextState) {
 export function BusinessPanel({
   appointmentSchedule,
   context,
-  inbox,
-  sessionEmail
+  inbox
 }: BusinessPanelProps) {
   const router = useRouter();
   const tenant = getPanelTenant(context, inbox);
@@ -140,6 +137,16 @@ export function BusinessPanel({
   );
   const [activeFilter, setActiveFilter] = useState<AppointmentFilter>("all");
   const [search, setSearch] = useState("");
+  const [nowUtc, setNowUtc] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNowUtc(new Date().toISOString());
+    const interval = window.setInterval(
+      () => setNowUtc(new Date().toISOString()),
+      30 * 1000
+    );
+    return () => window.clearInterval(interval);
+  }, []);
   const [conflictCandidate, setConflictCandidate] =
     useState<BusinessAppointmentRequest | null>(null);
   const [reportDraft, setReportDraft] = useState<AbuseReportDraft | null>(null);
@@ -173,11 +180,26 @@ export function BusinessPanel({
     (request) => getRequestStatus(request) === "PendingApproval"
   ).length;
 
+  const urgentCount = useMemo(
+    () =>
+      requests.filter(
+        (request) =>
+          getRequestStatus(request) === "PendingApproval" &&
+          isRequestUrgent(request.expiresAtUtc, nowUtc ?? "")
+      ).length,
+    [requests, nowUtc]
+  );
+
   const visibleRequests = useMemo(() => {
     return requests.filter((request) => {
       const requestStatus = getRequestStatus(request);
       const matchesFilter =
-        activeFilter === "all" ? true : requestStatus === activeFilter;
+        activeFilter === "all"
+          ? true
+          : activeFilter === "urgent"
+            ? requestStatus === "PendingApproval" &&
+              isRequestUrgent(request.expiresAtUtc, nowUtc ?? "")
+            : requestStatus === activeFilter;
       const haystack = [
         request.id,
         request.branchDisplayName,
@@ -191,7 +213,7 @@ export function BusinessPanel({
 
       return matchesFilter && haystack.includes(search.toLocaleLowerCase("tr-TR"));
     });
-  }, [activeFilter, requests, search]);
+  }, [activeFilter, nowUtc, requests, search]);
 
   function showToast(message: string) {
     setToast(message);
@@ -401,25 +423,9 @@ export function BusinessPanel({
   }
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1440px] space-y-6">
-        <PanelHeader
-          context={context}
-          inbox={inbox}
-          pendingCount={pendingCount}
-          sessionEmail={sessionEmail}
-          tenantId={tenant?.tenantId}
-          tenantName={
-            tenant?.tenantDisplayName ?? tenant?.tenantSlug ?? "RezSaaS Merkez"
-          }
-        />
-
+    <div className="space-y-6">
         <div className="grid gap-6 xl:grid-cols-[25rem_1fr]">
           <aside className="space-y-6">
-            <BusinessTenantSwitcher
-              activeTenantId={tenant?.tenantId}
-              context={context}
-            />
             <TenantContextCard context={context} tenant={tenant} />
             <OperatingRulesCard />
             <DarkDecisionCard />
@@ -431,6 +437,7 @@ export function BusinessPanel({
               onFilterChange={setActiveFilter}
               onSearchChange={setSearch}
               search={search}
+              urgentCount={urgentCount}
             />
 
             {inbox.kind === "unavailable" ? (
@@ -444,7 +451,7 @@ export function BusinessPanel({
 
             <div className="grid gap-4">
               {visibleRequests.length === 0 ? (
-                <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
+                <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
                   <CardTitle>Bu filtrede talep yok</CardTitle>
                   <CardDescription className="mx-auto mt-2 max-w-md">
                     Aramayı veya durum filtresini değiştirerek diğer talepleri
@@ -465,6 +472,7 @@ export function BusinessPanel({
                     isReporting={reportingRequestId === request.id}
                     isSubmitting={actingRequestId === request.id}
                     key={request.id ?? `${request.branchId}-${request.requestedStartUtc}`}
+                    nowUtc={nowUtc ?? ""}
                     onApprove={() => void approveRequest(request)}
                     onDecline={() => void declineRequest(request)}
                     onReport={() => openAbuseReport(request)}
@@ -481,7 +489,6 @@ export function BusinessPanel({
             />
           </section>
         </div>
-      </div>
 
       {conflictCandidate ? (
         <ConflictDialog
@@ -503,134 +510,11 @@ export function BusinessPanel({
       ) : null}
 
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-white px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
           {toast}
         </div>
       ) : null}
-    </main>
-  );
-}
-
-function PanelHeader({
-  context,
-  inbox,
-  pendingCount,
-  sessionEmail,
-  tenantId,
-  tenantName
-}: {
-  context: BusinessContextState;
-  inbox: BusinessAppointmentInboxState;
-  pendingCount: number;
-  sessionEmail: string;
-  tenantId?: string | null;
-  tenantName: string;
-}) {
-  return (
-    <header className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/72 p-5 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl space-y-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
-              {contextStatusCopy(context)}
-            </span>
-            <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-              Güvenli işletme seçimi
-            </span>
-            <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-              {sessionEmail}
-            </span>
-            <Button asChild variant="secondary">
-              <Link href={withTenant(routes.business.settings, tenantId)}>
-                Ayar snapshot
-              </Link>
-            </Button>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--rs-muted)]">
-              {tenantName}
-            </p>
-            <h1 className="max-w-4xl text-5xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-7xl">
-              Rezervasyon kararlarını netleştiren operasyon paneli.
-            </h1>
-          </div>
-        </div>
-
-        <div className="grid min-w-72 grid-cols-2 gap-3">
-          <div className="rounded-[1.75rem] bg-[var(--rs-ink)] p-5 text-white shadow-[var(--rs-shadow-card)]">
-            <p className="text-xs uppercase tracking-[0.2em] text-white/55">
-              Bekleyen
-            </p>
-            <p className="mt-6 text-4xl font-semibold tracking-[-0.06em]">
-              {pendingCount}
-            </p>
-            <p className="mt-1 text-xs text-white/60">
-              {inbox.kind === "ready" ? "Güncel liste" : "Liste yükleniyor"}
-            </p>
-          </div>
-          <div className="rounded-[1.75rem] border border-[var(--rs-border)] bg-white p-5 shadow-[var(--rs-shadow-soft)]">
-            <p className="text-xs uppercase tracking-[0.2em] text-[var(--rs-muted)]">
-              SLA
-            </p>
-            <p className="mt-6 text-4xl font-semibold tracking-[-0.06em]">
-              24s
-            </p>
-            <p className="mt-1 text-xs text-[var(--rs-muted)]">
-              Yanıt üst sınırı
-            </p>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function BusinessTenantSwitcher({
-  activeTenantId,
-  context
-}: {
-  activeTenantId?: string | null;
-  context: BusinessContextState;
-}) {
-  if (context.kind !== "ready" || context.tenants.length <= 1) {
-    return null;
-  }
-
-  return (
-    <Card className="fade-up p-6">
-      <CardHeader>
-        <CardTitle>İşletme seçimi</CardTitle>
-        <CardDescription>
-          Tenant header yalnızca bu doğrulanmış üyeliklerden üretilir.
-        </CardDescription>
-      </CardHeader>
-
-      <div className="mt-5 space-y-2">
-        {context.tenants.map((tenant) => {
-          const isActive = tenant.tenantId === activeTenantId;
-
-          return (
-            <Link
-              className={
-                isActive
-                  ? "block rounded-2xl border border-[var(--rs-border-strong)] bg-white px-4 py-3 text-sm font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
-                  : "block rounded-2xl border border-[var(--rs-border)] bg-white/62 px-4 py-3 text-sm text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
-              }
-              href={withTenant(routes.business.panel, tenant.tenantId)}
-              key={tenant.tenantId ?? tenant.membershipId}
-            >
-              <span className="block">
-                {tenant.tenantDisplayName ?? tenant.tenantSlug ?? "İşletme"}
-              </span>
-              <span className="mt-1 block text-xs opacity-70">
-                {getRoleLabel(tenant.role)}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </Card>
+    </div>
   );
 }
 
@@ -663,13 +547,13 @@ function TenantContextCard({
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
             <p className="text-xs text-[var(--rs-muted)]">Rol</p>
             <p className="mt-2 font-medium text-[var(--rs-ink)]">
               {getRoleLabel(tenant?.role)}
             </p>
           </div>
-          <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
             <p className="text-xs text-[var(--rs-muted)]">Kapsam</p>
             <p className="mt-2 font-medium text-[var(--rs-ink)]">
               {tenant?.isTenantWide
@@ -727,7 +611,7 @@ function OperatingRulesCard() {
 
 function RuleItem({ label, text }: { label: string; text: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white/70 p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4">
       <p className="font-medium text-[var(--rs-ink)]">{label}</p>
       <p className="mt-1 text-[var(--rs-muted)]">{text}</p>
     </div>
@@ -736,7 +620,7 @@ function RuleItem({ label, text }: { label: string; text: string }) {
 
 function DarkDecisionCard() {
   return (
-    <section className="fade-up overflow-hidden rounded-[2rem] bg-[var(--rs-ink)] p-6 text-white shadow-[var(--rs-shadow-card)] [animation-delay:120ms]">
+    <section className="fade-up overflow-hidden rounded-[2rem] bg-[var(--rs-accent)] p-6 text-white shadow-[var(--rs-shadow-card)] [animation-delay:120ms]">
       <p className="text-xs uppercase tracking-[0.24em] text-white/45">
         karar odası
       </p>
@@ -755,12 +639,14 @@ function InboxToolbar({
   activeFilter,
   onFilterChange,
   onSearchChange,
-  search
+  search,
+  urgentCount
 }: {
   activeFilter: AppointmentFilter;
   onFilterChange: (value: AppointmentFilter) => void;
   onSearchChange: (value: string) => void;
   search: string;
+  urgentCount: number;
 }) {
   const filters: Array<{ label: string; value: AppointmentFilter }> = [
     { label: "Hepsi", value: "all" },
@@ -773,9 +659,34 @@ function InboxToolbar({
     <Card className="fade-up p-4 [animation-delay:160ms]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--rs-ink)]">
-            Gelen rezervasyon istekleri
-          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-2xl font-semibold tracking-[-0.05em] text-[var(--rs-ink)]">
+              Gelen rezervasyon istekleri
+            </h2>
+            {urgentCount > 0 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onFilterChange(activeFilter === "urgent" ? "all" : "urgent")
+                }
+                aria-pressed={activeFilter === "urgent"}
+                className={
+                  activeFilter === "urgent"
+                    ? "inline-flex items-center gap-1.5 rounded-full border border-[var(--rs-danger)]/30 bg-[var(--rs-danger)] px-3 py-1 text-xs font-semibold text-white shadow-[var(--rs-shadow-soft)]"
+                    : "inline-flex items-center gap-1.5 rounded-full border border-[var(--rs-danger)]/30 bg-[var(--rs-danger-soft)] px-3 py-1 text-xs font-semibold text-[var(--rs-danger)] transition hover:bg-[var(--rs-danger)] hover:text-white"
+                }
+              >
+                <span
+                  className={
+                    activeFilter === "urgent"
+                      ? "h-1.5 w-1.5 rounded-full bg-[var(--rs-surface)]"
+                      : "pulse-warning h-1.5 w-1.5 rounded-full bg-[var(--rs-danger)]"
+                  }
+                />
+                {urgentCount} acil
+              </button>
+            ) : null}
+          </div>
           <p className="mt-1 text-sm text-[var(--rs-muted)]">
             Onay bekleyen ve sonuçlanmış talepleri hizmet, personel veya müşteriyle ara.
           </p>
@@ -783,7 +694,7 @@ function InboxToolbar({
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
-            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-white px-5 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Talep, hizmet veya personel ara"
             type="search"
@@ -794,7 +705,7 @@ function InboxToolbar({
               <button
                 className={
                   activeFilter === filter.value
-                    ? "rounded-full bg-white px-4 py-2 text-xs font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
+                    ? "rounded-full bg-[var(--rs-surface)] px-4 py-2 text-xs font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
                     : "rounded-full px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:text-[var(--rs-ink)]"
                 }
                 key={filter.value}
@@ -817,6 +728,7 @@ function AppointmentRequestCard({
   isReported,
   isReporting,
   isSubmitting,
+  nowUtc,
   onApprove,
   onDecline,
   onReport,
@@ -827,6 +739,7 @@ function AppointmentRequestCard({
   isReported: boolean;
   isReporting: boolean;
   isSubmitting: boolean;
+  nowUtc: string;
   onApprove: () => void;
   onDecline: () => void;
   onReport: () => void;
@@ -834,6 +747,9 @@ function AppointmentRequestCard({
 }) {
   const status = getRequestStatus(request);
   const isPending = status === "PendingApproval";
+  const ttlStatus = isPending
+    ? getRequestTtlStatus(request.expiresAtUtc, nowUtc)
+    : null;
   const reportLabel = isReported
     ? "Raporlandı"
     : isReporting
@@ -842,7 +758,7 @@ function AppointmentRequestCard({
 
   return (
     <article
-      className="fade-up group rounded-[2rem] border border-[var(--rs-border)] bg-white/78 p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
+      className="fade-up group rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
       style={{ animationDelay: `${180 + index * 45}ms` }}
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-start">
@@ -852,6 +768,7 @@ function AppointmentRequestCard({
               {shortGuid(request.id)}
             </span>
             <StatusBadge status={status} />
+            {ttlStatus ? <TtlBadge status={ttlStatus} /> : null}
             <span className="text-xs text-[var(--rs-muted)]">
               {request.branchDisplayName ?? "Şube adı yok"}
             </span>
@@ -870,7 +787,10 @@ function AppointmentRequestCard({
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
-            <InfoBlock label="Müşteri hesabı" value={getCustomerHandle(request)} />
+            <InfoBlock
+              label="Müşteri hesabı"
+              value={getCustomerHandle(request)}
+            />
             <InfoBlock
               label="Telefon"
               value={request.customer?.maskedPhone ?? "Telefon yok"}
@@ -879,6 +799,16 @@ function AppointmentRequestCard({
               label="E-posta"
               value={request.customer?.maskedEmail ?? "E-posta yok"}
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--rs-neutral-soft)] px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.14em] text-[var(--rs-muted)]">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--rs-muted)]" />
+              PII gizli
+            </span>
+            <span className="text-[0.7rem] text-[var(--rs-muted)]">
+              Müşteri iletişim bilgisi yalnızca maskeli gösterilir.
+            </span>
           </div>
 
           <div className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4">
@@ -975,6 +905,56 @@ function ConflictHint({ signals }: { signals: BusinessRequestConflictSignal[] })
   );
 }
 
+function TtlBadge({ status }: { status: RequestTtlStatus | null }) {
+  if (!status) {
+    return null;
+  }
+
+  const base =
+    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.65rem] font-semibold tracking-[0.04em]";
+
+  if (status.level === "critical") {
+    return (
+      <span
+        className={`${base} border border-[var(--rs-danger)]/30 bg-[var(--rs-danger-soft)] text-[var(--rs-danger)]`}
+      >
+        <span className="pulse-warning h-1.5 w-1.5 rounded-full bg-[var(--rs-danger)]" />
+        {status.label}
+      </span>
+    );
+  }
+
+  if (status.level === "warning") {
+    return (
+      <span
+        className={`${base} border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] text-[var(--rs-warning)]`}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--rs-warning)]" />
+        {status.label}
+      </span>
+    );
+  }
+
+  if (status.level === "expired") {
+    return (
+      <span
+        className={`${base} bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]`}
+      >
+        {status.label}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`${base} bg-[var(--rs-neutral-soft)] text-[var(--rs-muted)]`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-[var(--rs-muted)]" />
+      {status.label}
+    </span>
+  );
+}
+
 function formatConflictSignals(signals: BusinessRequestConflictSignal[]) {
   const hasStaffConflict = signals.includes("staff");
   const hasResourceConflict = signals.includes("resource");
@@ -992,7 +972,7 @@ function formatConflictSignals(signals: BusinessRequestConflictSignal[]) {
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-2 font-mono text-sm font-medium text-[var(--rs-ink)]">
         {value}
@@ -1118,7 +1098,7 @@ function AbuseReportDialog({
           <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
             Rapor nedeni
             <select
-              className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
               onChange={(event) =>
                 onDraftChange({
                   ...draft,
@@ -1136,7 +1116,7 @@ function AbuseReportDialog({
           </label>
 
           {selectedReason ? (
-            <p className="rounded-2xl border border-[var(--rs-border)] bg-white/70 px-4 py-3 text-sm leading-6 text-[var(--rs-muted)]">
+            <p className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] px-4 py-3 text-sm leading-6 text-[var(--rs-muted)]">
               {selectedReason.description}
             </p>
           ) : null}
@@ -1144,7 +1124,7 @@ function AbuseReportDialog({
           <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
             Operasyon notu
             <textarea
-              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
               maxLength={abuseReportNoteMaxLength}
               onChange={(event) =>
                 onDraftChange({

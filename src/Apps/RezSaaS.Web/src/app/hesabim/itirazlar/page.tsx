@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CustomerAbusePage } from "@/features/customer/components/customer-abuse-page";
+import { CustomerShell } from "@/features/customer/components/customer-shell";
 import { getCustomerAbuseOverview } from "@/features/customer/api/get-abuse-overview";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
@@ -43,9 +44,11 @@ export default async function CustomerAppealsRoute() {
   }
 
   return (
-    <CustomerAbusePage
-      overview={abuseOverview.overview}
+    <CustomerShell
+      activeNav="appeals"
       sessionEmail={sessionState.session.account?.email ?? "Hesabım"}
-    />
+    >
+      <CustomerAbusePage overview={abuseOverview.overview} />
+    </CustomerShell>
   );
 }

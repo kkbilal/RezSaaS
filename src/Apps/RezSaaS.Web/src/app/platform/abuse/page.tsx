@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getPlatformAbuseOverview } from "@/features/platform/api/get-platform-abuse-overview";
 import { PlatformAbusePage } from "@/features/platform/components/platform-abuse-page";
+import { PlatformShell } from "@/features/platform/components/platform-shell";
 import { PlatformStepUpGate } from "@/features/platform/components/platform-step-up-gate";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
@@ -71,10 +72,11 @@ export default async function PlatformAbuseRoute() {
   }
 
   return (
-    <PlatformAbusePage
-      overview={overviewState.overview}
+    <PlatformShell
       sessionEmail={session.account?.email ?? "Platform hesabı"}
       stepUpExpiresAtUtc={session.stepUp.expiresAtUtc}
-    />
+    >
+      <PlatformAbusePage overview={overviewState.overview} />
+    </PlatformShell>
   );
 }

@@ -37,3 +37,9 @@ artifacts/local/
 
 # Temporary files
 find-result.txt
+build_output*.txt
+query-result.txt
+schemas.txt
+git_status.txt
+*_output.txt
+

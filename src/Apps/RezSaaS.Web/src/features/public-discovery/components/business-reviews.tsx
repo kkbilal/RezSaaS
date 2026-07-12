@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
@@ -74,7 +74,7 @@ export function BusinessReviews({
 
 function ReviewCard({ review }: { review: BusinessReview }) {
   return (
-    <div className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-white/72 p-6 shadow-[var(--rs-shadow-soft)]">
+    <div className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-soft)]">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-3">

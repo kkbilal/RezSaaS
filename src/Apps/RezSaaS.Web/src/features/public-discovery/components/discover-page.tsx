@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardTitle } from "@/shared/ui/card";
@@ -40,7 +40,7 @@ export function DiscoverPage({ params, state }: DiscoverPageProps) {
       <div className="mx-auto max-w-7xl space-y-8">
         <PublicTopBar />
 
-        <section className="fade-up grid gap-8 rounded-[2.5rem] border border-[var(--rs-border)] bg-white/74 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl lg:grid-cols-[1fr_28rem] lg:p-8">
+        <section className="fade-up grid gap-8 rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl lg:grid-cols-[1fr_28rem] lg:p-8">
           <div className="space-y-5">
             <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
               Keşfet
@@ -91,7 +91,7 @@ function SearchRefinement({
   const districtFacets = getFacetOptions(businesses, params, "district");
 
   return (
-    <section className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-white/70 p-5 shadow-[var(--rs-shadow-soft)] [animation-delay:90ms]">
+    <section className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] [animation-delay:90ms]">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--rs-muted)]">
@@ -117,7 +117,7 @@ function SearchRefinement({
         <div className="mt-5 flex flex-wrap gap-2">
           {activeFilters.map((filter) => (
             <Link
-              className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted-strong)] shadow-[var(--rs-shadow-soft)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+              className="rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2 text-sm text-[var(--rs-muted-strong)] shadow-[var(--rs-shadow-soft)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
               href={filter.href}
               key={filter.label}
             >
@@ -149,7 +149,7 @@ function FacetGroup({
 }) {
   if (options.length === 0) {
     return (
-      <div className="rounded-[1.5rem] border border-dashed border-[var(--rs-border)] bg-white/50 p-4 text-sm text-[var(--rs-muted)]">
+      <div className="rounded-[1.5rem] border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
         {title} filtresi için bu aramada veri yok.
       </div>
     );
@@ -165,8 +165,8 @@ function FacetGroup({
           <Link
             className={
               option.isActive
-                ? "rounded-full bg-[var(--rs-ink)] px-3 py-2 text-xs font-medium text-white shadow-[var(--rs-shadow-soft)]"
-                : "rounded-full border border-[var(--rs-border)] bg-white px-3 py-2 text-xs font-medium text-[var(--rs-muted-strong)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+                ? "rounded-full bg-[var(--rs-accent)] px-3 py-2 text-xs font-medium text-white shadow-[var(--rs-shadow-soft)]"
+                : "rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-3 py-2 text-xs font-medium text-[var(--rs-muted-strong)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
             }
             href={option.href}
             key={option.value}
@@ -263,7 +263,7 @@ function SearchInput({
     <label className="block space-y-2">
       <span className="text-sm font-medium text-[var(--rs-ink)]">{label}</span>
       <input
-        className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+        className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
         defaultValue={defaultValue}
         name={name}
         placeholder={placeholder}
@@ -275,7 +275,7 @@ function SearchInput({
 function SearchResults({ businesses }: { businesses: PublicBusinessSummary[] }) {
   if (businesses.length === 0) {
     return (
-      <Card className="border-dashed bg-white/60 p-10 text-center shadow-none">
+      <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
         <CardTitle>Bu aramada işletme bulunamadı</CardTitle>
         <CardDescription className="mx-auto mt-2 max-w-lg">
           Arama terimini genişletebilir, şehir veya kategori alanlarını boşaltarak
@@ -309,7 +309,7 @@ function BusinessResultCard({
 
   return (
     <article
-      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-white/78 p-5 shadow-[var(--rs-shadow-soft)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
+      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
       style={{ animationDelay: `${index * 55}ms` }}
     >
       <p className="w-fit rounded-full bg-[var(--rs-neutral-soft)] px-3 py-1 text-xs font-medium text-[var(--rs-muted)]">

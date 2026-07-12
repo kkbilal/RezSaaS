@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { BusinessBranchManagementPage } from "@/features/business/components/business-branch-management-page";
+import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { getBusinessBranchesServer } from "@/features/business/api/get-business-branches-server";
+import { PanelShell } from "@/features/business/components/panel-shell";
+import {
+  firstSearchParam,
+  selectBusinessTenant
+} from "@/features/business/lib/business-tenant-selection";
+import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
-import { BusinessBranchManagementPage } from "@/features/business/components/business-branch-management-page";
-import { getBusinessBranchesServer } from "@/features/business/api/get-business-branches-server";
-import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { EmptyState } from "@/shared/ui/empty-state";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false },
-  title: "Şube Yönetimi"
+  title: "Şube Yönetimi — İşletme Paneli"
 };
 
 type Props = {
@@ -41,15 +48,71 @@ export default async function BusinessBranchesRoute({ searchParams }: Props) {
   if (context.kind === "unavailable") {
     return (
       <PrivateRouteState
-        actionHref={routes.auth.login}
-        actionLabel="Giriş ekranına git"
+        actionHref={routes.business.panel}
+        actionLabel="Panele dön"
         description={`${context.reason} Şube yönetimi render edilmedi.`}
+        eyebrow="İşletme paneli"
         title="İşletme bilgisi alınamadı"
       />
     );
   }
 
-  const initialBranches = await getBusinessBranchesServer();
+  const tenant = selectBusinessTenant(
+    context,
+    firstSearchParam((await searchParams).tenantId)
+  );
 
-  return <BusinessBranchManagementPage initialBranches={initialBranches} />;
+  if (!tenant) {
+    return (
+      <PrivateRouteState
+        actionHref={routes.business.panel}
+        actionLabel="Panele dön"
+        description="Bu hesap için aktif işletme yetkisi görünmüyor."
+        eyebrow="İşletme paneli"
+        title="Aktif işletme üyeliği yok"
+      />
+    );
+  }
+
+  const branchesState = await getBusinessBranchesServer(tenant);
+
+  if (branchesState.kind !== "ready") {
+    return (
+      <PrivateRouteState
+        actionHref={routes.business.panel}
+        actionLabel="Panele dön"
+        description={branchesState.reason}
+        eyebrow="Şube yönetimi"
+        title="Şubeler yüklenemedi"
+      />
+    );
+  }
+
+  if (branchesState.branches.length === 0) {
+    return (
+      <PanelShell
+        currentTenantId={tenant.tenantId}
+        sessionEmail={sessionState.session.account?.email ?? "Oturum"}
+        tenants={buildPanelTenants(context.tenants)}
+      >
+        <EmptyState
+          description="Bu işletme için kayıtlı şube henüz yok. Şube yönetimi Phase 5a backend'i tamamlandığında bu ekrandan açılır."
+          title="Şube yok"
+        />
+      </PanelShell>
+    );
+  }
+
+  return (
+    <PanelShell
+      currentTenantId={tenant.tenantId}
+      sessionEmail={sessionState.session.account?.email ?? "Oturum"}
+      tenants={buildPanelTenants(context.tenants)}
+    >
+      <BusinessBranchManagementPage
+        initialBranches={branchesState.branches}
+        tenantId={tenant.tenantId ?? ""}
+      />
+    </PanelShell>
+  );
 }

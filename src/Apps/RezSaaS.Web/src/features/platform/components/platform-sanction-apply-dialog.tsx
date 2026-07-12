@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -123,7 +123,7 @@ export function PlatformSanctionApplyDialog({
           <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
             Yaptırım türü
             <select
-              className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
               onChange={(event) => {
                 setSanctionType(event.target.value as SanctionType);
                 if (event.target.value === "Warning") {
@@ -149,7 +149,7 @@ export function PlatformSanctionApplyDialog({
             <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
               Bitiş zamanı (UTC)
               <input
-                className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+                className="min-h-12 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
                 max={selectedConfig ? getMaxEndDate(selectedConfig.maxHours) : ""}
                 onChange={(event) => setEndsAtUtc(event.target.value)}
                 required
@@ -167,7 +167,7 @@ export function PlatformSanctionApplyDialog({
           <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
             Yaptırım nedeni
             <textarea
-              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
               maxLength={reasonMaxLength}
               onChange={(event) => setReason(event.target.value)}
               placeholder="Yaptırım gerekçesini yaz."
@@ -201,7 +201,7 @@ export function PlatformSanctionApplyDialog({
       </DialogFormPanel>
 
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-white px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
           {toast}
         </div>
       ) : null}

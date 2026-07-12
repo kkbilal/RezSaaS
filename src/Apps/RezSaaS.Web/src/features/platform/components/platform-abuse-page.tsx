@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -14,21 +14,16 @@ import {
   PlatformReportConfirmDialog,
   PlatformReportDismissDialog
 } from "@/features/platform/components/platform-report-review-dialog";
-import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
 type PlatformAbusePageProps = {
   overview: PlatformAbuseOverview;
-  sessionEmail: string;
-  stepUpExpiresAtUtc?: string | null;
 };
 
 export function PlatformAbusePage({
-  overview,
-  sessionEmail,
-  stepUpExpiresAtUtc
+  overview
 }: PlatformAbusePageProps) {
   const [confirmReportId, setConfirmReportId] = useState<string | null>(null);
   const [dismissReportId, setDismissReportId] = useState<string | null>(null);
@@ -41,14 +36,9 @@ export function PlatformAbusePage({
     (reconciliation?.executionStalledClosureCount ?? 0);
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
+    <div className="space-y-6">
       <div className="mx-auto max-w-7xl space-y-8">
-        <PlatformHeader
-          sessionEmail={sessionEmail}
-          stepUpExpiresAtUtc={stepUpExpiresAtUtc}
-        />
-
-        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
+        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl space-y-5">
               <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
@@ -114,46 +104,13 @@ export function PlatformAbusePage({
           reportId={dismissReportId}
         />
       ) : null}
-    </main>
-  );
-}
-
-function PlatformHeader({
-  sessionEmail,
-  stepUpExpiresAtUtc
-}: {
-  sessionEmail: string;
-  stepUpExpiresAtUtc?: string | null;
-}) {
-  return (
-    <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <Link
-        className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
-        href={routes.public.home}
-      >
-        RezSaaS
-      </Link>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-          {sessionEmail}
-        </span>
-        <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-          Step-up: {formatUtcDateTime(stepUpExpiresAtUtc)}
-        </span>
-        <Button asChild variant="secondary">
-          <Link href={routes.platform.tenants}>Tenantlar</Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link href={routes.platform.appeals}>İtirazlar</Link>
-        </Button>
-      </div>
-    </header>
+    </div>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] bg-[var(--rs-ink)] p-4 text-white shadow-[var(--rs-shadow-card)]">
+    <div className="rounded-[1.5rem] bg-[var(--rs-accent)] p-4 text-white shadow-[var(--rs-shadow-card)]">
       <p className="text-[0.65rem] uppercase tracking-[0.18em] text-white/50">
         {label}
       </p>
@@ -192,14 +149,14 @@ function ReportList({
   reports: PlatformAbuseReport[];
 }) {
   if (reports.length === 0) {
-    return <EmptyState text="Bekleyen işletme abuse raporu yok." />;
+    return <EmptyState title="Bekleyen işletme abuse raporu yok." />;
   }
 
   return (
     <div className="grid gap-3">
       {reports.map((report) => (
         <article
-          className="rounded-[1.5rem] border border-[var(--rs-border)] bg-white/75 p-4"
+          className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4"
           key={report.reportId}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -250,14 +207,14 @@ function ReportList({
 
 function AppealList({ appeals }: { appeals: PlatformAbuseAppeal[] }) {
   if (appeals.length === 0) {
-    return <EmptyState text="Bekleyen müşteri itirazı yok." />;
+    return <EmptyState title="Bekleyen müşteri itirazı yok." />;
   }
 
   return (
     <div className="grid gap-3">
       {appeals.map((appeal) => (
         <article
-          className="rounded-[1.5rem] border border-[var(--rs-border)] bg-white/75 p-4"
+          className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4"
           key={appeal.appealId}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -324,7 +281,7 @@ function ReconciliationCard({
         <StatusBadge status={reconciliation.status ?? "Unknown"} />
         {signals.map(([label, value]) => (
           <div
-            className="flex items-center justify-between rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm"
+            className="flex items-center justify-between rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm"
             key={label}
           >
             <span className="text-[var(--rs-muted)]">{label}</span>
@@ -349,11 +306,11 @@ function ClosureCaseCard({
       </CardDescription>
       <div className="mt-5 space-y-3">
         {closureCases.length === 0 ? (
-          <EmptyState text="Closure case kaydı yok." />
+          <EmptyState title="Closure case kaydı yok." />
         ) : (
           closureCases.map((closureCase) => (
             <div
-              className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm"
+              className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm"
               key={closureCase.closureCaseId}
             >
               <StatusBadge status={closureCase.status ?? "Unknown"} />
@@ -380,11 +337,11 @@ function EventCard({ events }: { events: PlatformAbuseEvent[] }) {
       </CardDescription>
       <div className="mt-5 space-y-3">
         {events.length === 0 ? (
-          <EmptyState text="Abuse event kaydı yok." />
+          <EmptyState title="Abuse event kaydı yok." />
         ) : (
           events.slice(0, 8).map((event) => (
             <div
-              className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm"
+              className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm"
               key={event.eventId}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -414,10 +371,10 @@ function EventCard({ events }: { events: PlatformAbuseEvent[] }) {
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function EmptyState({ title }: { title: string }) {
   return (
-    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
-      {text}
+    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
+      {title}
     </p>
   );
 }

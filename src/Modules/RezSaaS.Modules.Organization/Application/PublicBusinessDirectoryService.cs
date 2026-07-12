@@ -73,6 +73,7 @@ public sealed class PublicBusinessDirectoryService
             .OrderBy(entity => entity.DisplayName)
             .Take(take)
             .Select(entity => new PublicBusinessSummaryView(
+                entity.TenantId,
                 entity.Slug,
                 entity.DisplayName,
                 entity.CategoryKey,

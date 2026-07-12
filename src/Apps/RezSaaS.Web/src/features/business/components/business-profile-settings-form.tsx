@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
@@ -34,7 +34,7 @@ type BusinessProfileSettingsFormProps = {
 };
 
 const textAreaClassName =
-  "min-h-28 w-full rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)] disabled:cursor-not-allowed disabled:opacity-60";
+  "min-h-28 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)] disabled:cursor-not-allowed disabled:opacity-60";
 
 export function BusinessProfileSettingsForm({
   canManage,
@@ -146,7 +146,7 @@ export function BusinessProfileSettingsForm({
             label="Personel görünürlüğü"
           >
             <select
-              className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isDisabled}
               onChange={(event) =>
                 setDraft((current) => ({

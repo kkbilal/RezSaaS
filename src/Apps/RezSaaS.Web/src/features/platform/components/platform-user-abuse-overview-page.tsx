@@ -1,15 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type {
   PlatformUserAbuseOverview,
   PlatformUserSanction,
   PlatformUserStrike
 } from "@/features/platform/api/get-platform-user-abuse-overview";
 import { PlatformSanctionApplyDialog } from "@/features/platform/components/platform-sanction-apply-dialog";
-import { routes } from "@/shared/config/routes";
 import { apiClient } from "@/shared/api/client";
 import { Button } from "@/shared/ui/button";
 import {
@@ -21,14 +19,10 @@ import { StatusBadge } from "@/shared/ui/status-badge";
 
 type PlatformUserAbuseOverviewPageProps = {
   overview: PlatformUserAbuseOverview;
-  sessionEmail: string;
-  stepUpExpiresAtUtc?: string | null;
 };
 
 export function PlatformUserAbuseOverviewPage({
-  overview,
-  sessionEmail,
-  stepUpExpiresAtUtc
+  overview
 }: PlatformUserAbuseOverviewPageProps) {
   const [showSanctionApply, setShowSanctionApply] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<{
@@ -43,28 +37,9 @@ export function PlatformUserAbuseOverviewPage({
   const activeSanctions = overview.sanctions.filter((s) => s.isActive);
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
+    <div className="space-y-6">
       <div className="mx-auto max-w-5xl space-y-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
-            href={routes.platform.abuse}
-          >
-            ← Abuse
-          </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-              {sessionEmail}
-            </span>
-            {stepUpExpiresAtUtc ? (
-              <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-                Step-up: {formatUtcDateTime(stepUpExpiresAtUtc)}
-              </span>
-            ) : null}
-          </div>
-        </header>
-
-        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
+        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
@@ -102,7 +77,7 @@ export function PlatformUserAbuseOverviewPage({
             </CardHeader>
             <div className="mt-5 space-y-3">
               {overview.strikes.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
+                <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
                   Strike kaydı yok.
                 </p>
               ) : (
@@ -130,7 +105,7 @@ export function PlatformUserAbuseOverviewPage({
             </CardHeader>
             <div className="mt-5 space-y-3">
               {overview.sanctions.length === 0 ? (
-                <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
+                <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
                   Yaptırım kaydı yok.
                 </p>
               ) : (
@@ -160,13 +135,13 @@ export function PlatformUserAbuseOverviewPage({
           </CardHeader>
           <div className="mt-5 space-y-3">
             {overview.reports.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
+              <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
                 Rapor kaydı yok.
               </p>
             ) : (
               overview.reports.map((report) => (
                 <div
-                  className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm"
+                  className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm"
                   key={report.reportId}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -195,13 +170,13 @@ export function PlatformUserAbuseOverviewPage({
           </CardHeader>
           <div className="mt-5 space-y-3">
             {overview.events.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
+              <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
                 Event kaydı yok.
               </p>
             ) : (
               overview.events.slice(0, 10).map((event) => (
                 <div
-                  className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm"
+                  className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm"
                   key={event.eventId}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -247,7 +222,7 @@ export function PlatformUserAbuseOverviewPage({
           userAccountId={overview.userAccountId}
         />
       ) : null}
-    </main>
+    </div>
   );
 }
 
@@ -259,7 +234,7 @@ function StrikeCard({
   strike: PlatformUserStrike;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <StatusBadge
           status={strike.isActive ? "Active" : "Revoked"}
@@ -302,7 +277,7 @@ function SanctionCard({
   sanction: PlatformUserSanction;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <StatusBadge
           status={sanction.type ?? "Unknown"}
@@ -376,7 +351,7 @@ function PlatformStrikeRevokeDialog({
           params: {
             path: {
               userAccountId,
-              strikeId: strike.strikeId
+              strikeId: strike.strikeId ?? "",
             }
           }
         }
@@ -412,7 +387,7 @@ function PlatformStrikeRevokeDialog({
           <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
             Geri alma nedeni
             <textarea
-              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
               maxLength={300}
               onChange={(event) => setReason(event.target.value)}
               placeholder="Geri alma gerekçesini yaz."
@@ -431,7 +406,7 @@ function PlatformStrikeRevokeDialog({
         </div>
       </DialogFormPanel>
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-white px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
           {toast}
         </div>
       ) : null}
@@ -475,7 +450,7 @@ function PlatformSanctionRevokeDialog({
           body: { reason: reason.trim() },
           params: {
             path: {
-              sanctionId: sanction.sanctionId,
+              sanctionId: sanction.sanctionId ?? "",
               userAccountId
             }
           }
@@ -512,7 +487,7 @@ function PlatformSanctionRevokeDialog({
           <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
             Geri alma nedeni
             <textarea
-              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+              className="min-h-32 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
               maxLength={300}
               onChange={(event) => setReason(event.target.value)}
               placeholder="Geri alma gerekçesini yaz."
@@ -531,7 +506,7 @@ function PlatformSanctionRevokeDialog({
         </div>
       </DialogFormPanel>
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-white px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
           {toast}
         </div>
       ) : null}

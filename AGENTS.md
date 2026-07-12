@@ -320,6 +320,17 @@ IP ban sadece güçlü sinyal ve ağır abuse durumunda; NAT/CGNAT nedeniyle “
   - tenant izolasyonu (başka tenant kaynağı görünmez)
 - En az bir entegrasyon test katmanı planlanmalı (PostgreSQL ile).
 
+### 9.1 UTF-8 / Mojibake Koruma Kapısı (her build check'te zorunlu)
+
+- Bu repodaki tüm kaynak dosyaları (`.cs`, `.ts`, `.tsx`, `.css`, `.md`)** UTF-8 without BOM** olarak yazılır. ASCII veya Windows-1252/1254 decode'u ile karıştırılmaz.
+- **Her build check (local `dotnet build`, `pnpm typecheck`, `pnpm test`, CI workflow) öncesinde mojibake kontrolü zorunludur.** Bu kapı olmadan PR merge edilmez.
+- Kontrol şunları doğrular:
+  1. Her dosya `TextDecoder('utf-8', { fatal: true })` ile hatasız decode edilebilmeli (geçersiz byte dizisi = fail).
+  2. Yaygın mojibake pattern'leri dosyalarda geçmemeli: UTF-8 byte'larının Windows-1252 ile yanlış decode edilmiş halleri (Türkçe karakterler için: `0xC3 0xA7`, `0xC4 0xB1`, `0xC5 0x9F`, `0xC4 0x9F`, `0xC3 0xBC`, `0xC3 0xB6`, `0xC4 0xB0`, `0xC5 0x9E`, `0xC3 0x87`, `0xC4 0x9E`, `0xC3 0x9C`, `0xC3 0x96`) ve `U+FFFD` (REPLACEMENT CHARACTER).
+- Kabul edilen referans script: `scripts/Check-SourceEncoding.ps1` (aşağıdaki kontratı uygular). Bu script `pre-commit`, CI lint job ve lokal `pnpm check:encoding` / `dotnet build` öncesi hook'ta çağrılır.
+- **Windows + PowerShell tuzağı**: PowerShell 5.1'de `Get-Content -Raw -Encoding UTF8` **birlikte kullanılamaz** (parametre bağlama hatası) ve `Set-Content` default encoding Windows-1252'dir. Toplu dosya dönüştürme/düzenleme yaparken **mutlaka** `[System.IO.File]::ReadAllBytes` + `[System.Text.Encoding]::UTF8.GetString` ile oku, `[System.IO.File]::WriteAllBytes` ile UTF-8 byte'ı yaz. Konsol çıktısındaki `?` karakteri gerçek dosya içeriğini yansıtmaz; kontrol için raw byte okuma yap.
+- Bir dosya mojibake tespit edilirse: build/test fail eder; PR'a dosya **orijinal haline** (`git checkout`) geri çekilip değişiklik encoding-safe yöntemle yeniden uygulanır. Mojibake'li dosya commit edilmez.
+
 ---
 
 ## 10) Git / PR Disiplini
@@ -406,4 +417,31 @@ okunur.
   teslimat kabul edilmez.
 - Her frontend dilimi lint, typecheck, test, Storybook a11y, ilgili Playwright
   journey ve responsive visual QA ile kapanır.
+
+### 13.1 Proje UI/Metin Dili Türkçe'dir (zorunlu varsayılan)
+
+- Projenin **varsayılan ve tek UI/metin dili Türkçe'dir**. Tüm kullanıcı yüzey
+  metinleri (button label, empty state, error mesajı, toast, e-posta, SMS, audit
+  reason copy, onay dialog metni, tooltip, placeholder vb.) Türkçe yazılır.
+- Domain terimleri Türkçe ve tutarlı kullanılır; İngilizce'ye **çevrilmez veya
+  karıştırılmaz**: "Talep" (`AppointmentRequest`), "Randevu" (`Appointment`),
+  "Onay bekliyor" (`PendingApproval`), "Onaylandı" (`Confirmed`), "Reddedildi"
+  (`Declined`), "Süresi doldu" (`Expired`), "Başka talep seçildi" (`Superseded`),
+  "Şube" (`Branch`), "Personel" (`StaffMember`), "Hizmet" (`Service`),
+  "Yetkinlik" (`Skill`), "Kaynak" (`Resource`), "İşletme" (`Tenant`),
+  "İtiraz" (`Appeal`), "Ceza" (`Sanction`), "Hesap kapatma" (`AccountClosureCase`).
+- Backend enum/değer adları (`PendingApproval`, `BusinessOwner` vb.) İngilizce
+  kalır (kod/kontrat katmanı); UI'da gösterilirken Türkçe label'a map'lenir
+  (`StatusBadge`, rol etiketleri). Enum adları kullanıcıya raw gösterilmez.
+- Code comment, dosya adı, route path, CSS class adı, değişken adları ve API
+  kontratı İngilizce kalır; sadece **kullanıcının gördüğü metinler** Türkçe'dir.
+- Lokalizasyon/i18n altyapısı (multi-dil) MVP sonrasına ertelenmiştir ama
+  **ilk ve varsayılan dil Türkçe'dir**; İngilizce veya başka bir dil PR'ında
+  Türkçe varsayılan korunmadan merge edilmez.
+- Çeviri tutarlılığı review'da kontrol edilir: aynı domain kavramı farklı
+  sayfalarda farklı Türkçe kelimeyle ifade edilmez (örn "Şube" bir yerde "Salon"
+  başka yerde "Mağaza" olmaz). Terim birliği için `docs/05-domain-sozlugu.md`
+  tek kaynaktır.
+- Tarihsel/saat gösterimleri `Intl.DateTimeFormat("tr-TR", ...)` ile Türkçe
+  formatlanır; para birimi `TRY`/`₺` ve `tr-TR` locale kullanılır.
 

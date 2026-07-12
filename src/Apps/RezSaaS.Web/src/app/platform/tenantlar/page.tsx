@@ -3,6 +3,7 @@ import {
   getPlatformTenantsOverview,
   type PlatformTenantFilters
 } from "@/features/platform/api/get-platform-tenants-overview";
+import { PlatformShell } from "@/features/platform/components/platform-shell";
 import { PlatformStepUpGate } from "@/features/platform/components/platform-step-up-gate";
 import { PlatformTenantsPage } from "@/features/platform/components/platform-tenants-page";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
@@ -83,11 +84,12 @@ export default async function PlatformTenantsRoute({
   }
 
   return (
-    <PlatformTenantsPage
-      overview={overviewState.overview}
+    <PlatformShell
       sessionEmail={session.account?.email ?? "Platform hesabı"}
       stepUpExpiresAtUtc={session.stepUp.expiresAtUtc}
-    />
+    >
+      <PlatformTenantsPage overview={overviewState.overview} />
+    </PlatformShell>
   );
 }
 

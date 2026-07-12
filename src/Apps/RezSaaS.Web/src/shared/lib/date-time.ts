@@ -15,6 +15,95 @@ export function formatBranchDateTime(
   }).format(value);
 }
 
+export type BranchTimeParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  weekday: number;
+};
+
+export function getBranchTimeParts(
+  valueUtc: string,
+  branchTimeZoneId: string
+): BranchTimeParts | null {
+  const date = new Date(valueUtc);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      hour: "2-digit",
+      hour12: false,
+      minute: "2-digit",
+      month: "2-digit",
+      timeZone: branchTimeZoneId,
+      weekday: "short",
+      year: "numeric"
+    }).formatToParts(date);
+
+    const hour = getNumberPart(parts, "hour");
+    // Intl can yield "24" for midnight with hour12:false in some engines.
+    return {
+      year: getNumberPart(parts, "year"),
+      month: getNumberPart(parts, "month"),
+      day: getNumberPart(parts, "day"),
+      hour: hour === 24 ? 0 : hour,
+      minute: getNumberPart(parts, "minute"),
+      weekday: getWeekdayIndex(parts)
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getWeekdayIndex(parts: Intl.DateTimeFormatPart[]): number {
+  const raw = parts.find((part) => part.type === "weekday")?.value ?? "";
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6
+  };
+  return map[raw] ?? 0;
+}
+
+export function formatBranchDateLabel(valueUtc: string, branchTimeZoneId: string): string {
+  const date = new Date(valueUtc);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Tarih okunamıyor";
+  }
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "numeric",
+    month: "long",
+    timeZone: branchTimeZoneId,
+    weekday: "long"
+  }).format(date);
+}
+
+export function formatBranchTimeLabel(valueUtc: string, branchTimeZoneId: string): string {
+  const date = new Date(valueUtc);
+
+  if (Number.isNaN(date.getTime())) {
+    return "--:--";
+  }
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: branchTimeZoneId
+  }).format(date);
+}
+
 type DateTimeLocalParts = {
   day: number;
   hour: number;

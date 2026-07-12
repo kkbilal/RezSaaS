@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
@@ -11,7 +10,6 @@ import type {
   CustomerStrike
 } from "@/features/customer/api/get-abuse-overview";
 import { apiClient } from "@/shared/api/client";
-import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -33,12 +31,10 @@ type AppealDraft = {
 
 type CustomerAbusePageProps = {
   overview: CustomerAbuseOverview;
-  sessionEmail: string;
 };
 
 export function CustomerAbusePage({
-  overview,
-  sessionEmail
+  overview
 }: CustomerAbusePageProps) {
   const router = useRouter();
   const [appeals, setAppeals] = useState<CustomerAbuseAppeal[]>(
@@ -121,31 +117,11 @@ export function CustomerAbusePage({
   }
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
+    <div className="space-y-6">
       <div className="mx-auto max-w-7xl space-y-8">
-        <header className="flex items-center justify-between">
-          <Link
-            className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
-            href={routes.public.home}
-          >
-            RezSaaS
-          </Link>
-          <div className="flex items-center gap-3">
-            <Button asChild variant="ghost">
-              <Link href={routes.customer.requests}>Taleplerim</Link>
-            </Button>
-            <Button asChild>
-              <Link href={routes.public.discover}>Keşfet</Link>
-            </Button>
-          </div>
-        </header>
-
-        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
+        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl space-y-5">
-              <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
-                {sessionEmail}
-              </p>
               <h1 className="text-5xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-7xl">
                 İtirazlarım ve güvenlik durumum.
               </h1>
@@ -175,7 +151,7 @@ export function CustomerAbusePage({
             </Card>
 
             {targets.length === 0 ? (
-              <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
+              <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
                 <CardTitle>Şu anda itiraz açılabilir kayıt yok</CardTitle>
                 <CardDescription className="mx-auto mt-2 max-w-lg">
                   Aktif yaptırım, geçerli uyarı veya uygun hesap kapatma vakası
@@ -224,17 +200,17 @@ export function CustomerAbusePage({
       ) : null}
 
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-white px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
+        <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 py-3 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-card)]">
           {toast}
         </div>
       ) : null}
-    </main>
+    </div>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] bg-[var(--rs-ink)] p-4 text-white shadow-[var(--rs-shadow-card)]">
+    <div className="rounded-[1.5rem] bg-[var(--rs-accent)] p-4 text-white shadow-[var(--rs-shadow-card)]">
       <p className="text-[0.65rem] uppercase tracking-[0.18em] text-white/50">
         {label}
       </p>
@@ -254,7 +230,7 @@ function AppealTargetCard({
 }) {
   return (
     <article
-      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-white/78 p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl"
+      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl"
       style={{ animationDelay: `${index * 45}ms` }}
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-start">
@@ -300,10 +276,10 @@ function SafeScopeCard() {
         yetkilisi veya platform iç notu burada paylaşılmaz.
       </CardDescription>
       <div className="mt-5 space-y-3 text-sm leading-6 text-[var(--rs-muted)]">
-        <p className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+        <p className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
           Açık itiraz limiti ve itiraz penceresi backend tarafından korunur.
         </p>
-        <p className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+        <p className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
           Kabul edilen itiraz ilgili strike, yaptırım veya closure case kaydını
           güvenli workflow içinde düzeltir.
         </p>
@@ -322,13 +298,13 @@ function AppealHistoryCard({ appeals }: { appeals: CustomerAbuseAppeal[] }) {
 
       <div className="mt-5 space-y-3">
         {appeals.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
+          <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
             Henüz itiraz kaydı yok.
           </p>
         ) : (
           appeals.map((appeal) => (
             <div
-              className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm"
+              className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm"
               key={appeal.appealId ?? `${appeal.targetType}-${appeal.targetId}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -374,7 +350,7 @@ function ClosureCasesCard({
       <div className="mt-5 space-y-3">
         {closureCases.map((closureCase) => (
           <div
-            className="rounded-2xl border border-[var(--rs-border)] bg-white p-4 text-sm"
+            className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4 text-sm"
             key={closureCase.closureCaseId}
           >
             <StatusBadge status={closureCase.status ?? "Unknown"} />
@@ -405,7 +381,7 @@ function AppealDialog({
   onSubmit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-[rgb(5_26_36_/_0.42)] p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-40 grid place-items-center bg-black/70 p-4 backdrop-blur-sm">
       <section className="fade-up w-full max-w-2xl rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-6 shadow-[var(--rs-shadow-card)]">
         <div className="space-y-4">
           <span className="rounded-full bg-[var(--rs-accent-soft)] px-3 py-1 text-xs font-medium text-[var(--rs-accent-strong)]">
@@ -423,7 +399,7 @@ function AppealDialog({
         <label className="mt-6 block text-sm font-medium text-[var(--rs-ink)]">
           Açıklama
           <textarea
-            className="mt-3 min-h-40 w-full resize-y rounded-[1.25rem] border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+            className="mt-3 min-h-40 w-full resize-y rounded-[1.25rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
             maxLength={1000}
             onChange={(event) => onStatementChange(event.target.value)}
             placeholder="Bu kararın neden tekrar incelenmesi gerektiğini kısa ve net anlat."

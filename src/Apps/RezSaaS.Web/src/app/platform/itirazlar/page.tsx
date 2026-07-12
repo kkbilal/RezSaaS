@@ -4,6 +4,7 @@ import {
   type PlatformAppealsFilters
 } from "@/features/platform/api/get-platform-appeals-overview";
 import { PlatformAppealsPage } from "@/features/platform/components/platform-appeals-page";
+import { PlatformShell } from "@/features/platform/components/platform-shell";
 import { PlatformStepUpGate } from "@/features/platform/components/platform-step-up-gate";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
@@ -83,11 +84,12 @@ export default async function PlatformAppealsRoute({
   }
 
   return (
-    <PlatformAppealsPage
-      overview={overviewState.overview}
+    <PlatformShell
       sessionEmail={session.account?.email ?? "Platform hesabı"}
       stepUpExpiresAtUtc={session.stepUp.expiresAtUtc}
-    />
+    >
+      <PlatformAppealsPage overview={overviewState.overview} />
+    </PlatformShell>
   );
 }
 

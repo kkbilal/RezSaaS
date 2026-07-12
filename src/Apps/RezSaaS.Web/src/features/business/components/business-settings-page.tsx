@@ -1,6 +1,4 @@
-import Link from "next/link";
-import type { BusinessTenantContext } from "@/features/business/api/get-business-context";
-import type {
+﻿import type {
   BusinessProfileSettings,
   BusinessProfileSettingsState,
   BusinessSettingsOverview
@@ -10,15 +8,11 @@ import {
   type BusinessProfileSettingsDraft
 } from "@/features/business/components/business-profile-settings-form";
 import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
-import { routes, withTenant } from "@/shared/config/routes";
-import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
 type BusinessSettingsPageProps = {
   overview: BusinessSettingsOverview;
-  sessionEmail: string;
-  tenantOptions: BusinessTenantContext[];
 };
 
 const dayLabels: Record<string, string> = {
@@ -32,9 +26,7 @@ const dayLabels: Record<string, string> = {
 };
 
 export function BusinessSettingsPage({
-  overview,
-  sessionEmail,
-  tenantOptions
+  overview
 }: BusinessSettingsPageProps) {
   const { profile, tenant } = overview;
   const branches = profile.branches ?? [];
@@ -57,15 +49,8 @@ export function BusinessSettingsPage({
   );
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <SettingsHeader
-          profileSlug={profile.slug ?? tenant.tenantSlug}
-          sessionEmail={sessionEmail}
-          tenantId={tenant.tenantId}
-        />
-
-        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
+    <div className="space-y-6">
+        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl space-y-5">
               <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
@@ -92,11 +77,6 @@ export function BusinessSettingsPage({
 
         <div className="grid gap-6 xl:grid-cols-[24rem_1fr]">
           <aside className="space-y-6">
-            <TenantSwitcherCard
-              activeTenantId={tenant.tenantId}
-              routePath={routes.business.settings}
-              tenants={tenantOptions}
-            />
             <TenantScopeCard overview={overview} />
             <CapabilityMapCard />
           </aside>
@@ -124,102 +104,13 @@ export function BusinessSettingsPage({
             </div>
           </section>
         </div>
-      </div>
-    </main>
-  );
-}
-
-function SettingsHeader({
-  profileSlug,
-  sessionEmail,
-  tenantId
-}: {
-  profileSlug?: string | null;
-  sessionEmail: string;
-  tenantId?: string | null;
-}) {
-  return (
-    <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <Link
-        className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
-        href={routes.public.home}
-      >
-        RezSaaS
-      </Link>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-          {sessionEmail}
-        </span>
-        <Button asChild variant="secondary">
-          <Link href={withTenant(routes.business.panel, tenantId)}>
-            Operasyon paneli
-          </Link>
-        </Button>
-        {profileSlug ? (
-          <Button asChild variant="ghost">
-            <Link href={routes.public.businessProfile(profileSlug)}>
-              Public profili gör
-            </Link>
-          </Button>
-        ) : null}
-      </div>
-    </header>
-  );
-}
-
-function TenantSwitcherCard({
-  activeTenantId,
-  routePath,
-  tenants
-}: {
-  activeTenantId?: string | null;
-  routePath: string;
-  tenants: BusinessTenantContext[];
-}) {
-  if (tenants.length <= 1) {
-    return null;
-  }
-
-  return (
-    <Card className="p-6">
-      <CardHeader>
-        <CardTitle>İşletme seçimi</CardTitle>
-        <CardDescription>
-          Yalnızca hesabına bağlı işletmeler arasında geçiş yapılır.
-        </CardDescription>
-      </CardHeader>
-
-      <div className="mt-5 space-y-2">
-        {tenants.map((tenant) => {
-          const isActive = tenant.tenantId === activeTenantId;
-
-          return (
-            <Link
-              className={
-                isActive
-                  ? "block rounded-2xl border border-[var(--rs-border-strong)] bg-white px-4 py-3 text-sm font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
-                  : "block rounded-2xl border border-[var(--rs-border)] bg-white/62 px-4 py-3 text-sm text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
-              }
-              href={withTenant(routePath, tenant.tenantId)}
-              key={tenant.tenantId ?? tenant.membershipId}
-            >
-              <span className="block">
-                {tenant.tenantDisplayName ?? tenant.tenantSlug ?? "İşletme"}
-              </span>
-              <span className="mt-1 block text-xs opacity-70">
-                {getRoleLabel(tenant.role)}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </Card>
+    </div>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] bg-[var(--rs-ink)] p-4 text-white shadow-[var(--rs-shadow-card)]">
+    <div className="rounded-[1.5rem] bg-[var(--rs-accent)] p-4 text-white shadow-[var(--rs-shadow-card)]">
       <p className="text-[0.65rem] uppercase tracking-[0.18em] text-white/50">
         {label}
       </p>
@@ -268,7 +159,7 @@ function TenantScopeCard({
             ) : (
               tenant.capabilities?.map((capability) => (
                 <span
-                  className="rounded-full bg-white px-3 py-1 text-xs text-[var(--rs-muted)]"
+                  className="rounded-full bg-[var(--rs-surface)] px-3 py-1 text-xs text-[var(--rs-muted)]"
                   key={capability}
                 >
                   {capability}
@@ -374,7 +265,7 @@ function CapabilityMapCard() {
       <div className="mt-6 space-y-3">
         {items.map((item) => (
           <div
-            className="rounded-2xl border border-[var(--rs-border)] bg-white p-4"
+            className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4"
             key={item.label}
           >
             <div className="flex items-start justify-between gap-3">
@@ -519,7 +410,7 @@ function BranchSnapshotCard({
         ) : (
           branches.map((branch) => (
             <article
-              className="rounded-[1.5rem] border border-[var(--rs-border)] bg-white/74 p-4"
+              className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4"
               key={branch.slug ?? branch.displayName}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -597,7 +488,7 @@ function ServiceSnapshotCard({
         ) : (
           services.map((service) => (
             <article
-              className="rounded-[1.5rem] border border-[var(--rs-border)] bg-white/74 p-4"
+              className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4"
               key={service.id ?? service.name}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -644,7 +535,7 @@ function ServiceSnapshotCard({
 
 function InfoLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-2 break-all font-medium text-[var(--rs-ink)]">{value}</p>
     </div>
@@ -653,7 +544,7 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-2 font-medium text-[var(--rs-ink)]">{value}</p>
     </div>
@@ -662,7 +553,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 
 function TextBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="mt-5 rounded-[1.5rem] border border-[var(--rs-border)] bg-white p-4">
+    <div className="mt-5 rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--rs-muted)]">
         {label}
       </p>
@@ -675,7 +566,7 @@ function TextBlock({ label, value }: { label: string; value: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
+    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
       {text}
     </p>
   );

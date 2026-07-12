@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\BuildingBlocks\RezSaaS.BuildingBlocks\RezSaaS.BuildingBlocks.csproj" />
+    <ProjectReference Include="..\RezSaaS.Modules.TenantManagement\RezSaaS.Modules.TenantManagement.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -16,6 +16,9 @@ import { routes, withReturnTo } from "@/shared/config/routes";
 import { createWebIdempotencyKey } from "@/shared/lib/idempotency";
 import { Button } from "@/shared/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { EmptyState } from "@/shared/ui/empty-state";
+import { Progress } from "@/shared/ui/progress";
+import { TextSkeleton } from "@/shared/ui/skeleton";
 
 type PublicSlotSearchResponse = ApiSchema<"PublicSlotSearchResponse">;
 type PublicSlot = ApiSchema<"PublicSlotResponse">;
@@ -80,6 +83,7 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
       ) ?? null,
     [selectedSlotStartUtc, slotState.result?.slots]
   );
+  const hasSearched = slotState.result !== undefined;
 
   function resetBookingIntent() {
     setIdempotencyKey("");
@@ -262,7 +266,11 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
         </CardDescription>
       </CardHeader>
 
-      <div className="mt-7 grid gap-6 xl:grid-cols-[1fr_22rem]">
+      <div className="mt-6 rounded-[var(--rs-radius-lg)] border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] px-4 py-4 sm:px-6">
+        <Progress steps={getProgressSteps({ hasSearched, hasSlot: Boolean(selectedSlotStartUtc), submitted: submitState.kind === "success" })} />
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
             <SelectField
@@ -287,7 +295,7 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
             <label className="block space-y-2">
               <span className="text-sm font-medium text-[var(--rs-ink)]">Tarih</span>
               <input
-                className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+                className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
                 onChange={(event) => {
                   setDate(event.target.value);
                   setSelectedSlotStartUtc("");
@@ -332,8 +340,8 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
                   <label
                     className={
                       selectedVariantIds.includes(option.id)
-                        ? "rounded-2xl border border-[var(--rs-border-strong)] bg-white p-4 shadow-[var(--rs-shadow-soft)]"
-                        : "rounded-2xl border border-[var(--rs-border)] bg-white/60 p-4 transition hover:border-[var(--rs-border-strong)]"
+                        ? "rounded-2xl border border-[var(--rs-border-strong)] bg-[var(--rs-surface)] p-4 shadow-[var(--rs-shadow-soft)]"
+                        : "rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 transition hover:border-[var(--rs-border-strong)]"
                     }
                     key={option.id}
                   >
@@ -375,6 +383,8 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
           ) : null}
 
           <SlotResults
+            hasSearched={hasSearched}
+            isLoading={slotState.isLoading}
             onSelect={(startUtc) => {
               setSelectedSlotStartUtc(startUtc);
               resetBookingIntent();
@@ -445,7 +455,7 @@ function SelectField({
     <label className="block space-y-2">
       <span className="text-sm font-medium text-[var(--rs-ink)]">{label}</span>
       <select
-        className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+        className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -456,21 +466,55 @@ function SelectField({
 }
 
 function SlotResults({
+  hasSearched,
+  isLoading,
   onSelect,
   selectedSlotStartUtc,
   slots,
   timeZoneId
 }: {
+  hasSearched: boolean;
+  isLoading: boolean;
   onSelect: (startUtc: string) => void;
   selectedSlotStartUtc: string;
   slots: PublicSlot[];
   timeZoneId?: string | null;
 }) {
-  if (slots.length === 0) {
+  if (isLoading) {
     return (
-      <p className="rounded-2xl border border-dashed border-[var(--rs-border)] p-4 text-sm text-[var(--rs-muted)]">
-        Saatleri görmek için seçimlerini tamamlayıp arama yap.
-      </p>
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-xl font-semibold tracking-[-0.04em] text-[var(--rs-ink)]">
+            Uygun saatler
+          </h3>
+          <p className="mt-1 text-sm text-[var(--rs-muted)]">
+            Saatler şube zamanına göre gösterilir: {timeZoneId ?? "zaman dilimi yok"}.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="h-24 animate-pulse bg-[var(--rs-surface-muted)] rounded-2xl" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (slots.length === 0) {
+    if (hasSearched) {
+      return (
+        <EmptyState
+          description="Başka bir tarih veya hizmet seçmeyi dene"
+          title="Uygun saat bulunamadı"
+        />
+      );
+    }
+
+    return (
+      <EmptyState
+        description="Şube, tarih ve en az bir hizmet seçip 'Uygun saatleri ara' butonuna bas"
+        title="Saatleri görmek için arama yap"
+      />
     );
   }
 
@@ -489,8 +533,8 @@ function SlotResults({
           <button
             className={
               selectedSlotStartUtc === slot.startUtc
-                ? "rounded-2xl border border-[var(--rs-border-strong)] bg-[var(--rs-ink)] p-4 text-left text-white shadow-[var(--rs-shadow-card)]"
-                : "rounded-2xl border border-[var(--rs-border)] bg-white/72 p-4 text-left text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
+                ? "rounded-2xl border border-[var(--rs-border-strong)] bg-[var(--rs-accent)] p-4 text-left text-white shadow-[var(--rs-shadow-card)]"
+                : "rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-left text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
             }
             key={slot.startUtc}
             onClick={() => slot.startUtc && onSelect(slot.startUtc)}
@@ -540,7 +584,7 @@ function SummaryCard({
     selectedVariants.find((variant) => variant.currencyCode)?.currencyCode ?? "TRY";
 
   return (
-    <div className="rounded-[2rem] border border-[var(--rs-border)] bg-white/72 p-5 shadow-[var(--rs-shadow-soft)]">
+    <div className="rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)]">
       <p className="text-xs uppercase tracking-[0.22em] text-[var(--rs-muted)]">
         Seçim özeti
       </p>
@@ -585,6 +629,43 @@ function SummaryLine({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-medium text-[var(--rs-ink)]">{value}</p>
     </div>
   );
+}
+
+function getProgressSteps(state: {
+  hasSearched: boolean;
+  hasSlot: boolean;
+  submitted: boolean;
+}) {
+  const { hasSearched, hasSlot, submitted } = state;
+
+  return [
+    {
+      label: "Seçim",
+      state: submitted
+        ? ("complete" as const)
+        : hasSearched
+          ? ("complete" as const)
+          : ("current" as const)
+    },
+    {
+      label: "Saat",
+      state: submitted
+        ? ("complete" as const)
+        : hasSlot
+          ? ("complete" as const)
+          : hasSearched
+            ? ("current" as const)
+            : ("upcoming" as const)
+    },
+    {
+      label: "Gönder",
+      state: submitted
+        ? ("complete" as const)
+        : hasSlot
+          ? ("current" as const)
+          : ("upcoming" as const)
+    }
+  ];
 }
 
 function createVariantOptions(services: Service[]) {

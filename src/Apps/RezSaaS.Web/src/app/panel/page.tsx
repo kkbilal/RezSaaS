@@ -4,10 +4,12 @@ import { getBusinessAppointments } from "@/features/business/api/get-business-ap
 import { getBusinessAppointmentInbox } from "@/features/business/api/get-appointment-inbox";
 import { getBusinessContext } from "@/features/business/api/get-business-context";
 import { BusinessPanel } from "@/features/business/components/business-panel";
+import { PanelShell } from "@/features/business/components/panel-shell";
 import {
   firstSearchParam,
   selectBusinessTenant
 } from "@/features/business/lib/business-tenant-selection";
+import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
@@ -74,12 +76,22 @@ export default async function PanelPage({ searchParams }: PanelPageProps) {
     getBusinessAppointments(tenant)
   ]);
 
+  const pendingCount = inbox.kind === "ready"
+    ? inbox.requests.filter((r) => (r.status ?? "Unknown") === "PendingApproval").length
+    : 0;
+
   return (
-    <BusinessPanel
-      appointmentSchedule={appointmentSchedule}
-      context={context}
-      inbox={inbox}
+    <PanelShell
+      currentTenantId={tenant.tenantId}
+      pendingRequestCount={pendingCount}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}
-    />
+      tenants={buildPanelTenants(context.tenants)}
+    >
+      <BusinessPanel
+        appointmentSchedule={appointmentSchedule}
+        context={context}
+        inbox={inbox}
+      />
+    </PanelShell>
   );
 }

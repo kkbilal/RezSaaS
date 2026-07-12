@@ -26,7 +26,7 @@ export function TextInput({
   return (
     <input
       className={cn(
-        "min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)] disabled:cursor-not-allowed disabled:opacity-60",
+        "min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] px-4 text-sm text-[var(--rs-ink)] backdrop-blur-xl outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)] disabled:cursor-not-allowed disabled:opacity-60",
         className
       )}
       {...props}

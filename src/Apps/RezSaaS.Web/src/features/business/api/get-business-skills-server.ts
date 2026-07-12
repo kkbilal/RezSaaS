@@ -1,8 +1,59 @@
-import { apiClient } from "@/shared/api/client";
+import { cookies } from "next/headers";
+import { createServerApiClient } from "@/shared/api/server-client";
+import type { ApiSchema } from "@/shared/api/types";
+import type { BusinessTenantContext } from "./get-business-context";
+import "server-only";
 
-export type BusinessSkillsData = Array<{ id: string; name: string }>;
+export type SkillResponse = ApiSchema<"BusinessSkillResponse">;
 
-export async function getBusinessSkillsServer(): Promise<BusinessSkillsData> {
-  const { data } = await apiClient.GET("/api/business/skills");
-  return (data as unknown as BusinessSkillsData) ?? [];
+export type SkillsState =
+  | {
+      skills: SkillResponse[];
+      kind: "ready";
+      tenant: BusinessTenantContext;
+    }
+  | {
+      skills: [];
+      kind: "unavailable";
+      reason: string;
+    };
+
+export async function getBusinessSkillsServer(
+  tenant: BusinessTenantContext
+): Promise<SkillsState> {
+  if (!tenant.tenantId) {
+    return {
+      skills: [],
+      kind: "unavailable",
+      reason: "İşletme bilgisi doğrulanamadı."
+    };
+  }
+
+  try {
+    const cookieHeader = (await cookies()).toString();
+    const { data, response } = await createServerApiClient(
+      cookieHeader,
+      tenant.tenantId
+    ).GET("/api/business/skills");
+
+    if (!response.ok) {
+      return {
+        skills: [],
+        kind: "unavailable",
+        reason: "Yetkinlikler şu anda alınamadı."
+      };
+    }
+
+    return {
+      skills: data ?? [],
+      kind: "ready",
+      tenant
+    };
+  } catch {
+    return {
+      skills: [],
+      kind: "unavailable",
+      reason: "Yetkinlikler şu anda yüklenemedi."
+    };
+  }
 }

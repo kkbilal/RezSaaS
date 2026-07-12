@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,7 @@ import {
   createBranch,
   updateBranch,
   archiveBranch,
-  type BranchResponse,
+  type BusinessBranchResponse,
   type CreateBranchRequest
 } from "@/features/business/api/business-branch-client";
 import { Button } from "@/shared/ui/button";
@@ -15,14 +15,16 @@ import { EmptyState } from "@/shared/ui/empty-state";
 import { DialogFormPanel, DialogOverlay } from "@/shared/ui/dialog";
 
 type BusinessBranchManagementPageProps = {
-  initialBranches: BranchResponse[];
+  tenantId: string;
+  initialBranches: BusinessBranchResponse[];
 };
 
 export function BusinessBranchManagementPage({
+  tenantId,
   initialBranches
 }: BusinessBranchManagementPageProps) {
   const router = useRouter();
-  const [branches, setBranches] = useState<BranchResponse[]>(initialBranches);
+  const [branches, setBranches] = useState<BusinessBranchResponse[]>(initialBranches);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -54,7 +56,7 @@ export function BusinessBranchManagementPage({
     setError(null);
 
     try {
-      const result = await createBranch({
+      const result = await createBranch(tenantId, {
         slug: draft.slug,
         displayName: draft.displayName,
         timeZoneId: draft.timeZoneId,
@@ -86,7 +88,7 @@ export function BusinessBranchManagementPage({
     setError(null);
 
     try {
-      const result = await updateBranch(showEdit, {
+      const result = await updateBranch(tenantId, showEdit, {
         displayName: draft.displayName,
         city: draft.city || undefined,
         district: draft.district || undefined,
@@ -115,7 +117,7 @@ export function BusinessBranchManagementPage({
     setError(null);
 
     try {
-      await archiveBranch(showArchive);
+      await archiveBranch(tenantId, showArchive);
       setBranches((prev) => prev.filter((b) => b.id !== showArchive));
       setShowArchive(null);
       router.refresh();
@@ -126,16 +128,16 @@ export function BusinessBranchManagementPage({
     }
   }
 
-  function openEdit(branch: BranchResponse) {
+  function openEdit(branch: BusinessBranchResponse) {
     setDraft({
-      slug: branch.slug,
-      displayName: branch.displayName,
-      timeZoneId: branch.timeZoneId,
-      city: branch.city,
-      district: branch.district,
-      addressLine: branch.addressLine
+      slug: branch.slug || "",
+      displayName: branch.displayName || "",
+      timeZoneId: branch.timeZoneId || "Europe/Istanbul",
+      city: branch.city ?? undefined,
+      district: branch.district ?? undefined,
+      addressLine: branch.addressLine ?? undefined
     });
-    setShowEdit(branch.id);
+    setShowEdit(branch.id || null);
   }
 
   return (
@@ -155,12 +157,12 @@ export function BusinessBranchManagementPage({
       ) : null}
 
       {branches.length === 0 ? (
-        <EmptyState text="Henüz şube tanımlanmamış." />
+        <EmptyState title="Henüz şube tanımlanmamış." />
       ) : (
         <div className="grid gap-4">
           {branches.map((branch) => (
             <article
-              className="rounded-2xl border border-[var(--rs-border)] bg-white p-4"
+              className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4"
               key={branch.id}
             >
               <div className="flex items-start justify-between">
@@ -174,7 +176,7 @@ export function BusinessBranchManagementPage({
                   <Button onClick={() => openEdit(branch)} variant="ghost">
                     Düzenle
                   </Button>
-                  <Button onClick={() => setShowArchive(branch.id)} variant="ghost">
+                  <Button onClick={() => setShowArchive(branch.id ?? null)} variant="ghost">
                     Arşivle
                   </Button>
                 </div>
@@ -213,7 +215,7 @@ export function BusinessBranchManagementPage({
               <label className="block text-sm font-medium text-[var(--rs-ink)]">
                 Şube kodu (slug)
                 <input
-                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                   maxLength={64}
                   onChange={(e) => setDraft((p) => ({ ...p, slug: e.target.value }))}
                   placeholder="ornek-sube"
@@ -225,7 +227,7 @@ export function BusinessBranchManagementPage({
               <label className="block text-sm font-medium text-[var(--rs-ink)]">
                 Şube adı
                 <input
-                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                   maxLength={200}
                   onChange={(e) => setDraft((p) => ({ ...p, displayName: e.target.value }))}
                   placeholder="Örn: Merkez Şube"
@@ -237,7 +239,7 @@ export function BusinessBranchManagementPage({
               <label className="block text-sm font-medium text-[var(--rs-ink)]">
                 Zaman dilimi
                 <input
-                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                   maxLength={80}
                   onChange={(e) => setDraft((p) => ({ ...p, timeZoneId: e.target.value }))}
                   placeholder="Europe/Istanbul"
@@ -250,7 +252,7 @@ export function BusinessBranchManagementPage({
                 <label className="block text-sm font-medium text-[var(--rs-ink)]">
                   İl
                   <input
-                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                     maxLength={120}
                     onChange={(e) => setDraft((p) => ({ ...p, city: e.target.value }))}
                     type="text"
@@ -260,7 +262,7 @@ export function BusinessBranchManagementPage({
                 <label className="block text-sm font-medium text-[var(--rs-ink)]">
                   İlçe
                   <input
-                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                     maxLength={120}
                     onChange={(e) => setDraft((p) => ({ ...p, district: e.target.value }))}
                     type="text"
@@ -271,7 +273,7 @@ export function BusinessBranchManagementPage({
               <label className="block text-sm font-medium text-[var(--rs-ink)]">
                 Adres
                 <input
-                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                   maxLength={300}
                   onChange={(e) => setDraft((p) => ({ ...p, addressLine: e.target.value }))}
                   type="text"
@@ -296,7 +298,7 @@ export function BusinessBranchManagementPage({
               <label className="block text-sm font-medium text-[var(--rs-ink)]">
                 Şube adı
                 <input
-                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                   maxLength={200}
                   onChange={(e) => setDraft((p) => ({ ...p, displayName: e.target.value }))}
                   required
@@ -308,7 +310,7 @@ export function BusinessBranchManagementPage({
                 <label className="block text-sm font-medium text-[var(--rs-ink)]">
                   İl
                   <input
-                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                     maxLength={120}
                     onChange={(e) => setDraft((p) => ({ ...p, city: e.target.value }))}
                     type="text"
@@ -318,7 +320,7 @@ export function BusinessBranchManagementPage({
                 <label className="block text-sm font-medium text-[var(--rs-ink)]">
                   İlçe
                   <input
-                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                    className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                     maxLength={120}
                     onChange={(e) => setDraft((p) => ({ ...p, district: e.target.value }))}
                     type="text"
@@ -329,7 +331,7 @@ export function BusinessBranchManagementPage({
               <label className="block text-sm font-medium text-[var(--rs-ink)]">
                 Adres
                 <input
-                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-white px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
+                  className="mt-1 block w-full rounded-xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2.5 text-sm text-[var(--rs-ink)] focus:border-[var(--rs-focus)] focus:outline-none"
                   maxLength={300}
                   onChange={(e) => setDraft((p) => ({ ...p, addressLine: e.target.value }))}
                   type="text"

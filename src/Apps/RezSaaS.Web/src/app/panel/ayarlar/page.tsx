@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 import { getBusinessContext } from "@/features/business/api/get-business-context";
 import { getBusinessSettingsOverview } from "@/features/business/api/get-business-settings-overview";
 import { BusinessSettingsPage } from "@/features/business/components/business-settings-page";
+import { PanelShell } from "@/features/business/components/panel-shell";
 import {
   firstSearchParam,
   selectBusinessTenant
 } from "@/features/business/lib/business-tenant-selection";
+import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
@@ -92,10 +94,12 @@ export default async function BusinessSettingsRoute({
   }
 
   return (
-    <BusinessSettingsPage
-      overview={overviewState.overview}
+    <PanelShell
+      currentTenantId={tenant.tenantId}
       sessionEmail={sessionState.session.account?.email ?? "Oturum"}
-      tenantOptions={context.tenants}
-    />
+      tenants={buildPanelTenants(context.tenants)}
+    >
+      <BusinessSettingsPage overview={overviewState.overview} />
+    </PanelShell>
   );
 }

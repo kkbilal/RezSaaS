@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -342,7 +342,7 @@ export function BusinessAppointmentSchedule({
       ) : null}
 
       {schedule.kind === "ready" && visibleAppointments.length === 0 ? (
-        <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
+        <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
           <CardTitle>Bu görünümde randevu yok</CardTitle>
           <CardDescription className="mx-auto mt-2 max-w-md">
             Filtreyi değiştirerek kesinleşmiş, tamamlanmış veya kapanmış
@@ -434,7 +434,7 @@ function ScheduleToolbar({
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
-            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-white px-5 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Randevu, hizmet veya müşteri ara"
             type="search"
@@ -445,7 +445,7 @@ function ScheduleToolbar({
               <button
                 className={
                   activeFilter === filter.value
-                    ? "rounded-full bg-white px-4 py-2 text-xs font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
+                    ? "rounded-full bg-[var(--rs-surface)] px-4 py-2 text-xs font-medium text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)]"
                     : "rounded-full px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:text-[var(--rs-ink)]"
                 }
                 key={filter.value}
@@ -483,7 +483,7 @@ function BusinessAppointmentCard({
 
   return (
     <article
-      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-white/78 p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
+      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] backdrop-blur-xl transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
       style={{ animationDelay: `${240 + index * 45}ms` }}
     >
       <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-start">
@@ -551,7 +551,7 @@ function BusinessAppointmentCard({
           </div>
 
           {appointment.businessNote ? (
-            <p className="rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-muted-strong)]">
+            <p className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-muted-strong)]">
               <span className="font-medium text-[var(--rs-ink)]">Not: </span>
               {appointment.businessNote}
             </p>
@@ -685,7 +685,7 @@ function AppointmentOperationDialog({
             <label className="block text-sm font-medium text-[var(--rs-ink)]">
               Başlangıç şube zamanı
               <input
-                className="mt-3 min-h-11 w-full rounded-full border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+                className="mt-3 min-h-11 w-full rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
                 onChange={(event) =>
                   onTimeChange("startUtcInput", event.target.value)
                 }
@@ -696,7 +696,7 @@ function AppointmentOperationDialog({
             <label className="block text-sm font-medium text-[var(--rs-ink)]">
               Bitiş şube zamanı
               <input
-                className="mt-3 min-h-11 w-full rounded-full border border-[var(--rs-border)] bg-white px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+                className="mt-3 min-h-11 w-full rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
                 onChange={(event) =>
                   onTimeChange("endUtcInput", event.target.value)
                 }
@@ -704,7 +704,7 @@ function AppointmentOperationDialog({
                 value={draft.endUtcInput}
               />
             </label>
-            <p className="rounded-2xl border border-[var(--rs-border)] bg-white px-4 py-3 text-xs leading-5 text-[var(--rs-muted)] sm:col-span-2">
+            <p className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-xs leading-5 text-[var(--rs-muted)] sm:col-span-2">
               Şube saati önizleme:{" "}
               <span className="font-medium text-[var(--rs-ink)]">
                 {formatDraftBranchPreview(draft)}
@@ -716,7 +716,7 @@ function AppointmentOperationDialog({
         <label className="mt-6 block text-sm font-medium text-[var(--rs-ink)]">
           {details.textareaLabel}
           <textarea
-            className="mt-3 min-h-32 w-full resize-y rounded-[1.25rem] border border-[var(--rs-border)] bg-white px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+            className="mt-3 min-h-32 w-full resize-y rounded-[1.25rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
             maxLength={details.maxLength}
             onChange={(event) => onTextChange(event.target.value)}
             placeholder={details.placeholder}
@@ -743,7 +743,7 @@ function AppointmentOperationDialog({
 
 function AppointmentInfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-2 font-mono text-sm font-medium text-[var(--rs-ink)]">
         {value}

@@ -1,11 +1,20 @@
 import type { ComponentPropsWithoutRef } from "react";
 import { cn } from "@/shared/lib/cn";
 
-export function Card({ className, ...props }: ComponentPropsWithoutRef<"section">) {
+type CardProps = ComponentPropsWithoutRef<"section"> & {
+  interactive?: boolean;
+};
+
+export function Card({
+  className,
+  interactive = false,
+  ...props
+}: CardProps) {
   return (
     <section
       className={cn(
-        "rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] shadow-[var(--rs-shadow-card)]",
+        "rounded-[1.25rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] shadow-[var(--rs-shadow-card)] backdrop-blur-xl transition-colors duration-200",
+        interactive && "cursor-pointer hover:bg-[var(--rs-glass-strong)]",
         className
       )}
       {...props}

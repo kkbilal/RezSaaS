@@ -1,12 +1,49 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { apiClient } from "@/shared/api/client";
+import { routes } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/button";
 import { FormField, TextInput } from "@/shared/ui/form-field";
 
-export function LoginForm({ returnTo }: { returnTo: string }) {
+type RoleTarget = "platform" | "business" | "customer" | "default";
+
+function resolveRoleTarget(session: {
+  platformRoles?: string[] | null;
+  tenantMemberships?:
+    | { role?: string | null }[]
+    | null;
+}): RoleTarget {
+  const isPlatformAdmin =
+    session.platformRoles?.some((role) =>
+      ["PlatformAdmin", "PlatformSupport"].includes(role)
+    ) ?? false;
+  if (isPlatformAdmin) return "platform";
+
+  const isBusiness =
+    session.tenantMemberships?.some((m) =>
+      m.role ? ["BusinessOwner", "BranchManager", "Staff"].includes(m.role) : false
+    ) ?? false;
+  if (isBusiness) return "business";
+
+  return "customer";
+}
+
+function routeForRole(target: RoleTarget): string {
+  switch (target) {
+    case "platform":
+      return routes.platform.tenants;
+    case "business":
+      return routes.business.panel;
+    case "customer":
+      return routes.customer.requests;
+    default:
+      return routes.business.panel;
+  }
+}
+
+export function LoginForm({ returnTo }: { returnTo?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +78,27 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
         return;
       }
 
-      router.replace(returnTo);
+      // If an explicit returnTo was provided (e.g. user tried to access a
+      // specific page), honor it. Otherwise determine the destination based
+      // on the authenticated user's roles/memberships.
+      if (returnTo) {
+        router.replace(returnTo);
+        router.refresh();
+        return;
+      }
+
+      // Fetch the session to determine role-based redirect.
+      const { data: session, response: sessionResponse } =
+        await apiClient.GET("/api/session/bootstrap");
+
+      if (!sessionResponse.ok || !session?.account) {
+        // Session lookup failed; fall back to the business panel.
+        router.replace(routes.business.panel);
+        router.refresh();
+        return;
+      }
+
+      router.replace(routeForRole(resolveRoleTarget(session)));
       router.refresh();
     } catch {
       setError("Giriş şu anda tamamlanamadı. Lütfen kısa süre sonra tekrar dene.");
@@ -73,7 +130,7 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
         />
       </FormField>
 
-      <div className="grid gap-4 rounded-[1.5rem] border border-[var(--rs-border)] bg-white/65 p-4 sm:grid-cols-2">
+      <div className="grid gap-4 rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 sm:grid-cols-2">
         <FormField
           hint="MFA açık hesaplarda authenticator kodu gir."
           label="MFA kodu"

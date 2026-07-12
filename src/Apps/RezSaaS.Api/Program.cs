@@ -15,16 +15,15 @@ using RezSaaS.Modules.Booking;
 using RezSaaS.Modules.Booking.Application;
 using RezSaaS.Modules.Catalog;
 using RezSaaS.Modules.Identity;
-using RezSaaS.Modules.Integrations;
 using RezSaaS.Modules.Messaging;
 using RezSaaS.Modules.Organization;
 using RezSaaS.Modules.Organization.Application;
-using RezSaaS.Modules.Payments;
 using RezSaaS.Modules.Resources;
 using RezSaaS.Modules.Reviews;
 using RezSaaS.Modules.TenantManagement;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
+using Microsoft.AspNetCore.HttpOverrides;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddLocalDevelopmentEnvironment(builder.Environment);
@@ -40,8 +39,9 @@ IModule[] modules =
     new BookingModule(),
     new MessagingModule(),
     new ReviewsModule(),
-    new IntegrationsModule(),
-    new PaymentsModule(),
+    // Integrations and Payments modules disabled until Phase 4/5
+    // new IntegrationsModule(),
+    // new PaymentsModule(),
     new AdminModule(),
 ];
 
@@ -73,7 +73,6 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<ITenantAccessor, TenantAccessor>();
 builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddModules(modules, builder.Configuration);
@@ -178,6 +177,36 @@ SessionRateLimitOptions sessionRateLimitOptions =
     builder.Configuration.GetSection(SessionRateLimitOptions.SectionName)
         .Get<SessionRateLimitOptions>()
     ?? new SessionRateLimitOptions();
+
+// CORS: browser clients (Next.js on http://localhost:3000) call the API directly
+// cross-origin to http://localhost:5252. The allowed origins reuse the same
+// Security:UnsafeRequestOrigins:AllowedOrigins config that backs the server-side
+// UnsafeRequestOriginMiddleware, keeping a single source of truth. Because the
+// browser client uses credentials:"include" (cookie auth per AGENTS.md), the
+// policy must echo the specific origin and call AllowCredentials(); a wildcard
+// "*" is not valid with credentials. When no origins are configured (production
+// default), the policy allows nothing — fail-closed.
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        UnsafeRequestOriginOptions originOptions =
+            builder.Configuration.GetSection(UnsafeRequestOriginOptions.SectionName)
+                .Get<UnsafeRequestOriginOptions>()
+            ?? new UnsafeRequestOriginOptions();
+
+        policy.SetPreflightMaxAge(TimeSpan.FromMinutes(5));
+
+        if (originOptions.AllowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(originOptions.AllowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    });
+});
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -305,6 +334,19 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // In production, configure KnownProxies/KnownNetworks from config
+    // to prevent XFF spoofing. For single-proxy deployment:
+    // options.KnownProxies.Add(IPAddress.Parse("your-proxy-ip"));
+});
+// CORS must run before authentication/authorization so that preflight OPTIONS
+// requests are answered with the appropriate Access-Control-* headers and
+// short-circuited, instead of being rejected by auth middleware (401). This is
+// what fixes the "blocked by CORS policy: No 'Access-Control-Allow-Origin'
+// header" preflight failure observed from the browser client.
+app.UseCors();
 app.UseMiddleware<TenantContextMiddleware>();
 app.UseMiddleware<UnsafeRequestOriginMiddleware>();
 app.UseAuthentication();
@@ -350,8 +392,9 @@ app.MapAdminControlPlaneEndpoints();
 app.MapAdminAbuseControlPlaneEndpoints();
 app.MapAdminAbuseWorkflowEndpoints();
 app.MapAdminOperationsEndpoints();
-app.MapAdminIntegrationOperationsEndpoints();
-app.MapAdminPaymentOperationsEndpoints();
+// Integrations and Payments endpoints disabled until Phase 4/5
+// app.MapAdminIntegrationOperationsEndpoints();
+// app.MapAdminPaymentOperationsEndpoints();
 app.MapModuleEndpoints(modules);
 
 app.Run();

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -23,8 +23,6 @@ import { StatusBadge } from "@/shared/ui/status-badge";
 
 type PlatformTenantsPageProps = {
   overview: PlatformTenantsOverview;
-  sessionEmail: string;
-  stepUpExpiresAtUtc?: string | null;
 };
 
 const statusFilters = [
@@ -35,9 +33,7 @@ const statusFilters = [
 ];
 
 export function PlatformTenantsPage({
-  overview,
-  sessionEmail,
-  stepUpExpiresAtUtc
+  overview
 }: PlatformTenantsPageProps) {
   const [showProvisionDialog, setShowProvisionDialog] = useState(false);
   const [showMembershipAdd, setShowMembershipAdd] = useState(false);
@@ -62,15 +58,13 @@ export function PlatformTenantsPage({
   ).length;
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
+    <div className="space-y-6">
       <div className="mx-auto max-w-7xl space-y-8">
         <PlatformTenantHeader
           onProvision={() => setShowProvisionDialog(true)}
-          sessionEmail={sessionEmail}
-          stepUpExpiresAtUtc={stepUpExpiresAtUtc}
         />
 
-        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
+        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl space-y-5">
               <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
@@ -165,18 +159,14 @@ export function PlatformTenantsPage({
           tenantId={revokeTarget.tenantId}
         />
       ) : null}
-    </main>
+    </div>
   );
 }
 
 function PlatformTenantHeader({
-  onProvision,
-  sessionEmail,
-  stepUpExpiresAtUtc
+  onProvision
 }: {
   onProvision: () => void;
-  sessionEmail: string;
-  stepUpExpiresAtUtc?: string | null;
 }) {
   return (
     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -187,12 +177,6 @@ function PlatformTenantHeader({
         RezSaaS
       </Link>
       <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-          {sessionEmail}
-        </span>
-        <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-          Step-up: {formatUtcDateTime(stepUpExpiresAtUtc)}
-        </span>
         <Button onClick={onProvision} variant="primary">
           Tenant oluştur
         </Button>
@@ -209,7 +193,7 @@ function PlatformTenantHeader({
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] bg-[var(--rs-ink)] p-4 text-white shadow-[var(--rs-shadow-card)]">
+    <div className="rounded-[1.5rem] bg-[var(--rs-accent)] p-4 text-white shadow-[var(--rs-shadow-card)]">
       <p className="text-[0.65rem] uppercase tracking-[0.18em] text-white/50">
         {label}
       </p>
@@ -235,7 +219,7 @@ function TenantFilters({ filters }: { filters: PlatformTenantFilters }) {
         <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
           Arama
           <input
-            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-white px-5 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
             defaultValue={filters.search ?? ""}
             name="search"
             placeholder="Slug veya işletme adı"
@@ -253,8 +237,8 @@ function TenantFilters({ filters }: { filters: PlatformTenantFilters }) {
             className={
               filters.status === filter.value ||
               (!filters.status && filter.value === undefined)
-                ? "rounded-full bg-[var(--rs-ink)] px-4 py-2 text-xs font-medium text-white"
-                : "rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+                ? "rounded-full bg-[var(--rs-accent)] px-4 py-2 text-xs font-medium text-white"
+                : "rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
             }
             href={buildTenantHref({
               search: filters.search,
@@ -291,7 +275,7 @@ function SafetyCard() {
 
 function RuleLine({ text }: { text: string }) {
   return (
-    <p className="rounded-2xl border border-[var(--rs-border)] bg-white/70 p-4 text-[var(--rs-muted)]">
+    <p className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-[var(--rs-muted)]">
       {text}
     </p>
   );
@@ -324,8 +308,8 @@ function TenantList({
             <Link
               className={
                 selectedTenantId === tenant.tenantId
-                  ? "rounded-[1.5rem] border border-[var(--rs-border-strong)] bg-white p-4 shadow-[var(--rs-shadow-card)]"
-                  : "rounded-[1.5rem] border border-[var(--rs-border)] bg-white/74 p-4 shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)]"
+                  ? "rounded-[1.5rem] border border-[var(--rs-border-strong)] bg-[var(--rs-surface)] p-4 shadow-[var(--rs-shadow-card)]"
+                  : "rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)]"
               }
               href={buildTenantHref({
                 search: filters.search,
@@ -371,7 +355,7 @@ function TenantDetailCard({
 }) {
   if (!tenant) {
     return (
-      <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
+      <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
         <CardTitle>Tenant detayı seçilmedi</CardTitle>
         <CardDescription className="mx-auto mt-2 max-w-lg">
           Liste üzerinden tenant seçildiğinde membership ve lifecycle snapshot
@@ -451,7 +435,7 @@ function MembershipList({
 
         return (
           <article
-            className="rounded-[1.25rem] border border-[var(--rs-border)] bg-white p-4"
+            className="rounded-[1.25rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4"
             key={membership.membershipId}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -496,7 +480,7 @@ function MembershipList({
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-2 font-medium text-[var(--rs-ink)]">{value}</p>
     </div>
@@ -505,7 +489,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
+    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
       {text}
     </p>
   );

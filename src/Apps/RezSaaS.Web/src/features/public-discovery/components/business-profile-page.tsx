@@ -1,4 +1,4 @@
-  import Link from "next/link";
+﻿  import Link from "next/link";
   import { PublicBookingPanel } from "@/features/public-booking/components/public-booking-panel";
   import { EnhancedGallery } from "./enhanced-gallery";
   import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
@@ -48,7 +48,7 @@ export function BusinessProfilePage({ profile }: BusinessProfilePageProps) {
           </div>
         </header>
 
-        <section className="fade-up overflow-hidden rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 shadow-[var(--rs-shadow-card)] backdrop-blur-xl">
+        <section className="fade-up overflow-hidden rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] shadow-[var(--rs-shadow-card)] backdrop-blur-xl">
           <div className="grid gap-8 p-6 lg:grid-cols-[1fr_25rem] lg:p-8">
             <div className="space-y-5">
               <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
@@ -63,7 +63,7 @@ export function BusinessProfilePage({ profile }: BusinessProfilePageProps) {
               </p>
             </div>
 
-            <aside className="rounded-[2rem] bg-[var(--rs-ink)] p-6 text-white shadow-[var(--rs-shadow-card)]">
+            <aside className="rounded-[2rem] bg-[var(--rs-accent)] p-6 text-white shadow-[var(--rs-shadow-card)]">
               <p className="text-xs uppercase tracking-[0.24em] text-white/50">
                 Rezervasyon modeli
               </p>
@@ -187,7 +187,7 @@ function ServiceCard({
         ) : (
           variants.map((variant) => (
             <div
-              className="rounded-2xl border border-[var(--rs-border)] bg-white/72 p-4"
+              className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4"
               key={variant.id ?? variant.name}
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -279,7 +279,7 @@ function BranchCard({
   branch: NonNullable<PublicBusinessProfile["branches"]>[number];
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-[var(--rs-border)] bg-white/72 p-4">
+    <div className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4">
       <p className="font-medium text-[var(--rs-ink)]">
         {branch.displayName ?? "Şube"}
       </p>
@@ -323,7 +323,7 @@ function BranchCard({
 
 function InfoLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white/72 p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-1 font-medium text-[var(--rs-ink)]">{value}</p>
     </div>
@@ -332,7 +332,7 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 
 function EmptyCard({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/55 p-4 text-sm text-[var(--rs-muted)]">
+    <div className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
       {text}
     </div>
   );

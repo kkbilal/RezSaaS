@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using RezSaaS.BuildingBlocks.Modularity;
 using RezSaaS.Modules.Organization.Application;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
+using RezSaaS.Modules.TenantManagement.Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,7 @@ public sealed class OrganizationModule : ModuleBase
         services.AddScoped<StaffManagementService>();
         services.AddScoped<SkillManagementService>();
         services.AddScoped<StaffSkillService>();
+        services.AddScoped<TenantLifecycleQueryService>();
     }
 
     public override void MapEndpoints(IEndpointRouteBuilder endpoints)
@@ -56,6 +58,7 @@ public sealed class OrganizationModule : ModuleBase
                     string? district,
                     int? take,
                     PublicBusinessDirectoryService directoryService,
+                    TenantLifecycleQueryService tenantLifecycleService,
                     CancellationToken cancellationToken) =>
                 {
                     IReadOnlyCollection<PublicBusinessSummaryView> businesses =
@@ -68,25 +71,16 @@ public sealed class OrganizationModule : ModuleBase
                                 take),
                             cancellationToken);
 
-                    return Results.Ok(businesses);
+                    IReadOnlyCollection<Guid> activeTenantIds =
+                        await tenantLifecycleService.GetActiveTenantIdsAsync(500, cancellationToken);
+
+                    IReadOnlyCollection<PublicBusinessSummaryView> activeBusinesses =
+                        businesses
+                            .Where(business => activeTenantIds.Contains(business.TenantId))
+                            .ToList();
+
+                    return Results.Ok(activeBusinesses);
                 })
             .Produces<IReadOnlyCollection<PublicBusinessSummaryView>>();
-
-        publicBusinesses.MapGet(
-                "/{slug}",
-                async (
-                    string slug,
-                    PublicBusinessDirectoryService directoryService,
-                    CancellationToken cancellationToken) =>
-                {
-                    PublicBusinessProfileView? business =
-                        await directoryService.GetBySlugAsync(slug, cancellationToken);
-
-                    return business is null
-                        ? Results.NotFound()
-                        : Results.Ok(business);
-                })
-            .Produces<PublicBusinessProfileView>()
-            .Produces(StatusCodes.Status404NotFound);
     }
 }

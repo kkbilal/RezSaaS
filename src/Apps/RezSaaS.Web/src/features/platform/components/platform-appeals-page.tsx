@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -25,8 +25,6 @@ import { StatusBadge } from "@/shared/ui/status-badge";
 
 type PlatformAppealsPageProps = {
   overview: PlatformAppealsOverview;
-  sessionEmail: string;
-  stepUpExpiresAtUtc?: string | null;
 };
 
 const appealStatusFilters = [
@@ -47,9 +45,7 @@ const closureStatusFilters = [
 ];
 
 export function PlatformAppealsPage({
-  overview,
-  sessionEmail,
-  stepUpExpiresAtUtc
+  overview
 }: PlatformAppealsPageProps) {
   const [acceptAppealId, setAcceptAppealId] = useState<string | null>(null);
   const [rejectAppealId, setRejectAppealId] = useState<string | null>(null);
@@ -67,14 +63,9 @@ export function PlatformAppealsPage({
   ).length;
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
+    <div className="space-y-6">
       <div className="mx-auto max-w-7xl space-y-8">
-        <PlatformAppealsHeader
-          sessionEmail={sessionEmail}
-          stepUpExpiresAtUtc={stepUpExpiresAtUtc}
-        />
-
-        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-white/76 p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
+        <section className="fade-up rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl space-y-5">
               <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
@@ -185,46 +176,13 @@ export function PlatformAppealsPage({
           onDismiss={() => setExecuteClosureCase(null)}
         />
       ) : null}
-    </main>
-  );
-}
-
-function PlatformAppealsHeader({
-  sessionEmail,
-  stepUpExpiresAtUtc
-}: {
-  sessionEmail: string;
-  stepUpExpiresAtUtc?: string | null;
-}) {
-  return (
-    <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <Link
-        className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
-        href={routes.public.home}
-      >
-        RezSaaS
-      </Link>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-          {sessionEmail}
-        </span>
-        <span className="rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-sm text-[var(--rs-muted)]">
-          Step-up: {formatUtcDateTime(stepUpExpiresAtUtc)}
-        </span>
-        <Button asChild variant="secondary">
-          <Link href={routes.platform.abuse}>Abuse</Link>
-        </Button>
-        <Button asChild variant="secondary">
-          <Link href={routes.platform.tenants}>Tenantlar</Link>
-        </Button>
-      </div>
-    </header>
+    </div>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[1.5rem] bg-[var(--rs-ink)] p-4 text-white shadow-[var(--rs-shadow-card)]">
+    <div className="rounded-[1.5rem] bg-[var(--rs-accent)] p-4 text-white shadow-[var(--rs-shadow-card)]">
       <p className="text-[0.65rem] uppercase tracking-[0.18em] text-white/50">
         {label}
       </p>
@@ -257,7 +215,7 @@ function AppealFilters({ filters }: { filters: PlatformAppealsFilters }) {
         <label className="grid gap-2 text-sm font-medium text-[var(--rs-ink)]">
           Kullanıcı hesabı
           <input
-            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-white px-5 font-mono text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-border-strong)] focus:ring-4 focus:ring-[rgb(5_26_36_/_0.08)]"
+            className="min-h-11 rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-5 font-mono text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
             defaultValue={filters.userAccountId ?? ""}
             name="userAccountId"
             placeholder="UserAccountId"
@@ -310,8 +268,8 @@ function FilterGroup({
           <Link
             className={
               activeValue === item.value || (!activeValue && !item.value)
-                ? "rounded-full bg-[var(--rs-ink)] px-4 py-2 text-xs font-medium text-white"
-                : "rounded-full border border-[var(--rs-border)] bg-white px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
+                ? "rounded-full bg-[var(--rs-accent)] px-4 py-2 text-xs font-medium text-white"
+                : "rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2 text-xs font-medium text-[var(--rs-muted)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
             }
             href={buildAppealsHref({
               ...filters,
@@ -350,7 +308,7 @@ function SafetyCard() {
 
 function RuleLine({ text }: { text: string }) {
   return (
-    <p className="rounded-2xl border border-[var(--rs-border)] bg-white/70 p-4 text-[var(--rs-muted)]">
+    <p className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-[var(--rs-muted)]">
       {text}
     </p>
   );
@@ -375,14 +333,14 @@ function AppealList({
       </CardHeader>
       <div className="mt-5 grid gap-3">
         {appeals.length === 0 ? (
-          <EmptyState text="Bu filtreyle itiraz bulunamadı." />
+          <EmptyState title="Bu filtreyle itiraz bulunamadı." />
         ) : (
           appeals.map((appeal) => (
             <Link
               className={
                 selectedAppealId === appeal.appealId
-                  ? "rounded-[1.5rem] border border-[var(--rs-border-strong)] bg-white p-4 shadow-[var(--rs-shadow-card)]"
-                  : "rounded-[1.5rem] border border-[var(--rs-border)] bg-white/74 p-4 shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)]"
+                  ? "rounded-[1.5rem] border border-[var(--rs-border-strong)] bg-[var(--rs-surface)] p-4 shadow-[var(--rs-shadow-card)]"
+                  : "rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)]"
               }
               href={buildAppealsHref({
                 ...filters,
@@ -440,14 +398,14 @@ function ClosureCaseList({
       </CardHeader>
       <div className="mt-5 grid gap-3">
         {closureCases.length === 0 ? (
-          <EmptyState text="Bu filtreyle closure case bulunamadı." />
+          <EmptyState title="Bu filtreyle closure case bulunamadı." />
         ) : (
           closureCases.map((closureCase) => (
             <Link
               className={
                 selectedClosureCaseId === closureCase.closureCaseId
-                  ? "rounded-[1.5rem] border border-[var(--rs-border-strong)] bg-white p-4 shadow-[var(--rs-shadow-card)]"
-                  : "rounded-[1.5rem] border border-[var(--rs-border)] bg-white/74 p-4 shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)]"
+                  ? "rounded-[1.5rem] border border-[var(--rs-border-strong)] bg-[var(--rs-surface)] p-4 shadow-[var(--rs-shadow-card)]"
+                  : "rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:border-[var(--rs-border-strong)]"
               }
               href={buildAppealsHref({
                 ...filters,
@@ -503,7 +461,7 @@ function DetailGrid({
 }) {
   if (!appeal && !closureCase) {
     return (
-      <Card className="border-dashed bg-white/55 p-10 text-center shadow-none">
+      <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
         <CardTitle>Detay seçilmedi</CardTitle>
         <CardDescription className="mx-auto mt-2 max-w-lg">
           Liste üzerinden bir itiraz veya closure case seçildiğinde karar
@@ -691,7 +649,7 @@ function ClosureDetailCard({
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-white p-4">
+    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs text-[var(--rs-muted)]">{label}</p>
       <p className="mt-2 break-all font-medium text-[var(--rs-ink)]">{value}</p>
     </div>
@@ -706,7 +664,7 @@ function TextBlock({
   value?: string | null;
 }) {
   return (
-    <div className="mt-5 rounded-[1.5rem] border border-[var(--rs-border)] bg-white p-4">
+    <div className="mt-5 rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--rs-muted)]">
         {label}
       </p>
@@ -717,10 +675,10 @@ function TextBlock({
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function EmptyState({ title }: { title: string }) {
   return (
-    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-white/60 p-4 text-sm text-[var(--rs-muted)]">
-      {text}
+    <p className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
+      {title}
     </p>
   );
 }
