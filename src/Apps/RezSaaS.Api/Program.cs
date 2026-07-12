@@ -148,6 +148,12 @@ builder.Services.AddScoped<RezSaaS.BuildingBlocks.Reviews.ICompletedAppointmentL
 builder.Services.AddScoped<RezSaaS.BuildingBlocks.Reviews.IBusinessRatingSummarySink, RezSaaS.Api.Reviews.OrganizationBusinessRatingSummarySinkAdapter>();
 builder.Services.AddScoped<RezSaaS.BuildingBlocks.Reviews.ICustomerDisplayNameResolver, RezSaaS.Api.Reviews.IdentityCustomerDisplayNameResolverAdapter>();
 builder.Services.AddScoped<PublicAppointmentRequestComposer>();
+builder.Services.AddScoped<PublicAppointmentCancellationComposer>();
+// Booking -> Organization modul-arasi sozlesmesi (iptal politikasi). Moduller birbirini
+// tanimaz; adapter composition root'ta baglanir (Reviews adapter'leriyle ayni kalip).
+builder.Services.AddScoped<
+    RezSaaS.BuildingBlocks.Booking.IBusinessCancellationPolicyLookup,
+    RezSaaS.Api.Booking.OrganizationBusinessCancellationPolicyAdapter>();
 builder.Services.AddScoped<SessionBootstrapComposer>();
 builder.Services.AddScoped<BusinessContextComposer>();
 builder.Services.AddScoped<BusinessAppointmentRequestComposer>();

@@ -93,7 +93,8 @@ public sealed class BusinessSettingsComposer
                 request.PublicRules ?? string.Empty,
                 request.SeoTitle ?? string.Empty,
                 request.SeoDescription ?? string.Empty,
-                request.StaffDisplayPolicy ?? string.Empty),
+                request.StaffDisplayPolicy ?? string.Empty,
+                request.CancellationCutoffHours),
             cancellationToken);
 
         return ToResult(result);

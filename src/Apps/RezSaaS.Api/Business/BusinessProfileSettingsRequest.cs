@@ -6,4 +6,6 @@ public sealed record BusinessProfileSettingsRequest(
     string? PublicRules,
     string? SeoTitle,
     string? SeoDescription,
-    string? StaffDisplayPolicy);
+    string? StaffDisplayPolicy,
+    // Gonderilmezse mevcut iptal politikasi KORUNUR (sifirlanmaz).
+    int? CancellationCutoffHours);

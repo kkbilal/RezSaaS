@@ -99,6 +99,39 @@ public sealed class Business
         PublicStaffDisplayPolicy = staffDisplayPolicy;
     }
 
+    /// <summary>
+    /// Musterinin onaylanmis randevusunu iptal edebilecegi SON ANI belirler.
+    /// Randevu saatine bu kadar saatten az kaldiysa iptal reddedilir.
+    /// </summary>
+    /// <remarks>
+    /// 0 = her zaman iptal edilebilir (kural yok).
+    ///
+    /// Neden isletme basina AYARLANABILIR: sabit bir kural her salona uymaz. Bir kuaför
+    /// 2 saat yeterli bulurken, uzun sureli bir bakim/spa randevusu 24 saat isteyebilir.
+    /// Sabit kodlayip sonradan ayara cevirmek migration borcu dogururdu.
+    ///
+    /// Neden SADECE onaylanmis randevuya uygulanir, BEKLEYEN TALEBE degil:
+    /// PendingApproval bir talep slotu BLOKLAMAZ (urunun temel mekanigi). Musterinin onu
+    /// iptal etmesi salon icin tamamen kazanctir -- engellemek anlamsiz olurdu.
+    /// </remarks>
+    public int CancellationCutoffHours { get; private set; } = DefaultCancellationCutoffHours;
+
+    public const int DefaultCancellationCutoffHours = 2;
+
+    public const int MaxCancellationCutoffHours = 168; // 7 gun
+
+    public void UpdateCancellationPolicy(int cancellationCutoffHours)
+    {
+        if (cancellationCutoffHours is < 0 or > MaxCancellationCutoffHours)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(cancellationCutoffHours),
+                $"Value must be between 0 and {MaxCancellationCutoffHours}.");
+        }
+
+        CancellationCutoffHours = cancellationCutoffHours;
+    }
+
     public void UpdateRatingSummary(decimal ratingAverage, int reviewCount)
     {
         if (ratingAverage is < 0 or > 5)

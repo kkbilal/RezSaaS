@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using RezSaaS.BuildingBlocks.Booking;
 using RezSaaS.BuildingBlocks.Security;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Admin.Application;
@@ -1997,6 +1998,264 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     private BookingDbContext CreateBookingDbContext()
     {
         return new BookingDbContext(CreateOptions<BookingDbContext>());
+    }
+
+    /// <summary>
+    /// Sabit bir iptal politikasi donen sahte lookup. Gercek adapter Organization'daki
+    /// Business kaydini okur; burada politikayi testin kontrol etmesi gerekiyor.
+    /// </summary>
+    private sealed class StubCancellationPolicyLookup : IBusinessCancellationPolicyLookup
+    {
+        private readonly BusinessCancellationPolicy? policy;
+
+        public StubCancellationPolicyLookup(int? cancellationCutoffHours)
+        {
+            policy = cancellationCutoffHours is { } hours
+                ? new BusinessCancellationPolicy(hours)
+                : null;
+        }
+
+        public Task<BusinessCancellationPolicy?> GetAsync(
+            Guid tenantId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(policy);
+        }
+    }
+
+    private CancelAppointmentByCustomerService CreateCancelAppointmentByCustomerService(
+        Guid tenantId,
+        int? cancellationCutoffHours,
+        DateTimeOffset? now = null)
+    {
+        TenantContextAccessor tenantContextAccessor = new()
+        {
+            TenantId = tenantId,
+        };
+
+        return new CancelAppointmentByCustomerService(
+            new BookingDbContext(CreateOptions<BookingDbContext>(), tenantContextAccessor),
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new StubCancellationPolicyLookup(cancellationCutoffHours),
+            tenantContextAccessor,
+            new FixedTimeProvider(now ?? testTime));
+    }
+
+    private async Task<Appointment> SeedConfirmedAppointmentAsync(
+        Guid tenantId,
+        Guid customerUserAccountId,
+        DateTimeOffset startUtc)
+    {
+        Appointment appointment = Appointment.CreateConfirmed(
+            tenantId,
+            appointmentRequestId: null,
+            customerUserAccountId,
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            Guid.CreateVersion7(),
+            startUtc,
+            startUtc.AddMinutes(60),
+            testTime);
+        appointment.AddLine(Guid.CreateVersion7(), "Saç Kesimi", 60, 500, "TRY");
+
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+        await using BookingDbContext dbContext =
+            new(CreateOptions<BookingDbContext>(), accessor);
+        dbContext.Appointments.Add(appointment);
+        await dbContext.SaveChangesAsync();
+
+        return appointment;
+    }
+
+    private async Task<AppointmentStatus> ReadAppointmentStatusAsync(Guid tenantId, Guid appointmentId)
+    {
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+        await using BookingDbContext dbContext =
+            new(CreateOptions<BookingDbContext>(), accessor);
+
+        return await dbContext.Appointments
+            .AsNoTracking()
+            .Where(entity => entity.Id == appointmentId)
+            .Select(entity => entity.Status)
+            .SingleAsync();
+    }
+
+    /// <summary>
+    /// LANSMAN BLOKAJI REGRESYONU: musteri KENDI onaylanmis randevusunu iptal edebilir.
+    /// </summary>
+    /// <remarks>
+    /// Onceden HIC edemiyordu: talep iptali yalnizca PendingApproval'da calisiyor, isletme
+    /// tarafindaki iptal ucu tenant uyeligi ariyordu. Plani degisen musterinin yapacak
+    /// hicbir seyi yoktu -- salonu ARAMAK zorundaydi.
+    /// </remarks>
+    [Fact]
+    public async Task CustomerCanCancelOwnConfirmedAppointment()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid customerId = Guid.CreateVersion7();
+
+        // Randevu 10 gun sonra: cutoff penceresinin cok disinda.
+        Appointment appointment =
+            await SeedConfirmedAppointmentAsync(tenantId, customerId, testTime.AddDays(10));
+
+        CancelAppointmentByCustomerService service =
+            CreateCancelAppointmentByCustomerService(tenantId, cancellationCutoffHours: 2);
+
+        CustomerAppointmentCancellationResult result =
+            await service.CancelAsync(appointment.Id, customerId);
+
+        Assert.True(result.Succeeded);
+
+        // Servisin donus degerine GUVENME -- veritabanindan yeniden oku.
+        Assert.Equal(
+            AppointmentStatus.Cancelled,
+            await ReadAppointmentStatusAsync(tenantId, appointment.Id));
+    }
+
+    /// <summary>
+    /// GUVENLIK: baskasinin randevusunu iptal EDEMEZ ve varligini bile ogrenemez (404).
+    /// </summary>
+    /// <remarks>
+    /// 403 donmek "bu kayit var ama goremiyorsun" bilgisini SIZDIRIRDI. Mevcut talep-iptal
+    /// servisi de 404 donuyor; ayni davranis.
+    /// </remarks>
+    [Fact]
+    public async Task CustomerCannotCancelSomeoneElsesAppointment()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid ownerCustomerId = Guid.CreateVersion7();
+        Guid attackerCustomerId = Guid.CreateVersion7();
+
+        Appointment appointment =
+            await SeedConfirmedAppointmentAsync(tenantId, ownerCustomerId, testTime.AddDays(10));
+
+        CancelAppointmentByCustomerService service =
+            CreateCancelAppointmentByCustomerService(tenantId, cancellationCutoffHours: 2);
+
+        CustomerAppointmentCancellationResult result =
+            await service.CancelAsync(appointment.Id, attackerCustomerId);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(CancelAppointmentByCustomerService.NotFound, result.ErrorCode);
+
+        // Randevu BOZULMAMIS olmali.
+        Assert.Equal(
+            AppointmentStatus.Confirmed,
+            await ReadAppointmentStatusAsync(tenantId, appointment.Id));
+    }
+
+    /// <summary>
+    /// IPTAL POLITIKASI: cutoff penceresi icindeyse iptal REDDEDILIR -- BACKEND'DE.
+    /// </summary>
+    /// <remarks>
+    /// UI'da butonu gizlemek bir kural kontrolu DEGILDIR. Dogruluk kaynagi burasi.
+    /// </remarks>
+    [Fact]
+    public async Task CustomerCannotCancelInsideCancellationCutoffWindow()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid customerId = Guid.CreateVersion7();
+
+        // Randevuya 1 saat kaldi, ama politika 2 saat oncesine kadar iptale izin veriyor.
+        Appointment appointment =
+            await SeedConfirmedAppointmentAsync(tenantId, customerId, testTime.AddHours(1));
+
+        CancelAppointmentByCustomerService service =
+            CreateCancelAppointmentByCustomerService(tenantId, cancellationCutoffHours: 2);
+
+        CustomerAppointmentCancellationResult result =
+            await service.CancelAsync(appointment.Id, customerId);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(CancelAppointmentByCustomerService.CancelTooLate, result.ErrorCode);
+
+        // UI kullaniciya "2 saatten az kaldi" diyebilsin diye politika geri donuyor.
+        Assert.Equal(2, result.CancellationCutoffHours);
+
+        Assert.Equal(
+            AppointmentStatus.Confirmed,
+            await ReadAppointmentStatusAsync(tenantId, appointment.Id));
+    }
+
+    /// <summary>
+    /// CutoffHours = 0 -> kural yok, her zaman iptal edilebilir.
+    /// </summary>
+    [Fact]
+    public async Task CustomerCanCancelAtAnyTimeWhenCutoffIsZero()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid customerId = Guid.CreateVersion7();
+
+        // Randevuya 5 dakika kaldi.
+        Appointment appointment =
+            await SeedConfirmedAppointmentAsync(tenantId, customerId, testTime.AddMinutes(5));
+
+        CancelAppointmentByCustomerService service =
+            CreateCancelAppointmentByCustomerService(tenantId, cancellationCutoffHours: 0);
+
+        CustomerAppointmentCancellationResult result =
+            await service.CancelAsync(appointment.Id, customerId);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(
+            AppointmentStatus.Cancelled,
+            await ReadAppointmentStatusAsync(tenantId, appointment.Id));
+    }
+
+    /// <summary>
+    /// FAIL-CLOSED: politika okunamazsa (isletme bulunamadi) "kural yok" SAYILMAZ.
+    /// </summary>
+    /// <remarks>
+    /// Aksi halde bir okuma hatasi, tum son-dakika iptallerini serbest birakirdi.
+    /// </remarks>
+    [Fact]
+    public async Task MissingCancellationPolicyFallsBackToSafeDefaultNotToNoRule()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid customerId = Guid.CreateVersion7();
+
+        Appointment appointment =
+            await SeedConfirmedAppointmentAsync(tenantId, customerId, testTime.AddHours(1));
+
+        // Politika YOK (lookup null donuyor).
+        CancelAppointmentByCustomerService service =
+            CreateCancelAppointmentByCustomerService(tenantId, cancellationCutoffHours: null);
+
+        CustomerAppointmentCancellationResult result =
+            await service.CancelAsync(appointment.Id, customerId);
+
+        // Guvenli varsayilana (2 saat) dustu -> 1 saat kala iptal REDDEDILDI.
+        Assert.False(result.Succeeded);
+        Assert.Equal(CancelAppointmentByCustomerService.CancelTooLate, result.ErrorCode);
+    }
+
+    /// <summary>
+    /// Tamamlanmis / gelmedi gibi kapali bir randevu iptal edilemez.
+    /// </summary>
+    [Fact]
+    public async Task CustomerCannotCancelAlreadyClosedAppointment()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        Guid customerId = Guid.CreateVersion7();
+
+        Appointment appointment =
+            await SeedConfirmedAppointmentAsync(tenantId, customerId, testTime.AddDays(10));
+
+        CancelAppointmentByCustomerService service =
+            CreateCancelAppointmentByCustomerService(tenantId, cancellationCutoffHours: 0);
+
+        // Ilk iptal basarili.
+        Assert.True((await service.CancelAsync(appointment.Id, customerId)).Succeeded);
+
+        // IDEMPOTENT: ayni iptal tekrar cagirilirsa BASARILI doner (cift tiklama cift etki
+        // yaratmaz), hata firlatmaz.
+        CustomerAppointmentCancellationResult second =
+            await service.CancelAsync(appointment.Id, customerId);
+
+        Assert.True(second.Succeeded);
+        Assert.Equal(
+            AppointmentStatus.Cancelled,
+            await ReadAppointmentStatusAsync(tenantId, appointment.Id));
     }
 
     private CancelAppointmentRequestService CreateCancelAppointmentRequestService(Guid tenantId)

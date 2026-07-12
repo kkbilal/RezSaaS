@@ -3931,6 +3931,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/businesses/{slug}/appointments/{appointmentId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "Idempotency-Key"?: string;
+                };
+                path: {
+                    slug: string;
+                    appointmentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentCancellationResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentCancellationErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentCancellationErrorResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentCancellationErrorResponse"];
+                    };
+                };
+                /** @description Unprocessable Content */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicAppointmentCancellationErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/businesses/{slug}/profile": {
         parameters: {
             query?: never;
@@ -5061,6 +5144,8 @@ export interface components {
             seoTitle?: string | null;
             seoDescription?: string | null;
             staffDisplayPolicy?: string | null;
+            /** Format: int32 */
+            cancellationCutoffHours?: number | null;
         };
         BusinessProfileSettingsResponse: {
             /** Format: uuid */
@@ -5450,6 +5535,16 @@ export interface components {
             bootstrapToken?: string | null;
         };
         PlatformAdminBootstrapHttpResponse: {
+            status?: string | null;
+        };
+        PublicAppointmentCancellationErrorResponse: {
+            errorCode?: string | null;
+            /** Format: int32 */
+            cancellationCutoffHours?: number | null;
+        };
+        PublicAppointmentCancellationResponse: {
+            /** Format: uuid */
+            appointmentId?: string;
             status?: string | null;
         };
         PublicAppointmentRequestCreateRequest: {

@@ -84,6 +84,10 @@ public sealed class CustomerAppointmentHistoryComposer
                     await confirmedAppointmentQueryService.GetOwnAsync(
                         customerUserAccountId,
                         branchIds,
+                        // BUG FIX: status BURAYA HIC GECIRILMIYORDU. Yalnizca taleplere
+                        // uygulaniyordu, randevulara degil -> ?status=X gonderilse bile TUM
+                        // randevular donuyordu ve /hesabim sekmeleri yanlis veri gosteriyordu.
+                        status,
                         boundedTake,
                         cancellationToken);
                 HashSet<Guid> appointmentRequestIdsWithAppointment = appointments

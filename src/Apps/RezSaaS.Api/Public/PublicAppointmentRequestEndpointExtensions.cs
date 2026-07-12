@@ -123,6 +123,56 @@ public static class PublicAppointmentRequestEndpointExtensions
             .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status409Conflict)
             .Produces<PublicAppointmentRequestErrorResponse>(StatusCodes.Status422UnprocessableEntity);
 
+        // MUSTERI RANDEVU IPTALI -- lansman blokajiydi.
+        //
+        // Musteri onaylanmis randevusunu HICBIR SEKILDE iptal edemiyordu: talep iptali
+        // yalnizca PendingApproval'da calisiyor, isletme tarafindaki iptal ucu ise tenant
+        // uyeligi ariyordu. Yani plani degisen musterinin yapacak hicbir seyi yoktu, salonu
+        // ARAMAK zorundaydi -- ki bu tam olarak bu urunun cozmeyi vaat ettigi problem.
+        publicBusinesses.MapPost(
+                "/{slug}/appointments/{appointmentId:guid}/cancel",
+                async (
+                    string slug,
+                    Guid appointmentId,
+                    [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+                    ClaimsPrincipal user,
+                    PublicAppointmentCancellationComposer composer,
+                    CancellationToken cancellationToken) =>
+                {
+                    PublicAppointmentCancellationResult result =
+                        await composer.CancelOwnAsync(
+                            slug,
+                            appointmentId,
+                            idempotencyKey,
+                            user,
+                            cancellationToken);
+
+                    if (result.Outcome == PublicAppointmentRequestAccessOutcome.Success)
+                    {
+                        return Results.Ok(result.Response);
+                    }
+
+                    PublicAppointmentCancellationErrorResponse error =
+                        new(result.ErrorCode ?? "APPOINTMENT_CANCEL_INVALID",
+                            result.CancellationCutoffHours);
+
+                    return result.Outcome switch
+                    {
+                        PublicAppointmentRequestAccessOutcome.BadRequest => Results.BadRequest(error),
+                        PublicAppointmentRequestAccessOutcome.Unauthorized => Results.Unauthorized(),
+                        PublicAppointmentRequestAccessOutcome.NotFound => Results.NotFound(error),
+                        PublicAppointmentRequestAccessOutcome.Conflict => Results.Conflict(error),
+                        _ => Results.UnprocessableEntity(error),
+                    };
+                })
+            .RequireAuthorization()
+            .Produces<PublicAppointmentCancellationResponse>()
+            .Produces<PublicAppointmentCancellationErrorResponse>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<PublicAppointmentCancellationErrorResponse>(StatusCodes.Status404NotFound)
+            .Produces<PublicAppointmentCancellationErrorResponse>(StatusCodes.Status409Conflict)
+            .Produces<PublicAppointmentCancellationErrorResponse>(StatusCodes.Status422UnprocessableEntity);
+
         return endpoints;
     }
 

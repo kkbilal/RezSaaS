@@ -9,4 +9,5 @@ public sealed record BusinessProfileSettingsView(
     string PublicRules,
     string SeoTitle,
     string SeoDescription,
-    string StaffDisplayPolicy);
+    string StaffDisplayPolicy,
+    int CancellationCutoffHours);

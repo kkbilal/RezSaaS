@@ -101,6 +101,11 @@ public sealed class BusinessProfileSettingsService
             command.SeoTitle,
             command.SeoDescription,
             staffDisplayPolicy);
+        // null = "bu alana dokunma". Mevcut politika korunur.
+        if (command.CancellationCutoffHours is { } cutoffHours)
+        {
+            business.UpdateCancellationPolicy(cutoffHours);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -127,7 +132,10 @@ public sealed class BusinessProfileSettingsService
             && IsLength(command.Description, minLength: 0, maxLength: 600)
             && IsLength(command.PublicRules, minLength: 0, maxLength: 1000)
             && IsLength(command.SeoTitle, minLength: 0, maxLength: 120)
-            && IsLength(command.SeoDescription, minLength: 0, maxLength: 180);
+            && IsLength(command.SeoDescription, minLength: 0, maxLength: 180)
+            && (command.CancellationCutoffHours is null
+                || (command.CancellationCutoffHours >= 0
+                    && command.CancellationCutoffHours <= Business.MaxCancellationCutoffHours));
     }
 
     private static bool IsLength(string? value, int minLength, int maxLength)
@@ -196,6 +204,7 @@ public sealed class BusinessProfileSettingsService
             business.PublicRules,
             business.SeoTitle,
             business.SeoDescription,
-            business.PublicStaffDisplayPolicy.ToString());
+            business.PublicStaffDisplayPolicy.ToString(),
+            business.CancellationCutoffHours);
     }
 }
