@@ -1,3 +1,5 @@
+using RezSaaS.BuildingBlocks.Time;
+
 namespace RezSaaS.Api.PublicApi;
 
 public static class PublicTimeZoneResolver
@@ -17,49 +19,13 @@ public static class PublicTimeZoneResolver
         return TimeZoneInfo.ConvertTime(utcTime, timeZoneInfo).DateTime;
     }
 
+    // Ciftyonlu cozum mantigi ortak katmana (BuildingBlocks/TimeZoneResolution) tasindi;
+    // ayni mantik sube olustururken de (Organization) dogrulama/normalizasyon icin gerekiyordu.
+    // Burada sadece delege ediyoruz -- kod tek yerde yasar.
     public static bool TryFind(
         string timeZoneId,
         out TimeZoneInfo? timeZoneInfo)
     {
-        if (TryFindTimeZoneById(timeZoneId, out timeZoneInfo))
-        {
-            return true;
-        }
-
-        if (TimeZoneInfo.TryConvertIanaIdToWindowsId(timeZoneId, out string? windowsTimeZoneId)
-            && TryFindTimeZoneById(windowsTimeZoneId, out timeZoneInfo))
-        {
-            return true;
-        }
-
-        if (TimeZoneInfo.TryConvertWindowsIdToIanaId(timeZoneId, out string? ianaTimeZoneId)
-            && TryFindTimeZoneById(ianaTimeZoneId, out timeZoneInfo))
-        {
-            return true;
-        }
-
-        timeZoneInfo = null;
-        return false;
-    }
-
-    private static bool TryFindTimeZoneById(
-        string timeZoneId,
-        out TimeZoneInfo? timeZoneInfo)
-    {
-        try
-        {
-            timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-            return true;
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            timeZoneInfo = null;
-            return false;
-        }
-        catch (InvalidTimeZoneException)
-        {
-            timeZoneInfo = null;
-            return false;
-        }
+        return TimeZoneResolution.TryFind(timeZoneId, out timeZoneInfo);
     }
 }

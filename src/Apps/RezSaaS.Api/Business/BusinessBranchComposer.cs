@@ -232,6 +232,9 @@ public sealed class BusinessBranchComposer
             BranchManagementService.BusinessNotFound => BusinessBranchOutcome.NotFound,
             BranchManagementService.BranchNotFound => BusinessBranchOutcome.NotFound,
             BranchManagementService.SlugConflict => BusinessBranchOutcome.Conflict,
+            // Gecersiz zaman dilimi -> 400 (istek hatasi). Salon anlamsiz bir TZ ile sube
+            // acamamali; aksi halde o sube sonsuza kadar 0 slot dondururdu.
+            BranchManagementService.InvalidTimeZone => BusinessBranchOutcome.BadRequest,
             BranchManagementService.BranchHasStaff => BusinessBranchOutcome.Conflict,
             _ => BusinessBranchOutcome.BadRequest,
         };

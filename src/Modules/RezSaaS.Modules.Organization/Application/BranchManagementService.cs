@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RezSaaS.BuildingBlocks.Time;
 using RezSaaS.BuildingBlocks.Auditing;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Organization.Domain;
@@ -14,6 +15,7 @@ public sealed class BranchManagementService
     public const string BranchNotFound = "BRANCH_NOT_FOUND";
     public const string BranchHasStaff = "BRANCH_HAS_STAFF";
     public const string SlugConflict = "BRANCH_SLUG_CONFLICT";
+    public const string InvalidTimeZone = "BRANCH_INVALID_TIMEZONE";
 
     private readonly IAuditLogRecorder auditLogRecorder;
     private readonly OrganizationDbContext dbContext;
@@ -106,6 +108,21 @@ public sealed class BranchManagementService
             return BranchManagementResult.Failure(SlugConflict);
         }
 
+        // LANSMAN BLOKAJI FIX: TimeZoneId ONCEDEN sadece uzunluk (1-80) kontrol ediliyordu,
+        // GECERLI bir zaman dilimi olup olmadigi HIC dogrulanmiyordu. Sonuc:
+        //   - "Istanbul" gibi gecersiz bir deger -> slot motoru bu subeyi SONSUZA KADAR 0 slot
+        //     dondurur (200 OK, hata yok) -> salon "kimse randevu alamiyor" der, sebebini bulamaz.
+        //   - "Turkey Standard Time" (Windows ID) -> backend kabul eder ama frontend
+        //     Intl.DateTimeFormat RangeError ile PATLAR.
+        // Cozum: gecersizse REDDET; gecerliyse saklamadan once IANA'ya NORMALIZE et
+        // (DB ve API yaniti her zaman IANA olsun ki Intl asla patlamasin).
+        string? normalizedTimeZoneId = TimeZoneResolution.TryNormalizeToIana(command.TimeZoneId);
+
+        if (normalizedTimeZoneId is null)
+        {
+            return BranchManagementResult.Failure(InvalidTimeZone);
+        }
+
         DateTimeOffset now = timeProvider.GetUtcNow();
 
         Branch branch = Branch.Create(
@@ -113,7 +130,7 @@ public sealed class BranchManagementService
             businessId.Value,
             command.Slug,
             command.DisplayName,
-            command.TimeZoneId,
+            normalizedTimeZoneId,
             now,
             command.City,
             command.District,
