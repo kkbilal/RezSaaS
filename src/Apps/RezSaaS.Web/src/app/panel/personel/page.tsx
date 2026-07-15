@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { getBusinessBranchesServer } from "@/features/business/api/get-business-branches-server";
+import { BusinessStaffPage } from "@/features/business/components/business-staff-page";
+import { PanelShell } from "@/features/business/components/panel-shell";
 import {
   firstSearchParam,
   selectBusinessTenant
 } from "@/features/business/lib/business-tenant-selection";
-import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { EmptyState } from "@/shared/ui/empty-state";
-import { PanelShell } from "@/features/business/components/panel-shell";
-import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false },
-  title: "Personel Yönetimi — İşletme Paneli"
+  title: "Ekip — İşletme Paneli"
 };
 
 type Props = {
@@ -32,7 +32,7 @@ export default async function BusinessStaffRoute({ searchParams }: Props) {
       <PrivateRouteState
         actionHref={routes.auth.login}
         actionLabel="Giriş ekranına git"
-        description={`${sessionState.reason} Personel yönetimi render edilmedi.`}
+        description={`${sessionState.reason} Ekip yönetimi render edilmedi.`}
         title="Oturum doğrulanamadı"
       />
     );
@@ -49,7 +49,7 @@ export default async function BusinessStaffRoute({ searchParams }: Props) {
       <PrivateRouteState
         actionHref={routes.business.panel}
         actionLabel="Panele dön"
-        description={`${context.reason} Personel yönetimi render edilmedi.`}
+        description={`${context.reason} Ekip yönetimi render edilmedi.`}
         eyebrow="İşletme paneli"
         title="İşletme bilgisi alınamadı"
       />
@@ -73,37 +73,36 @@ export default async function BusinessStaffRoute({ searchParams }: Props) {
     );
   }
 
+  // Personel SUBE ALTINDA NESTED: listeyi cizebilmek icin once subeler lazim.
+  // (Personel ucları branchId ISTER; sube secilmeden personel getirilemez.)
+  const branchesState = await getBusinessBranchesServer(tenant);
   const sessionEmail = sessionState.session.account?.email ?? "Oturum";
-    return (
+
+  // tenantId tipi `string | undefined`; asagidaki ternary'nin ELSE dalinda daralir.
+  const tenantId = tenant.tenantId;
+
+  return (
     <PanelShell
       capabilities={tenant.capabilities ?? []}
-      currentTenantId={tenant.tenantId}
+      currentTenantId={tenantId}
       sessionEmail={sessionEmail}
       tenants={buildPanelTenants(context.tenants)}
     >
-      <div className="space-y-6">
-        <section>
-          <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--rs-accent-strong)]">
-            Personel yönetimi
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-5xl">
-            Personel
-          </h1>
-        </section>
-        <Card className="p-6 sm:p-8">
-          <CardHeader>
-            <CardTitle>Hazırlık durumu</CardTitle>
-            <CardDescription>
-              Personel CRUD, yetkinlik atama ve müsaitlik yönetimi Phase 5a
-              backend endpoint&apos;leriyle birlikte açılır.
-            </CardDescription>
-          </CardHeader>
-          <EmptyState
-            description="Personel oluşturma, güncelleme ve müsaitlik yönetimi akışları Phase 5a kapsamında yayınlanacak. Şimdilik mevcut personel /panel inbox ve takvim üzerinden görüntülenebilir."
-            title="Personel yönetimi yakında"
-          />
-        </Card>
-      </div>
+      {branchesState.kind === "unavailable" || !tenantId ? (
+        <PrivateRouteState
+          actionHref={routes.business.panel}
+          actionLabel="Panele dön"
+          description={`${
+            branchesState.kind === "unavailable"
+              ? branchesState.reason
+              : "İşletme bilgisi doğrulanamadı."
+          } Ekip listesi render edilmedi.`}
+          eyebrow="İşletme paneli"
+          title="Şubeler alınamadı"
+        />
+      ) : (
+        <BusinessStaffPage branches={branchesState.branches} tenantId={tenantId} />
+      )}
     </PanelShell>
   );
 }

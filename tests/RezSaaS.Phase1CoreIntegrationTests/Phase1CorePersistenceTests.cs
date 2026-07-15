@@ -2856,6 +2856,110 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// StaffManagementService.ArchiveAsync icin sahte randevu bekcisi.
+    /// Gercek adapter Booking'in Appointments tablosunu okur; testte "aktif randevu var mi"
+    /// cevabini kontrol edebilmek icin sabitliyoruz.
+    /// </summary>
+    private sealed class StubStaffAppointmentGuard : IStaffAppointmentGuard
+    {
+        private readonly bool hasUpcoming;
+
+        public StubStaffAppointmentGuard(bool hasUpcoming)
+        {
+            this.hasUpcoming = hasUpcoming;
+        }
+
+        public Task<bool> HasUpcomingActiveAppointmentsAsync(
+            Guid tenantId,
+            Guid staffMemberId,
+            DateTimeOffset asOfUtc,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(hasUpcoming);
+        }
+    }
+
+    private async Task<(Guid tenantId, Guid staffId, StaffManagementService service)> SeedStaffAsync(
+        bool guardHasUpcoming)
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+
+        OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>(), accessor);
+
+        Business business = Business.Create(tenantId, "atlas-hair", "Atlas Hair", "hair", testTime);
+        Branch branch = Branch.Create(
+            tenantId, business.Id, "kadikoy", "Kadıköy", "Europe/Istanbul", testTime,
+            "İstanbul", "Kadıköy", "Caferağa Mahallesi");
+        dbContext.Businesses.Add(business);
+        dbContext.Branches.Add(branch);
+        await dbContext.SaveChangesAsync();
+
+        StaffManagementService service = new(
+            dbContext,
+            accessor,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new StubStaffAppointmentGuard(guardHasUpcoming),
+            new FixedTimeProvider(testTime));
+
+        StaffManagementResult created = await service.CreateAsync(
+            new CreateStaffCommand(Guid.CreateVersion7(), branch.Id, "Ayşe Usta", null));
+
+        return (tenantId, created.Staff!.Id, service);
+    }
+
+    /// <summary>
+    /// REGRESYON: gelecekte AKTIF randevusu olan personel ARSIVLENEMEZ.
+    /// </summary>
+    /// <remarks>
+    /// BULUNAN BUG (uctan uca duman testi ortaya cikardi):
+    /// StaffManagementService.ArchiveAsync HICBIR KONTROL YAPMADAN staff.Archive() cagiriyordu.
+    /// Gelecekte Confirmed randevusu olan personel arsivleniyor, o randevu SAHIPSIZ kaliyordu
+    /// (personel arsivli ama randevu hala ona bagli) -- salon o randevuya kimin bakacagini
+    /// bilemez hale gelirdi.
+    ///
+    /// Booking'e dogrudan referans veremiyoruz (modul siniri); IStaffAppointmentGuard
+    /// sozlesmesi uzerinden soruyoruz.
+    /// </remarks>
+    [Fact]
+    public async Task StaffWithUpcomingAppointmentsCannotBeArchived()
+    {
+        (Guid _, Guid staffId, StaffManagementService service) = await SeedStaffAsync(guardHasUpcoming: true);
+
+        StaffManagementResult result =
+            await service.ArchiveAsync(Guid.CreateVersion7(), staffId);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(StaffManagementService.StaffHasUpcomingAppointments, result.ErrorCode);
+    }
+
+    /// <summary>
+    /// Gelecekte aktif randevusu OLMAYAN personel arsivlenebilir (soft archive: kayit korunur).
+    /// </summary>
+    [Fact]
+    public async Task StaffWithoutUpcomingAppointmentsCanBeArchived()
+    {
+        (Guid tenantId, Guid staffId, StaffManagementService service) = await SeedStaffAsync(guardHasUpcoming: false);
+
+        StaffManagementResult result =
+            await service.ArchiveAsync(Guid.CreateVersion7(), staffId);
+
+        Assert.True(result.Succeeded);
+
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+        await using OrganizationDbContext verify =
+            new(CreateOptions<OrganizationDbContext>(), accessor);
+
+        StaffMember persisted = await verify.StaffMembers
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == staffId);
+
+        // Soft archive: kayit SILINMEZ, status Archived olur.
+        Assert.Equal(StaffMemberStatus.Archived, persisted.Status);
+    }
+
+    /// <summary>
     /// REGRESYON TESTI (B1): StaffManagementService.UpdateAsync personelin adini GERCEKTEN degistirir.
     /// </summary>
     /// <remarks>
@@ -2900,6 +3004,7 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
             dbContext,
             tenantContextAccessor,
             new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new StubStaffAppointmentGuard(hasUpcoming: false),
             new FixedTimeProvider(testTime));
 
         // Isim yanlis yazilarak eklendi -- tipik ilk-kullanim senaryosu.
@@ -2961,6 +3066,7 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
             dbContext,
             tenantContextAccessor,
             new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new StubStaffAppointmentGuard(hasUpcoming: false),
             new FixedTimeProvider(testTime));
 
         StaffManagementResult created = await service.CreateAsync(

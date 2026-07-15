@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RezSaaS.BuildingBlocks.Auditing;
+using RezSaaS.BuildingBlocks.Booking;
 using RezSaaS.BuildingBlocks.Tenancy;
 using RezSaaS.Modules.Organization.Domain;
 using RezSaaS.Modules.Organization.Infrastructure.Persistence;
@@ -13,8 +14,10 @@ public sealed class StaffManagementService
     public const string MissingTenantContext = "MISSING_TENANT_CONTEXT";
     public const string BranchNotFound = "BRANCH_NOT_FOUND";
     public const string StaffNotFound = "STAFF_NOT_FOUND";
+    public const string StaffHasUpcomingAppointments = "STAFF_HAS_UPCOMING_APPOINTMENTS";
 
     private readonly IAuditLogRecorder auditLogRecorder;
+    private readonly IStaffAppointmentGuard staffAppointmentGuard;
     private readonly OrganizationDbContext dbContext;
     private readonly ITenantContextAccessor tenantContextAccessor;
     private readonly TimeProvider timeProvider;
@@ -23,11 +26,13 @@ public sealed class StaffManagementService
         OrganizationDbContext dbContext,
         ITenantContextAccessor tenantContextAccessor,
         IAuditLogRecorder auditLogRecorder,
+        IStaffAppointmentGuard staffAppointmentGuard,
         TimeProvider timeProvider)
     {
         this.dbContext = dbContext;
         this.tenantContextAccessor = tenantContextAccessor;
         this.auditLogRecorder = auditLogRecorder;
+        this.staffAppointmentGuard = staffAppointmentGuard;
         this.timeProvider = timeProvider;
     }
 
@@ -183,10 +188,30 @@ public sealed class StaffManagementService
             return StaffManagementResult.Failure(StaffNotFound);
         }
 
+        DateTimeOffset now = timeProvider.GetUtcNow();
+
+        // BUG FIX: burada HICBIR KONTROL YOKTU -- gelecekte Confirmed randevusu olan personel
+        // sorgusuz arsivleniyordu ve o randevular SAHIPSIZ kaliyordu (personel arsivli, ama
+        // randevu hala ona bagli). Salon o randevuya kimin bakacagini bilemez hale gelirdi.
+        //
+        // Booking'e dogrudan referans veremiyoruz (modul siniri) -- IStaffAppointmentGuard
+        // sozlesmesi uzerinden soruyoruz (composition root'ta BookingStaffAppointmentGuardAdapter).
+        bool hasUpcoming = await staffAppointmentGuard.HasUpcomingActiveAppointmentsAsync(
+            tenantId,
+            staffId,
+            now,
+            cancellationToken);
+
+        if (hasUpcoming)
+        {
+            // 409: kaynagin mevcut durumu (aktif randevusu var) islemi engelliyor.
+            // Salon once o randevulari baska personele tasimali ya da iptal etmeli.
+            return StaffManagementResult.Failure(StaffHasUpcomingAppointments);
+        }
+
         staff.Archive();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        DateTimeOffset now = timeProvider.GetUtcNow();
         await auditLogRecorder.RecordAsync(
             new AuditLogRecord(
                 tenantId,

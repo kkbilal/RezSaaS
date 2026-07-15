@@ -151,6 +151,8 @@ public sealed class BusinessStaffComposer
             StaffManagementService.MissingTenantContext => BusinessStaffOutcome.BadRequest,
             StaffManagementService.BranchNotFound => BusinessStaffOutcome.NotFound,
             StaffManagementService.StaffNotFound => BusinessStaffOutcome.NotFound,
+            // 409: personelin gelecekte aktif randevusu var -> arsivlenemez.
+            StaffManagementService.StaffHasUpcomingAppointments => BusinessStaffOutcome.Conflict,
             _ => BusinessStaffOutcome.BadRequest,
         };
 

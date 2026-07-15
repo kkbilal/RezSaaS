@@ -154,6 +154,10 @@ builder.Services.AddScoped<PublicAppointmentCancellationComposer>();
 builder.Services.AddScoped<
     RezSaaS.BuildingBlocks.Booking.IBusinessCancellationPolicyLookup,
     RezSaaS.Api.Booking.OrganizationBusinessCancellationPolicyAdapter>();
+// Personel arsivlerken gelecekteki aktif randevu kontrolu (Organization -> Booking sozlesmesi).
+builder.Services.AddScoped<
+    RezSaaS.BuildingBlocks.Booking.IStaffAppointmentGuard,
+    RezSaaS.Api.Booking.BookingStaffAppointmentGuardAdapter>();
 builder.Services.AddScoped<SessionBootstrapComposer>();
 builder.Services.AddScoped<BusinessContextComposer>();
 builder.Services.AddScoped<BusinessAppointmentRequestComposer>();

@@ -75,7 +75,7 @@ RATE_LIMIT_WINDOW_SECONDS = 62
 # Cikti yardimcilari
 # --------------------------------------------------------------------------------------
 
-TOTAL_STEPS = 46
+TOTAL_STEPS = 53
 
 # Kosum sirasinda ortaya cikan URUN BULGULARI. FAIL olmayan (INFO) bulgular da buraya
 # girer: testi dusurmeyen ama urun kararini etkileyen gercekler kaybolmasin.
@@ -1764,6 +1764,339 @@ def run(
         else "(soft archive filtresi calisiyor)"
     )
     REPORT.ok(f"public profilde YOK {reason} ({len(listed)} hizmet kaldi)")
+
+    # ==================================================================================
+    # PERSONEL YONETIMI (adim 47-53)
+    #
+    # DIKKAT (koddan/sozlesmeden dogrulandi):
+    #   - Personel SUBE ALTINDA nested: .../branches/{branchId}/staff/{staffId}.
+    #   - Personel = TAKVIM KAYNAGI (login DEGIL) -> sadece displayName; userAccountId
+    #     dogrulanmaz, UI'da GOSTERILMEZ.
+    #   - Yetkinlik atamasinin GET'i YOK (write-only) -> burada okunmaz/sinanmaz.
+    #   - Personel bazli calisma saati YOK; ama IZIN/MUSAITSIZLIK OKUNABILIR (liste var).
+    #
+    # Bu blok, personel yasam dongusunun yazdiktan SONRA gercekten kaldigini (rename),
+    # izin ekle/oku/sil dongusunu, iznin slotlari bloklayip bloklamadigini ve arsivlemenin
+    # aktif randevu + public gorunurluk davranisini sinar.
+    #
+    # NEDEN SONA EKLENDI: bu adimlar personeli ARSIVLER (geri donusu olmayan durum) ve
+    # aktif randevu icin YENI bir randevu dogurur. Onceki 46 adimin AYNEN calismasini
+    # garanti etmek icin hepsi tamamlandiktan SONRA calisirlar. Adim 24'te dogan randevu
+    # 32'de IPTAL edildiginden "aktif randevu" senaryosu (D) icin YENI bir Confirmed
+    # randevu doguruyoruz -- ayni personel, ayni varyant.
+    # ==================================================================================
+
+    def public_profile() -> dict:
+        _, body = customer.get(
+            f"/api/public/businesses/{business_slug}/profile", expect=(200,)
+        )
+        return body if isinstance(body, dict) else {}
+
+    def public_staff_ids() -> set:
+        ids = set()
+        for branch in public_profile().get("branches") or []:
+            for member in branch.get("staffMembers") or []:
+                if member.get("id"):
+                    ids.add(member["id"])
+        return ids
+
+    def read_staff() -> dict:
+        _, body = owner.get(
+            f"/api/business/branches/{branch_id}/staff/{staff_id}", expect=(200,)
+        )
+        if not isinstance(body, dict):
+            raise StepFailed(f"GET staff beklenmeyen yanit: {body}")
+        return body
+
+    def staff_slots(date_iso: str) -> list[dict]:
+        _, body = customer.get(
+            f"/api/public/businesses/{business_slug}/slots",
+            query={
+                "branchSlug": branch_slug,
+                "date": date_iso,
+                "serviceVariantIds": variant_id,
+            },
+            expect=(200,),
+        )
+        return list(body.get("slots") or []) if isinstance(body, dict) else []
+
+    def slots_with_staff(slots: list[dict], target_staff_id: str) -> int:
+        count = 0
+        for slot in slots:
+            if any(c.get("id") == target_staff_id for c in slot.get("staffCandidates") or []):
+                count += 1
+        return count
+
+    def find_appointment_row(target_id: str) -> dict | None:
+        moment = datetime.now(timezone.utc)
+        _, body = owner.get(
+            "/api/business/appointments",
+            query={
+                "fromUtc": (moment - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "toUtc": (moment + timedelta(days=60)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            },
+            expect=(200,),
+        )
+        rows = (body.get("appointments") or []) if isinstance(body, dict) else []
+        return next((r for r in rows if r.get("appointmentId") == target_id), None)
+
+    # -- 47 --------------------- (A) [RENAME REGRESYONU] ad guncellemesi KALICI mi (PATCH->GET)
+    # f757cee'de duzeltilen bug: PATCH 200 doner ama ad degismezdi. 200'e GUVENMIYORUZ.
+    REPORT.start("[A] Personel adi PATCH ile degisiyor ve KALIYOR mu (rename regresyonu)")
+    new_staff_name = "Ayse Usta (Kidemli)"
+    _, patched = owner.patch(
+        f"/api/business/branches/{branch_id}/staff/{staff_id}",
+        {"displayName": new_staff_name},
+        expect=(200,),
+    )
+    echoed_name = patched.get("displayName") if isinstance(patched, dict) else None
+    reread_staff = read_staff()
+    if reread_staff.get("displayName") != new_staff_name:
+        REPORT.fail(
+            f"SESSIZ NO-OP / REGRESYON: PATCH HTTP 200 (yanit displayName={echoed_name!r}) AMA "
+            f"YENIDEN OKUNDUGUNDA displayName={reread_staff.get('displayName')!r} -- "
+            f"{new_staff_name!r} bekleniyordu. Personel adi guncellemesi KALICI DEGIL "
+            "(f757cee regresyonu geri geldi)."
+        )
+        finding(
+            "Personel adi guncellemesi kalici degil (PATCH 200 doner, GET eski adi verir) "
+            "-- f757cee regresyonu geri geldi."
+        )
+        return False
+    if echoed_name != new_staff_name:
+        REPORT.fail(
+            f"PATCH yaniti displayName={echoed_name!r} ama GET {new_staff_name!r} veriyor "
+            "-- yanit govdesi kayitla tutarsiz."
+        )
+        return False
+    REPORT.ok(f"'Ayse Usta' -> {new_staff_name!r}; GET ile dogrulandi")
+
+    # -- 48 --------------------------------- (B) izin EKLE + GET ile DOGRULA
+    REPORT.start("[B] Personele izin ekleniyor ve GET ile dogrulaniyor")
+    leave_day = (datetime.now(timezone.utc) + timedelta(days=20)).date()
+    leave_start = f"{leave_day.isoformat()}T00:00:00Z"
+    leave_end = f"{(leave_day + timedelta(days=1)).isoformat()}T00:00:00Z"
+    _, created = owner.post(
+        f"/api/business/staff/{staff_id}/unavailable",
+        {"startUtc": leave_start, "endUtc": leave_end, "reason": "Yillik izin"},
+        expect=(201,),
+    )
+    unavailable_id = created.get("id") if isinstance(created, dict) else None
+    if not unavailable_id:
+        REPORT.fail(f"POST unavailable yanitinda id YOK: {created}")
+        return False
+    _, listed_leave = owner.get(f"/api/business/staff/{staff_id}/unavailable", expect=(200,))
+    leave_rows = listed_leave if isinstance(listed_leave, list) else []
+    leave_match = next((r for r in leave_rows if r.get("id") == unavailable_id), None)
+    if not leave_match:
+        REPORT.fail(
+            f"Eklenen izin (id={unavailable_id}) GET listesinde YOK "
+            f"({len(leave_rows)} kayit): {leave_rows}"
+        )
+        return False
+    if leave_match.get("reason") != "Yillik izin":
+        REPORT.fail(f"Izin kaydinin reason'i beklenmedik: {leave_match}")
+        return False
+    REPORT.ok(f"unavailableId={unavailable_id} eklendi, GET dogruladi ({len(leave_rows)} kayit)")
+
+    # -- 49 --------------------------------- (B) izin SIL + GET ile GITTIGINI DOGRULA
+    REPORT.start("[B] Izin DELETE ile siliniyor ve GET ile gittigi dogrulaniyor")
+    owner.request(
+        "DELETE",
+        f"/api/business/staff/{staff_id}/unavailable/{unavailable_id}",
+        expect=(200, 204),
+    )
+    _, listed_leave = owner.get(f"/api/business/staff/{staff_id}/unavailable", expect=(200,))
+    leave_rows = listed_leave if isinstance(listed_leave, list) else []
+    if any(r.get("id") == unavailable_id for r in leave_rows):
+        REPORT.fail(
+            f"Silinen izin (id={unavailable_id}) GET listesinde HALA VAR: {leave_rows}"
+        )
+        return False
+    REPORT.ok(f"izin silindi, GET listesinde yok ({len(leave_rows)} kayit kaldi)")
+
+    # -- 50 ------------------- (C) [IZIN SLOT'U BLOKLUYOR MU?] YARIN tam gun izin -> public slot
+    # KURULUM (acikca): sube tz Europe/Istanbul, calisma 09:00-19:00 yerel (= 06:00-16:00Z).
+    # YARIN icin UTC tam gun [00:00Z, +1gun 00:00Z) izin veriyoruz; bu, yarinin tum yerel
+    # calisma saatlerini kapsar. Tek personel oldugu icin YARIN personel adayli slot KALMAMALI.
+    REPORT.start("[C] Personele YARIN tam gun izin -> public slotlar YARIN bloklaniyor mu")
+    tomorrow = (datetime.now(timezone.utc) + timedelta(days=1)).date()
+    before_slots = staff_slots(tomorrow.isoformat())
+    before_count = slots_with_staff(before_slots, staff_id)
+    block_start = f"{tomorrow.isoformat()}T00:00:00Z"
+    block_end = f"{(tomorrow + timedelta(days=1)).isoformat()}T00:00:00Z"
+    owner.post(
+        f"/api/business/staff/{staff_id}/unavailable",
+        {"startUtc": block_start, "endUtc": block_end, "reason": "Tam gun izin"},
+        expect=(201,),
+    )
+    after_slots = staff_slots(tomorrow.isoformat())
+    after_count = slots_with_staff(after_slots, staff_id)
+    c_detail = (
+        f"YARIN={tomorrow.isoformat()} izin(UTC)=[{block_start},{block_end}) "
+        f"personel adayli slot: once={before_count} sonra={after_count} "
+        f"(tz Europe/Istanbul, 09:00-19:00 yerel = 06:00-16:00Z izin araligindadir)"
+    )
+    if before_count == 0:
+        REPORT.info(f"Baz slot yok -> izin etkisi olculemez. {c_detail}")
+        finding(
+            "[C] Personel izni slot etkisi OLCULEMEDI: izinden ONCE de yarin icin personel "
+            "adayli slot yoktu (baz sifir)."
+        )
+    elif after_count == 0:
+        REPORT.ok(f"izin personeli YARINki TUM slotlardan cikardi. {c_detail}")
+    elif after_count < before_count:
+        REPORT.ok(f"izin personelin YARINki slotlarini AZALTTI. {c_detail}")
+    else:
+        REPORT.info(f"izin YARINki slotlari DEGISTIRMEDI. {c_detail}")
+        finding(
+            "[C] Personel tam-gun izni public slot aramasini DEGISTIRMEDI -- izin/musaitsizlik "
+            "slot motoruna yansimiyor olabilir (urun riski; slot motoru StaffUnavailable'i "
+            "dikkate almiyor olabilir, dogrulanmali)."
+        )
+
+    # -- 51 ------------------------- (D-hazirlik) arsiv testi icin YENI Confirmed randevu
+    # Adim 24'un randevusu 32'de iptal edildi; 'aktif randevu' senaryosu icin taze randevu lazim.
+    REPORT.start("[D] Arsiv testi icin YENI Confirmed randevu doguruluyor")
+    appt2_date = (datetime.now(timezone.utc) + timedelta(days=6)).date().isoformat()
+    d_slots = staff_slots(appt2_date)
+    d_cutoff = datetime.now(timezone.utc) + timedelta(hours=3)
+    chosen2 = None
+    for slot in d_slots:
+        start = datetime.fromisoformat(slot["startUtc"].replace("Z", "+00:00"))
+        if start > d_cutoff and any(
+            c.get("id") == staff_id for c in slot.get("staffCandidates") or []
+        ):
+            chosen2 = slot
+            break
+    if not chosen2:
+        REPORT.fail(
+            f"Arsiv testi icin uygun slot yok (tarih={appt2_date}, {len(d_slots)} slot; "
+            f"personel={staff_id} adayli ve response buffer disinda slot bulunamadi)."
+        )
+        return False
+    start2 = chosen2["startUtc"]
+    _, body = customer.post(
+        f"/api/public/businesses/{business_slug}/appointment-requests",
+        {
+            "branchSlug": branch_slug,
+            "serviceVariantIds": [variant_id],
+            "staffMemberId": staff_id,
+            "startUtc": start2,
+        },
+        headers={"Idempotency-Key": str(uuid.uuid4())},
+        expect=(201,),
+    )
+    req2_id = body.get("appointmentRequestId") if isinstance(body, dict) else None
+    _, body = owner.post(
+        f"/api/business/appointment-requests/{req2_id}/approve",
+        headers={"Idempotency-Key": str(uuid.uuid4())},
+        expect=(200,),
+    )
+    appt2_id = body.get("appointmentId") if isinstance(body, dict) else None
+    if not appt2_id:
+        REPORT.fail(f"Onay appointmentId donmedi: {body}")
+        return False
+    row2 = find_appointment_row(appt2_id)
+    if not row2 or row2.get("status") != "Confirmed":
+        REPORT.fail(f"Yeni randevu Confirmed degil / listede yok: {row2}")
+        return False
+    REPORT.ok(
+        f"appointmentId={appt2_id} Confirmed (start={start2}, "
+        f"personel={row2.get('staffMemberDisplayName')!r})"
+    )
+
+    # -- 52 -------------- (D) [ARSIVLEME + AKTIF RANDEVU] backend aktif randevuyu koruyor mu?
+    # BEKLENTI (analiz): ArchiveAsync gelecekteki randevu kontrolu YAPMIYOR -> 200 doner ve
+    # randevu sahipsiz/arsivli personele bagli kalir. Backend 409 REDDEDIYORSA analiz yanilir.
+    # [D] REGRESYON: aktif randevusu OLAN personel arsivlenemez -> 409.
+    # (Bu bir bug'di: ArchiveAsync hicbir kontrol yapmadan arsivliyordu, randevu sahipsiz
+    #  kaliyordu. Duzeltildi: IStaffAppointmentGuard ile gelecek randevu kontrol ediliyor.)
+    REPORT.start("[D] Aktif randevulu personel arsivlenemez (409 STAFF_HAS_UPCOMING bekleniyor)")
+    staff_in_public_before = staff_id in public_staff_ids()  # adim (E) icin BAZ
+    status, body = owner.post(
+        f"/api/business/branches/{branch_id}/staff/{staff_id}/archive",
+        expect=(200, 400, 404, 409, 422),
+    )
+    d_error_code = body.get("errorCode") if isinstance(body, dict) else None
+    row2_after = find_appointment_row(appt2_id)
+
+    if status == 409 and d_error_code == "STAFF_HAS_UPCOMING_APPOINTMENTS":
+        # Dogru davranis: reddedildi, randevu SAGLAM.
+        if not (row2_after and row2_after.get("status") == "Confirmed"):
+            REPORT.fail(
+                "409 dondu AMA aktif randevu artik Confirmed degil/kayip -- beklenmeyen yan etki."
+            )
+            return False
+        REPORT.ok(
+            "409 STAFF_HAS_UPCOMING_APPOINTMENTS -- gelecek randevulu personel arsivlenmedi, "
+            "randevu Confirmed olarak saglam kaldi."
+        )
+    elif status == 200 and row2_after and row2_after.get("status") == "Confirmed":
+        orphan_name = row2_after.get("staffMemberDisplayName")
+        REPORT.fail(
+            "REGRESYON -- ARSIVLEME AKTIF RANDEVU KONTROLU YAPMIYOR: gelecekte Confirmed "
+            f"randevusu (appointmentId={appt2_id}) OLAN personel HTTP 200 ile arsivlendi "
+            f"(staffMemberDisplayName={orphan_name!r}) -> randevu SAHIPSIZ. "
+            "StaffManagementService.ArchiveAsync gelecek randevu kontrolunu kaybetmis."
+        )
+        finding("REGRESYON: personel arsivleme aktif randevu kontrolunu kaybetti.")
+        return False
+    else:
+        REPORT.fail(
+            f"Beklenmeyen sonuc: HTTP {status} (errorCode={d_error_code}). "
+            "Aktif randevulu personel arsivleme 409 STAFF_HAS_UPCOMING_APPOINTMENTS bekliyordu."
+        )
+        return False
+
+    # Simdi randevuyu IPTAL ET -> personel artik arsivlenebilmeli.
+    REPORT.start("[D] Randevu iptal edilince ayni personel ARSIVLENEBILIYOR")
+    cancel_status, _ = owner.post(
+        f"/api/business/appointments/{appt2_id}/cancel",
+        {"reason": "E2E arsivleme testi icin iptal"},
+        expect=(200, 204),
+    )
+    status, body = owner.post(
+        f"/api/business/branches/{branch_id}/staff/{staff_id}/archive",
+        expect=(200, 400, 404, 409, 422),
+    )
+    if status == 200:
+        REPORT.ok(
+            "randevu iptal edildikten sonra personel HTTP 200 ile arsivlendi "
+            "(engel kalkti -> kontrol dogru calisiyor)."
+        )
+        archived_ok = True
+    else:
+        d_error_code = body.get("errorCode") if isinstance(body, dict) else None
+        REPORT.fail(
+            f"Randevu iptal edildi ama personel HALA arsivlenemiyor: HTTP {status} "
+            f"(errorCode={d_error_code}). Engel gereginden fazla genis olabilir."
+        )
+        return False
+
+    # -- 53 --------------- (E) [ARSIVLI PERSONEL PUBLIC'TE] arsivlenen personel gizli mi?
+    REPORT.start("[E] Arsivlenen personel public profilde GORUNMUYOR mu")
+    if not archived_ok:
+        REPORT.info(
+            "Personel arsivlenemedi (adim [D] reddedildi) -> 'arsivli personel public'te gizli mi' "
+            "sorusu bu kosumda test edilemez."
+        )
+    else:
+        staff_in_public_after = staff_id in public_staff_ids()
+        if not staff_in_public_before:
+            REPORT.info(
+                f"Personel ({staff_id}) arsivden ONCE de public profilde YOKTU -> gizlenme "
+                f"kaniti uretilemiyor. Arsivden sonra public'te: {staff_in_public_after}"
+            )
+        elif staff_in_public_after:
+            REPORT.fail(
+                f"URUN HATASI: arsivlenen personel ({staff_id}) public profilde HALA GORUNUYOR. "
+                "Musteri artik calismayan personeli secip randevu talep edebilir."
+            )
+            finding("Arsivlenen personel public profilde gorunmeye devam ediyor.")
+            return False
+        else:
+            REPORT.ok("arsivden ONCE public'te vardi, SONRA yok -- dogru gizlendi")
 
     return True
 
