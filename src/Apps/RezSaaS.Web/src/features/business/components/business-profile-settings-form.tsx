@@ -1,40 +1,62 @@
-﻿"use client";
+"use client";
 
+import { Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
 import { createTenantApiClient } from "@/shared/api/client";
-import type { ApiSchema } from "@/shared/api/types";
-import { Button } from "@/shared/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { FormField, TextInput } from "@/shared/ui/form-field";
-import { StatusBadge } from "@/shared/ui/status-badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/shared/lib/cn";
 
-type BusinessProfileSettingsRequest =
-  ApiSchema<"BusinessProfileSettingsRequest">;
+/**
+ * PUBLIC PROFIL AYARLARI FORMU.
+ *
+ * TUZAK 5 ("PATCH ama davranisi PUT"): displayName, description, publicRules, seoTitle,
+ * seoDescription, staffDisplayPolicy alanlari KISMI gonderilirse digerlerini SIFIRLAR.
+ * Bu yuzden form her kaydetmede TUM alanlari gonderir (initial GET ile okunmus tam govde).
+ *
+ * ISTISNA: cancellationCutoffHours NULLABLE'dir ve gonderilmezse KORUNUR. Yine de degeri
+ * elimizde oldugundan (GET yaniti) her zaman acikca gonderiyoruz -- boylece kullanicinin
+ * girdigi deger kesin uygulanir.
+ */
 
-export type BusinessProfileSettingsDraft = Required<
-  {
-    description: NonNullable<BusinessProfileSettingsRequest["description"]>;
-    displayName: NonNullable<BusinessProfileSettingsRequest["displayName"]>;
-    publicRules: NonNullable<BusinessProfileSettingsRequest["publicRules"]>;
-    seoDescription: NonNullable<
-      BusinessProfileSettingsRequest["seoDescription"]
-    >;
-    seoTitle: NonNullable<BusinessProfileSettingsRequest["seoTitle"]>;
-    staffDisplayPolicy: NonNullable<
-      BusinessProfileSettingsRequest["staffDisplayPolicy"]
-    >;
-  }
->;
+const NAME_MIN = 2;
+const NAME_MAX = 200;
+const DESCRIPTION_MAX = 600;
+const RULES_MAX = 1000;
+const SEO_TITLE_MAX = 120;
+const SEO_DESCRIPTION_MAX = 180;
+// Backend Business.MaxCancellationCutoffHours = 168 (7 gun).
+const CANCELLATION_MIN = 0;
+const CANCELLATION_MAX = 168;
+
+export type BusinessProfileSettingsDraft = {
+  description: string;
+  displayName: string;
+  publicRules: string;
+  seoDescription: string;
+  seoTitle: string;
+  staffDisplayPolicy: string;
+  /** String tutulur ki bos girdi + sinir kontrolu kolay olsun; gonderirken sayiya cevrilir. */
+  cancellationCutoffHours: string;
+};
 
 type BusinessProfileSettingsFormProps = {
   canManage: boolean;
   initial: BusinessProfileSettingsDraft;
   tenantId?: string | null;
 };
-
-const textAreaClassName =
-  "min-h-28 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-3 text-sm leading-6 text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)] disabled:cursor-not-allowed disabled:opacity-60";
 
 export function BusinessProfileSettingsForm({
   canManage,
@@ -43,237 +65,321 @@ export function BusinessProfileSettingsForm({
 }: BusinessProfileSettingsFormProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(initial);
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
   const isDisabled = !canManage || !tenantId || isSubmitting;
+
+  const nameTrimmed = draft.displayName.trim();
+  const nameInvalid = nameTrimmed.length < NAME_MIN || nameTrimmed.length > NAME_MAX;
+
+  const cutoffRaw = draft.cancellationCutoffHours.trim();
+  const cutoffValue = cutoffRaw === "" ? 0 : Number(cutoffRaw);
+  const cutoffInvalid =
+    !Number.isInteger(cutoffValue) ||
+    cutoffValue < CANCELLATION_MIN ||
+    cutoffValue > CANCELLATION_MAX;
+
+  const showNames = draft.staffDisplayPolicy !== "HideNames";
+
+  function patch(next: Partial<BusinessProfileSettingsDraft>) {
+    setDraft((current) => ({ ...current, ...next }));
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     if (!tenantId) {
-      setError("İşletme tenant bağlamı doğrulanamadı.");
+      toast.error("İşletme tenant bağlamı doğrulanamadı.");
       return;
     }
-
     if (!canManage) {
-      setError("Bu ayarı yalnızca BusinessOwner rolü güncelleyebilir.");
+      toast.error("Bu ayarı yalnızca işletme sahibi güncelleyebilir.");
       return;
     }
-
-    if (draft.displayName.trim().length < 2) {
-      setError("İşletme adı en az 2 karakter olmalı.");
+    if (nameInvalid) {
+      toast.error(`İşletme adı en az ${NAME_MIN}, en fazla ${NAME_MAX} karakter olmalı.`);
+      return;
+    }
+    if (cutoffInvalid) {
+      toast.error(
+        `İptal süresi 0 ile ${CANCELLATION_MAX} saat (7 gün) arasında bir tam sayı olmalı.`
+      );
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      // TUM alanlar her zaman gonderilir (Tuzak 5) -- kismi PATCH digerlerini sifirlar.
       const response = await createTenantApiClient(tenantId).PATCH(
         "/api/business/settings/profile",
         {
           body: {
-            description: draft.description.trim(),
             displayName: draft.displayName.trim(),
+            description: draft.description.trim(),
             publicRules: draft.publicRules.trim(),
-            seoDescription: draft.seoDescription.trim(),
             seoTitle: draft.seoTitle.trim(),
-            staffDisplayPolicy: draft.staffDisplayPolicy
+            seoDescription: draft.seoDescription.trim(),
+            staffDisplayPolicy: draft.staffDisplayPolicy,
+            cancellationCutoffHours: cutoffValue
           }
         }
       );
 
       if (!response.response.ok) {
-        setError(getSettingsErrorCopy(response.response.status));
+        toast.error(getSettingsErrorCopy(response.response.status));
         return;
       }
 
-      setSuccess("Public profil ayarları kaydedildi.");
+      toast.success("İşletme ayarları kaydedildi.");
       router.refresh();
     } catch {
-      setError("Ayarlar şu anda kaydedilemedi. Lütfen tekrar dene.");
+      toast.error("Ayarlar şu anda kaydedilemedi. Lütfen tekrar dene.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <Card className="p-5">
+    <Card>
       <CardHeader>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle>Public profil ayarları</CardTitle>
-            <CardDescription className="mt-2">
-              Bu form gerçek backend kontratına bağlıdır; tenant header merkezi
-              client tarafından eklenir ve endpoint BusinessOwner authz uygular.
-            </CardDescription>
-          </div>
-          <StatusBadge status={canManage ? "Healthy" : "Degraded"} />
-        </div>
+        <CardTitle>İşletme profili</CardTitle>
+        <CardDescription>
+          Public salon profilinde görünen metinler ve müşteri kuralları. Değişiklikler
+          auditlenir; PII veya gizli bilgi yazma.
+        </CardDescription>
       </CardHeader>
 
-      {!canManage ? (
-        <p className="mt-5 rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] p-4 text-sm leading-6 text-[var(--rs-muted)]">
-          BranchManager ve Staff rolleri tenant-wide public profil metnini
-          değiştiremez. Şube/personel kapsamlı ayar formları ayrı endpointlerle
-          açılacak.
-        </p>
-      ) : null}
+      <CardContent>
+        {!canManage ? (
+          <p className="mb-6 flex items-start gap-2 rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
+            <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
+            Bu ayarları yalnızca işletme sahibi değiştirebilir. Form salt okunur.
+          </p>
+        ) : null}
 
-      <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <FormField
-            hint="Public profilde görünen işletme adı."
-            label="İşletme adı"
-          >
-            <TextInput
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <Label htmlFor="ayar-ad">İşletme adı</Label>
+            <Input
+              className="min-h-11"
               disabled={isDisabled}
-              maxLength={200}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  displayName: event.target.value
-                }))
-              }
+              id="ayar-ad"
+              maxLength={NAME_MAX}
+              onChange={(event) => patch({ displayName: event.target.value })}
               value={draft.displayName}
             />
-          </FormField>
-
-          <FormField
-            hint="Public personel görünürlüğü; kapasite hesabını etkilemez."
-            label="Personel görünürlüğü"
-          >
-            <select
-              className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isDisabled}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  staffDisplayPolicy: event.target.value
-                }))
-              }
-              value={draft.staffDisplayPolicy}
+            <p
+              className={cn(
+                "text-sm",
+                nameInvalid ? "text-destructive" : "text-muted-foreground"
+              )}
             >
-              <option value="ShowNames">Personel isimlerini göster</option>
-              <option value="HideNames">Personel isimlerini gizle</option>
-            </select>
-          </FormField>
-        </div>
+              {nameInvalid
+                ? `En az ${NAME_MIN}, en fazla ${NAME_MAX} karakter.`
+                : "Public profilde görünen işletme adı."}
+            </p>
+          </div>
 
-        <FormField
-          hint="En fazla 600 karakter; PII veya secret yazma."
-          label="Public açıklama"
-        >
-          <textarea
-            className={textAreaClassName}
+          {/* PERSONEL GORUNURLUGU -- switch + GORUNUR aciklama (renk/ikon tek sinyal degil) */}
+          <div className="flex items-start justify-between gap-4 rounded-md border p-4">
+            <div className="space-y-1">
+              <Label htmlFor="ayar-personel">Personel isimleri</Label>
+              <p className="text-sm text-muted-foreground">
+                Personel isimleri public profilde görünsün mü? Kapatırsan müşteri, randevu
+                sırasında personel adını görmez. Kapasite hesabını etkilemez.
+              </p>
+              <p className="text-sm font-medium">
+                {showNames ? "İsimler gösteriliyor" : "İsimler gizli"}
+              </p>
+            </div>
+            <Switch
+              aria-label="Personel isimlerini public profilde göster"
+              checked={showNames}
+              disabled={isDisabled}
+              id="ayar-personel"
+              onCheckedChange={(checked) =>
+                patch({ staffDisplayPolicy: checked ? "ShowNames" : "HideNames" })
+              }
+            />
+          </div>
+
+          <CountedTextarea
             disabled={isDisabled}
-            maxLength={600}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                description: event.target.value
-              }))
-            }
+            hint="Salonu tanıtan kısa metin."
+            id="ayar-aciklama"
+            label="Public açıklama"
+            max={DESCRIPTION_MAX}
+            onChange={(value) => patch({ description: value })}
+            rows={4}
             value={draft.description}
           />
-        </FormField>
 
-        <FormField
-          hint="Randevu öncesi müşteri beklentisini netleştiren kısa kurallar."
-          label="Public kurallar"
-        >
-          <textarea
-            className={textAreaClassName}
+          <CountedTextarea
             disabled={isDisabled}
-            maxLength={1000}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                publicRules: event.target.value
-              }))
-            }
+            hint="Randevu öncesi müşteri beklentisini netleştiren kısa kurallar."
+            id="ayar-kurallar"
+            label="Public kurallar"
+            max={RULES_MAX}
+            onChange={(value) => patch({ publicRules: value })}
+            rows={4}
             value={draft.publicRules}
           />
-        </FormField>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <FormField hint="En fazla 120 karakter." label="SEO başlık">
-            <TextInput
+          {/* IPTAL POLITIKASI (Serit B) -- nullable ama degeri elimizde, hep gonderiyoruz */}
+          <div className="space-y-2">
+            <Label htmlFor="ayar-iptal">İptal süresi (saat)</Label>
+            <Input
+              className="min-h-11 sm:max-w-40"
               disabled={isDisabled}
-              maxLength={120}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  seoTitle: event.target.value
-                }))
-              }
+              id="ayar-iptal"
+              inputMode="numeric"
+              max={CANCELLATION_MAX}
+              min={CANCELLATION_MIN}
+              onChange={(event) => patch({ cancellationCutoffHours: event.target.value })}
+              type="number"
+              value={draft.cancellationCutoffHours}
+            />
+            <p
+              className={cn(
+                "text-sm",
+                cutoffInvalid ? "text-destructive" : "text-muted-foreground"
+              )}
+            >
+              {cutoffInvalid
+                ? `0 ile ${CANCELLATION_MAX} saat (7 gün) arasında bir tam sayı gir.`
+                : "Randevu saatine kaç saat kala müşteri iptal edebilir. 0 = her zaman iptal edebilir."}
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <CountedInput
+              disabled={isDisabled}
+              hint="Arama sonuçlarında görünen başlık."
+              id="ayar-seo-baslik"
+              label="SEO başlık"
+              max={SEO_TITLE_MAX}
+              onChange={(value) => patch({ seoTitle: value })}
               value={draft.seoTitle}
             />
-          </FormField>
-
-          <FormField hint="En fazla 180 karakter." label="SEO açıklama">
-            <TextInput
+            <CountedInput
               disabled={isDisabled}
-              maxLength={180}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  seoDescription: event.target.value
-                }))
-              }
+              hint="Arama sonuçlarında görünen kısa açıklama."
+              id="ayar-seo-aciklama"
+              label="SEO açıklama"
+              max={SEO_DESCRIPTION_MAX}
+              onChange={(value) => patch({ seoDescription: value })}
               value={draft.seoDescription}
             />
-          </FormField>
-        </div>
+          </div>
 
-        {error ? (
-          <p className="rounded-2xl border border-[rgb(175_63_63_/_0.22)] bg-[var(--rs-danger-soft)] p-4 text-sm text-[var(--rs-danger)]">
-            {error}
-          </p>
-        ) : null}
-
-        {success ? (
-          <p className="rounded-2xl border border-[rgb(47_122_78_/_0.22)] bg-[var(--rs-success-soft)] p-4 text-sm text-[var(--rs-success)]">
-            {success}
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs leading-5 text-[var(--rs-muted)]">
-            Kayıt auditlenir; response veya log içinde raw secret/PII
-            taşınmamalıdır.
-          </p>
-          <Button disabled={isDisabled} type="submit">
-            {isSubmitting ? "Kaydediliyor..." : "Profili kaydet"}
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end">
+            <Button className="min-h-11" disabled={isDisabled} type="submit">
+              {isSubmitting ? "Kaydediliyor…" : "Ayarları kaydet"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
     </Card>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   KARAKTER SAYACLI ALANLAR -- sayac GORUNUR etikette
+   --------------------------------------------------------------------------- */
+
+function CountedTextarea({
+  disabled,
+  hint,
+  id,
+  label,
+  max,
+  onChange,
+  rows,
+  value
+}: {
+  disabled: boolean;
+  hint: string;
+  id: string;
+  label: string;
+  max: number;
+  onChange: (value: string) => void;
+  rows: number;
+  value: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id}>{label}</Label>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {value.length} / {max}
+        </span>
+      </div>
+      <Textarea
+        disabled={disabled}
+        id={id}
+        maxLength={max}
+        onChange={(event) => onChange(event.target.value)}
+        rows={rows}
+        value={value}
+      />
+      <p className="text-sm text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+function CountedInput({
+  disabled,
+  hint,
+  id,
+  label,
+  max,
+  onChange,
+  value
+}: {
+  disabled: boolean;
+  hint: string;
+  id: string;
+  label: string;
+  max: number;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id}>{label}</Label>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {value.length} / {max}
+        </span>
+      </div>
+      <Input
+        className="min-h-11"
+        disabled={disabled}
+        id={id}
+        maxLength={max}
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      />
+      <p className="text-sm text-muted-foreground">{hint}</p>
+    </div>
   );
 }
 
 function getSettingsErrorCopy(status: number) {
   if (status === 400) {
-    return "Alan formatı geçerli değil. Uzunlukları ve personel politikasını kontrol et.";
+    return "Alan formatı geçerli değil. Uzunlukları ve iptal süresini kontrol et.";
   }
-
   if (status === 403) {
-    return "Bu ayar için BusinessOwner yetkisi gerekiyor.";
+    return "Bu ayar için işletme sahibi yetkisi gerekiyor.";
   }
-
   if (status === 404) {
     return "Aktif işletme profili bulunamadı.";
   }
-
   if (status === 409) {
-    return "Bu tenant için birden fazla aktif business var; MVP ayar ekranı tek business destekler.";
+    return "Bu tenant için birden fazla aktif işletme var; ayar ekranı tek işletme destekler.";
   }
-
   if (status === 429) {
     return "Çok sık ayar kaydı denendi. Kısa süre sonra tekrar dene.";
   }
-
   return "Ayarlar kaydedilemedi. Lütfen tekrar dene.";
 }

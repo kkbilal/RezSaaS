@@ -256,6 +256,75 @@ export function getAppointmentStatus(appointment: BusinessAppointment) {
   return appointment.status ?? "Unknown";
 }
 
+/** Bir randevu icin gosterilecek TEK operasyon listesi (etiket + kullanilabilirlik). */
+export type AppointmentActionDescriptor = {
+  kind: AppointmentOperationKind;
+  label: string;
+  disabled: boolean;
+  destructive: boolean;
+};
+
+/**
+ * Randevunun statusune gore hangi operasyonlarin acilacagini TEK yerde tanimlar.
+ *
+ * Liste (dropdown menu) ve takvim (detay diyalogu) ekranlari ayni etiketleri ve ayni
+ * "ne zaman acilir" kurallarini gostermeli. Kapali aksiyon SILINMEZ; disabled birakilir
+ * ve nedeni ETIKETE yazilir (dokunmatik cihazda tooltip yoktur). Ekranlar bu betimlemeyi
+ * kendi primitive'lerine (DropdownMenuItem / Button) haritalar.
+ */
+export function describeAppointmentActions(
+  appointment: BusinessAppointment,
+  isSubmitting: boolean
+): AppointmentActionDescriptor[] {
+  const descriptors: AppointmentActionDescriptor[] = [];
+
+  if (getAppointmentStatus(appointment) === "Confirmed") {
+    const completeIsOpen = canCompleteAppointment(appointment);
+    descriptors.push({
+      kind: "complete",
+      label: completeIsOpen
+        ? "Tamamla"
+        : "Tamamla — bitiş saatinden sonra açılır",
+      disabled: isSubmitting || !completeIsOpen,
+      destructive: false
+    });
+
+    const noShowIsOpen = canMarkAppointmentNoShow(appointment);
+    descriptors.push({
+      kind: "no-show",
+      label: noShowIsOpen
+        ? "Gelmedi olarak işaretle"
+        : "Gelmedi — başlangıç saatinden sonra açılır",
+      disabled: isSubmitting || !noShowIsOpen,
+      destructive: false
+    });
+
+    descriptors.push({
+      kind: "rebook",
+      label: "Yeniden planla",
+      disabled: isSubmitting,
+      destructive: false
+    });
+
+    descriptors.push({
+      kind: "cancel",
+      label: "İptal et",
+      disabled: isSubmitting,
+      destructive: true
+    });
+  }
+
+  // Not, kapanmis randevularda da yazilabilir (operasyon gecmisi).
+  descriptors.push({
+    kind: "note",
+    label: appointment.businessNote ? "Notu düzenle" : "Not ekle",
+    disabled: isSubmitting,
+    destructive: false
+  });
+
+  return descriptors;
+}
+
 export function getOperationDetails(kind: AppointmentOperationKind) {
   if (kind === "cancel") {
     return {

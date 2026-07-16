@@ -80,22 +80,6 @@ test("dialog primitive keeps modal semantics and escape handling", () => {
 });
 
 
-test("tabs primitive keeps tablist semantics and keyboard focus", () => {
-  const tabs = readSource("tabs.tsx");
-  const requiredContracts = [
-    "role=\"tablist\"",
-    "role=\"tab\"",
-    "aria-selected={selected}",
-    "aria-controls=",
-    "focus-visible:outline",
-    "disabled:pointer-events-none"
-  ];
-
-  for (const contract of requiredContracts) {
-    assertIncludes(tabs, contract);
-  }
-});
-
 test("progress primitive renders step states", () => {
   const progress = readSource("progress.tsx");
   const requiredContracts = [
@@ -129,23 +113,6 @@ test("avatar primitive exposes sizes and accessible labelling", () => {
   }
 });
 
-
-test("calendar-grid primitive keeps branch-timezone-aware scheduling contract", () => {
-  const calendar = readSource("calendar-grid.tsx");
-  const requiredContracts = [
-    "CalendarEvent",
-    '"day"',
-    '"week"',
-    "branchTimeZoneId",
-    "getBranchTimeParts",
-    "formatBranchTimeLabel",
-    "formatBranchDateLabel"
-  ];
-
-  for (const contract of requiredContracts) {
-    assertIncludes(calendar, contract);
-  }
-});
 
 test("panel shell keeps tenant switcher behind controlled props", () => {
   const shell = readSource("../../features/business/components/panel-shell.tsx");

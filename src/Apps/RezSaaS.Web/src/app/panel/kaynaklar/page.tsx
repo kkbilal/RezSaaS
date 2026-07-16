@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { getBusinessBranchesServer } from "@/features/business/api/get-business-branches-server";
+import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { BusinessResourcesPage } from "@/features/business/components/business-resources-page";
+import { PanelShell } from "@/features/business/components/panel-shell";
 import {
   firstSearchParam,
   selectBusinessTenant
 } from "@/features/business/lib/business-tenant-selection";
-import { getBusinessContext } from "@/features/business/api/get-business-context";
+import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { EmptyState } from "@/shared/ui/empty-state";
-import { PanelShell } from "@/features/business/components/panel-shell";
-import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   robots: { index: false },
-  title: "Kaynak Yönetimi — İşletme Paneli"
+  title: "Koltuklar ve Ekipman — İşletme Paneli"
 };
 
 type Props = {
@@ -73,38 +73,33 @@ export default async function BusinessResourcesRoute({ searchParams }: Props) {
     );
   }
 
+  // Kaynaklar SUBE ALTINDA NESTED: listeyi cizmeden once subeler lazim (Tuzak 1).
+  const branchesState = await getBusinessBranchesServer(tenant);
   const sessionEmail = sessionState.session.account?.email ?? "Oturum";
-    return (
+  const tenantId = tenant.tenantId;
+
+  return (
     <PanelShell
       capabilities={tenant.capabilities ?? []}
-      currentTenantId={tenant.tenantId}
+      currentTenantId={tenantId}
       sessionEmail={sessionEmail}
       tenants={buildPanelTenants(context.tenants)}
     >
-      <div className="space-y-6">
-        <section>
-          <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[var(--rs-accent-strong)]">
-            Kaynak yönetimi
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-5xl">
-            Kaynaklar
-          </h1>
-        </section>
-        <Card className="p-6 sm:p-8">
-          <CardHeader>
-            <CardTitle>Hazırlık durumu</CardTitle>
-            <CardDescription>
-              Kaynak (koltuk, oda, istasyon vb.) CRUD ve out-of-service akışları
-              Phase 5a backend endpoint&apos;leriyle birlikte açılır. Kaynak ataması
-              müşteriye gösterilmez (AGENTS.md §5.4).
-            </CardDescription>
-          </CardHeader>
-          <EmptyState
-            description="Kaynak oluşturma, güncelleme ve blokaj akışları Phase 5a kapsamında yayınlanacak."
-            title="Kaynak yönetimi yakında"
-          />
-        </Card>
-      </div>
+      {branchesState.kind === "unavailable" || !tenantId ? (
+        <PrivateRouteState
+          actionHref={routes.business.panel}
+          actionLabel="Panele dön"
+          description={`${
+            branchesState.kind === "unavailable"
+              ? branchesState.reason
+              : "İşletme bilgisi doğrulanamadı."
+          } Kaynaklar render edilmedi.`}
+          eyebrow="İşletme paneli"
+          title="Şubeler alınamadı"
+        />
+      ) : (
+        <BusinessResourcesPage branches={branchesState.branches} tenantId={tenantId} />
+      )}
     </PanelShell>
   );
 }

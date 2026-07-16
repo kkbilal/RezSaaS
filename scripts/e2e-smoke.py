@@ -75,7 +75,7 @@ RATE_LIMIT_WINDOW_SECONDS = 62
 # Cikti yardimcilari
 # --------------------------------------------------------------------------------------
 
-TOTAL_STEPS = 53
+TOTAL_STEPS = 60
 
 # Kosum sirasinda ortaya cikan URUN BULGULARI. FAIL olmayan (INFO) bulgular da buraya
 # girer: testi dusurmeyen ama urun kararini etkileyen gercekler kaybolmasin.
@@ -2097,6 +2097,444 @@ def run(
             return False
         else:
             REPORT.ok("arsivden ONCE public'te vardi, SONRA yok -- dogru gizlendi")
+
+    # ==================================================================================
+    # KURULUM YUZEYI REGRESYONLARI (adim 54-60)
+    #
+    # Buraya kadar cekirdek dongu (randevu) + katalog + personel dogrulandi. Bu blok,
+    # salon KURULUM yuzeyinin dort kritik davranisini CANLI API'ye karsi sinar:
+    #   - Sube TimeZoneId dogrulama + Windows->IANA normalizasyonu (fix 62c8088)
+    #   - Isletme profil ayarlari round-trip + cancellationCutoffHours nullable korumasi
+    #   - Calisma saati (gun KAPALI) -> public slot bloklama
+    #   - slotIntervalMinutes ayari -> slot sikligi
+    #   - Kaynak out-of-service -> slot dususu
+    #
+    # NEDEN SONA EKLENDI ve NEDEN AYRI 'SLOT LAB' SUBESI: onceki 53 adimin durumunu
+    # (ozellikle ana subenin fixture'larini ve adim 52-53'te ARSIVLENEN ana personeli)
+    # bozmamak icin B/C/E slot testleri KENDI subesini+kaynagini+personelini kurar; ana
+    # subeye ve ana personele DOKUNMAZ. Business seviyesindeki variant/skill/resource-type
+    # yeniden kullanilir (bunlar sube-bagimsizdir).
+    # ==================================================================================
+
+    # Bu blok owner uzerinde YOGUN business cagrisi yapar. TUM /api/business/* uclari
+    # BookingRateLimitPolicyNames.BusinessDecisions limitini paylasir: DAKIKADA 60 istek
+    # (BookingSecurityOptions.BusinessDecisionPermitLimit=60, Window=1dk). Onceki 53 adim bu
+    # tavanin ALTINDA kaliyordu; bu blok +~30 owner cagrisi ekledigi icin 1 dakikalik pencere
+    # dolabiliyor. 429 URUN HATASI DEGIL -- kasitli koruma. Bu yuzden bu bloktaki owner (ve
+    # public slot arayan customer) cagrilarini, pencere dolarsa bekleyip yeniden denenecek
+    # sekilde sararak varsayilan olarak retry_on_rate_limit ekliyoruz. (Kimlik cagrilarindaki
+    # ayni yaklasimin business/public limitlere uygulanmasidir; bkz. Session.request.)
+    def _wrap_with_retry(session: Session, retries: int = 3) -> None:
+        original = session.request
+
+        def retrying(method: str, path: str, **kwargs):
+            kwargs.setdefault("retry_on_rate_limit", retries)
+            return original(method, path, **kwargs)
+
+        session.request = retrying  # type: ignore[assignment]
+
+    _wrap_with_retry(owner)
+    _wrap_with_retry(customer)
+
+    # -- 54 ------------------ (TZ1) [LANSMAN BLOKAJI] gecersiz TimeZoneId reddediliyor mu
+    # 62c8088: sube olustururken TimeZoneId artik DOGRULANIYOR. Gecersiz ("Istanbul")
+    # -> 400 BRANCH_INVALID_TIMEZONE olmali. 201 donerse fix GERI GITMIS demektir.
+    REPORT.start("[TZ] Gecersiz TimeZoneId ('Istanbul') sube olusturmada reddediliyor mu (400)")
+    status, body = owner.post(
+        "/api/business/branches",
+        {
+            "slug": f"tz-bad-{unique}",
+            "displayName": "TZ Gecersiz",
+            "timeZoneId": "Istanbul",  # IANA DEGIL -> reddedilmeli
+            "city": "Istanbul",
+            "district": "Kadikoy",
+            "addressLine": "TZ Testi 1",
+        },
+        expect=(201, 400, 409, 422),
+    )
+    tz_err = body.get("errorCode") if isinstance(body, dict) else None
+    if status == 201:
+        REPORT.fail(
+            "REGRESYON (62c8088 geri geldi): timeZoneId='Istanbul' KABUL EDILDI (HTTP 201). "
+            "IANA olmayan gecersiz zaman dilimi 400 BRANCH_INVALID_TIMEZONE ile reddedilmeliydi. "
+            "Sonuc: randevu saatleri yanlis zaman diliminde hesaplanabilir. Govde: " + str(body)
+        )
+        finding(
+            "Sube TimeZoneId dogrulamasi yok: gecersiz 'Istanbul' kabul ediliyor (62c8088 regresyonu)."
+        )
+        return False
+    if status != 400 or tz_err != "BRANCH_INVALID_TIMEZONE":
+        REPORT.fail(
+            f"HTTP {status} (errorCode={tz_err}) -- 400 BRANCH_INVALID_TIMEZONE bekleniyordu. "
+            f"Govde: {body}"
+        )
+        return False
+    REPORT.ok("HTTP 400 BRANCH_INVALID_TIMEZONE -- gecersiz zaman dilimi reddedildi")
+
+    # -- 55 ----------------- (TZ2) Windows ID kabul + IANA'ya NORMALIZE (62c8088 canli kaniti)
+    # timeZoneId="Turkey Standard Time" (Windows) -> 201 (kabul) VE olusan subenin GET'inde
+    # timeZoneId artik "Europe/Istanbul" (IANA'ya normalize) olmali. Normalize olmuyorsa NOT dus.
+    REPORT.start("[TZ] Windows 'Turkey Standard Time' kabul + IANA'ya normalize (Europe/Istanbul)")
+    status, body = owner.post(
+        "/api/business/branches",
+        {
+            "slug": f"tz-win-{unique}",
+            "displayName": "TZ Windows",
+            "timeZoneId": "Turkey Standard Time",
+            "city": "Istanbul",
+            "district": "Kadikoy",
+            "addressLine": "TZ Testi 2",
+        },
+        expect=(201, 400, 409, 422),
+    )
+    if status != 201:
+        tz_err = body.get("errorCode") if isinstance(body, dict) else None
+        REPORT.info(
+            f"Windows ID 'Turkey Standard Time' -> HTTP {status} (errorCode={tz_err}) reddedildi. "
+            "62c8088 yalnizca IANA'yi dogruluyor; Windows ID'lerini IANA'ya normalize ETMIYOR olabilir."
+        )
+        finding(
+            "Sube olusturmada Windows zaman dilimi ID'si ('Turkey Standard Time') IANA'ya "
+            "normalize edilmiyor, reddediliyor -- 62c8088 normalizasyonu Windows ID'lerini kapsamiyor."
+        )
+    else:
+        tz_branch_id = body["id"]
+        _, detail = owner.get(f"/api/business/branches/{tz_branch_id}", expect=(200,))
+        stored_tz = detail.get("timeZoneId") if isinstance(detail, dict) else None
+        if stored_tz == "Europe/Istanbul":
+            REPORT.ok(
+                f"HTTP 201; GET timeZoneId='{stored_tz}' -- Windows ID IANA'ya NORMALIZE edildi "
+                "(62c8088 canli kaniti)"
+            )
+        else:
+            REPORT.info(
+                f"HTTP 201 ama GET timeZoneId='{stored_tz}' -- 'Europe/Istanbul' bekleniyordu; "
+                "Windows ID kabul edildi AMA IANA'ya normalize EDILMEDI."
+            )
+            finding(
+                f"Sube TimeZoneId Windows->IANA normalizasyonu eksik: 'Turkey Standard Time' "
+                f"-> '{stored_tz}' saklandi (Europe/Istanbul bekleniyordu)."
+            )
+
+    # -- 56 ------------------ (AYAR) profil round-trip + cancellationCutoffHours nullable korumasi
+    # Serit B: cancellationCutoffHours NULLABLE; gonderilmezse KORUNUR, diger alanlar ise
+    # gonderilmezse SIFIRLANIR ("PATCH ama davranisi PUT"). Iki iddiayi da sinariz:
+    #   1) TUM alanlar + cutoff=24 gonder -> GET: cutoff=24 VE displayName/seoTitle DEGISMEMIS
+    #   2) cutoff'u ATLA (digerlerini gonder) -> GET: cutoff HALA 24 (nullable korumasi)
+    REPORT.start("[AYAR] Profil round-trip + cancellationCutoffHours nullable korumasi")
+    _, before = owner.get("/api/business/settings/profile", expect=(200,))
+    if not isinstance(before, dict):
+        REPORT.fail(f"GET settings/profile beklenmeyen yanit: {before}")
+        return False
+    if "cancellationCutoffHours" not in before:
+        REPORT.fail(
+            "GET /api/business/settings/profile yanitinda cancellationCutoffHours alani YOK "
+            "-- Serit B alani GET'te DONMUYOR; UI iptal politikasini gosteremez."
+        )
+        finding("cancellationCutoffHours GET settings/profile yanitinda yer almiyor (Serit B).")
+        return False
+    marker_seo = f"E2E SEO {unique}"
+    base_name = before.get("displayName")
+    # (1) TUM alanlar; seoTitle'a benzersiz marker, cutoff=24
+    owner.patch(
+        "/api/business/settings/profile",
+        {
+            "displayName": base_name,
+            "description": before.get("description") or "",
+            "publicRules": before.get("publicRules") or "",
+            "seoTitle": marker_seo,
+            "seoDescription": before.get("seoDescription") or "",
+            "staffDisplayPolicy": before.get("staffDisplayPolicy") or "ShowNames",
+            "cancellationCutoffHours": 24,
+        },
+        expect=(200,),
+    )
+    _, mid = owner.get("/api/business/settings/profile", expect=(200,))
+    if not isinstance(mid, dict) or mid.get("cancellationCutoffHours") != 24:
+        REPORT.fail(
+            f"PATCH sonrasi GET cancellationCutoffHours="
+            f"{mid.get('cancellationCutoffHours') if isinstance(mid, dict) else mid!r} -- 24 bekleniyordu."
+        )
+        return False
+    if mid.get("seoTitle") != marker_seo or mid.get("displayName") != base_name:
+        REPORT.fail(
+            f"PATCH (cutoff=24) diger alanlari BOZDU: displayName={mid.get('displayName')!r} "
+            f"seoTitle={mid.get('seoTitle')!r} (beklenen displayName={base_name!r} seoTitle={marker_seo!r})."
+        )
+        return False
+    # (2) cancellationCutoffHours'u BILEREK ATLA -> nullable korumasi geregi 24 KALMALI
+    owner.patch(
+        "/api/business/settings/profile",
+        {
+            "displayName": base_name,
+            "description": mid.get("description") or "",
+            "publicRules": mid.get("publicRules") or "",
+            "seoTitle": marker_seo,
+            "seoDescription": mid.get("seoDescription") or "",
+            "staffDisplayPolicy": mid.get("staffDisplayPolicy") or "ShowNames",
+            # cancellationCutoffHours GONDERILMIYOR
+        },
+        expect=(200,),
+    )
+    _, after = owner.get("/api/business/settings/profile", expect=(200,))
+    if not isinstance(after, dict) or after.get("cancellationCutoffHours") != 24:
+        REPORT.fail(
+            "cancellationCutoffHours NULLABLE KORUMASI CALISMIYOR: alan gonderilmeyince deger "
+            f"{after.get('cancellationCutoffHours') if isinstance(after, dict) else after!r} oldu "
+            "(24 korunmaliydi). Serit B'deki 'gonderilmezse koru' davranisi bozulmus."
+        )
+        finding(
+            "cancellationCutoffHours gonderilmeyince korunmuyor -- Serit B nullable korumasi bozuk."
+        )
+        return False
+    if after.get("seoTitle") != marker_seo or after.get("displayName") != base_name:
+        REPORT.fail(
+            f"Ikinci PATCH digerlerini bozdu: displayName={after.get('displayName')!r} "
+            f"seoTitle={after.get('seoTitle')!r}."
+        )
+        return False
+    REPORT.ok(
+        "cutoff 24'e set edildi (displayName/seoTitle korundu); sonra ATLANINCA 24 KORUNDU "
+        "(GET'te donuyor + nullable korumasi calisiyor)"
+    )
+
+    # -- SLOT LAB kurulumu (adim 57): ana subeye/personele DOKUNMADAN slot-etkileyen
+    # davranislari sinamak icin izole bir sube + kaynak + personel. variant_id/skill_id/
+    # resource_type_id business seviyesinde oldugu icin yeniden kullanilir.
+    # -- 57 ------------------------------------------------------------------------------
+    REPORT.start("[SLOT-LAB] Izole sube+kaynak+personel kur; baz slotlar dogruluyor")
+    lab_slug = f"slotlab-{unique}"
+    _, body = owner.post(
+        "/api/business/branches",
+        {
+            "slug": lab_slug,
+            "displayName": "Slot Lab Sube",
+            "timeZoneId": "Europe/Istanbul",
+            "city": "Istanbul",
+            "district": "Kadikoy",
+            "addressLine": "Slot Lab 1",
+        },
+        expect=(201,),
+    )
+    lab_branch_id = body["id"]
+    for day in days:  # 7 gun 09:00-19:00 acik (days adim 13'te tanimli)
+        owner.put(
+            f"/api/business/branches/{lab_branch_id}/working-hours/{day}",
+            {"opensAt": "09:00", "closesAt": "19:00", "isClosed": False},
+            expect=(200,),
+        )
+    _, body = owner.post(
+        f"/api/business/branches/{lab_branch_id}/resources",
+        {"resourceTypeId": resource_type_id, "displayName": "Lab Koltuk"},
+        expect=(201,),
+    )
+    lab_resource_id = body["id"]
+    _, body = owner.post(
+        f"/api/business/branches/{lab_branch_id}/staff",
+        {"displayName": "Lab Usta", "userAccountId": None},
+        expect=(201,),
+    )
+    lab_staff_id = body["id"]
+    owner.post(
+        f"/api/business/staff/{lab_staff_id}/skills", {"skillId": skill_id}, expect=(200,)
+    )
+
+    def lab_slots(date_iso: str) -> list[dict]:
+        _, b = customer.get(
+            f"/api/public/businesses/{business_slug}/slots",
+            query={"branchSlug": lab_slug, "date": date_iso, "serviceVariantIds": variant_id},
+            expect=(200,),
+        )
+        return list(b.get("slots") or []) if isinstance(b, dict) else []
+
+    lab_date = (datetime.now(timezone.utc) + timedelta(days=2)).date()
+    lab_date_iso = lab_date.isoformat()
+    base_slots = lab_slots(lab_date_iso)
+    base_count = len(base_slots)
+    if base_count == 0:
+        REPORT.fail(
+            f"Slot lab BAZ slot uretmedi (tarih={lab_date_iso}) -- fixture kurulumu eksik "
+            "(calisma saati / kaynak / personel yetkinligi); sonraki slot testleri anlamsiz olur."
+        )
+        return False
+    REPORT.ok(f"lab subesi hazir; {base_count} baz slot (tarih={lab_date_iso})")
+
+    # -- 58 --------- (CALISMA-SAATI) hedef gun KAPALI -> o gun slot DONMEZ; ACINCA geri gelir
+    REPORT.start("[CALISMA-SAATI] Lab subesi hedef gun KAPALI -> slot bloklaniyor, ACINCA geri geliyor")
+    target_day_name = lab_date.strftime("%A")  # or. 'Saturday' -- PUT gun ADI bekliyor (adim 13)
+    owner.put(
+        f"/api/business/branches/{lab_branch_id}/working-hours/{target_day_name}",
+        {"opensAt": "09:00", "closesAt": "19:00", "isClosed": True},
+        expect=(200,),
+    )
+    closed_slots = lab_slots(lab_date_iso)
+    if closed_slots:
+        # State'i temiz birak (yeniden ac) sonra dus.
+        owner.put(
+            f"/api/business/branches/{lab_branch_id}/working-hours/{target_day_name}",
+            {"opensAt": "09:00", "closesAt": "19:00", "isClosed": False},
+            expect=(200,),
+        )
+        REPORT.fail(
+            f"URUN HATASI: {target_day_name} isClosed=true yapildi ama slot aramada "
+            f"{lab_date_iso} icin HALA {len(closed_slots)} slot donuyor. Calisma saati (kapali gun) "
+            "public slot motoruna yansimiyor -- musteri kapali gune randevu talep edebilir."
+        )
+        finding(
+            f"Kapali gun (working-hours {target_day_name} isClosed=true) public slot aramasini bloklamiyor."
+        )
+        return False
+    owner.put(
+        f"/api/business/branches/{lab_branch_id}/working-hours/{target_day_name}",
+        {"opensAt": "09:00", "closesAt": "19:00", "isClosed": False},
+        expect=(200,),
+    )
+    reopened = lab_slots(lab_date_iso)
+    if not reopened:
+        REPORT.fail(
+            f"Gun ({target_day_name}) tekrar ACILDI ama slot GERI GELMEDI "
+            f"(tarih={lab_date_iso}, 0 slot) -- calisma saati acma islemi slotlara yansimiyor."
+        )
+        return False
+    REPORT.ok(f"{target_day_name} KAPALI iken 0 slot; ACILINCA {len(reopened)} slot geri geldi")
+
+    # -- 59 -------------- (SLOT-AYARI) slotIntervalMinutes slot sikligini etkiliyor mu +
+    #                       null maxPublicSlots audit REGRESYONU
+    # PATCH .../slot-settings ile araligi buyut (60). Slot ARDISIK ARALIGI 60 dk olmali VE
+    # toplam slot sayisi AZALMALI. AMA once bir SOZLESME-GECERLI cagriyi test ediyoruz:
+    # maxPublicSlots contract'ta NULLABLE ve GET null donduruyor; dogal/savunmaci istemci
+    # (oku-hepsini-geri-gonder) onu null gonderir. Bu 500 verirse GERCEK URUN HATASIDIR.
+    def min_gap_minutes(slots: list[dict]) -> float | None:
+        starts = sorted(
+            datetime.fromisoformat(s["startUtc"].replace("Z", "+00:00")) for s in slots
+        )
+        gaps = [(b - a).total_seconds() / 60 for a, b in zip(starts, starts[1:])]
+        return min(gaps) if gaps else None
+
+    REPORT.start("[SLOT-AYARI] slotIntervalMinutes slot sikligini etkiliyor + null maxPublicSlots audit")
+    _, lab_branch = owner.get(f"/api/business/branches/{lab_branch_id}", expect=(200,))
+    orig_interval = lab_branch.get("slotIntervalMinutes") if isinstance(lab_branch, dict) else None
+    orig_maxslots = lab_branch.get("maxPublicSlots") if isinstance(lab_branch, dict) else None
+    before_iv = lab_slots(lab_date_iso)
+
+    # (1) SOZLESME-GECERLI round-trip: GET'ten okunan maxPublicSlots'u (null) geri gonder.
+    status, body = owner.patch(
+        f"/api/business/branches/{lab_branch_id}/slot-settings",
+        {"slotIntervalMinutes": 60, "maxPublicSlots": orig_maxslots},
+        expect=(200, 400, 500),
+    )
+    null_max_bug = status == 500 and orig_maxslots is None
+
+    # (2) DAVRANISSAL dogrulama: ozelligin KENDISI calisiyor mu? null bug'i olsa bile somut
+    #     maxPublicSlots ile PATCH'i dene (bug yoksa bu, 1. cagriyla ayni etkiyi verir).
+    if status != 200:
+        status, body = owner.patch(
+            f"/api/business/branches/{lab_branch_id}/slot-settings",
+            {"slotIntervalMinutes": 60, "maxPublicSlots": 200},
+            expect=(200, 400, 500),
+        )
+    after_iv = lab_slots(lab_date_iso) if status == 200 else []
+    _, lab_after = owner.get(f"/api/business/branches/{lab_branch_id}", expect=(200,))
+    stored_interval = lab_after.get("slotIntervalMinutes") if isinstance(lab_after, dict) else None
+    gap = min_gap_minutes(after_iv)
+    interval_works = (
+        status == 200
+        and stored_interval == 60
+        and len(after_iv) < len(before_iv)
+        and gap is not None
+        and gap >= 59.9
+    )
+
+    if null_max_bug:
+        REPORT.fail(
+            "URUN HATASI -- PATCH /api/business/branches/{id}/slot-settings null maxPublicSlots ile "
+            "HTTP 500: BranchManagementService.cs:229 audit payload'ini ELLE string-interpolate "
+            "ediyor; command.MaxPublicSlots null oldugunda '\"maxPublicSlots\":}' seklinde GECERSIZ "
+            "JSON uretiyor, Postgres reddediyor, audit SaveChangesAsync patliyor ve TUM PATCH "
+            "rollback oluyor (slot ayari HIC kaydedilmiyor). maxPublicSlots sozlesmede NULLABLE ve "
+            "GET null donduruyor: subeyi round-trip'leyen (oku-hepsini-geri-gonder) HER istemci bu "
+            "500'u alir; slotIntervalMinutes null olsaydi ayni satir onu da bozardi. Duzeltme: audit "
+            "payload'ini elle degil JSON serializer ile uret (null -> 'null'). "
+            + (
+                f"NOT: somut maxPublicSlots=200 ile ozellik CALISIYOR "
+                f"(slot {len(before_iv)}->{len(after_iv)}, en kucuk aralik={gap:.0f}dk); "
+                "hata YALNIZCA null maxPublicSlots audit'inde."
+                if interval_works
+                else "Somut maxPublicSlots=200 ile de dogrulanamadi (ayrica slot etkisi olculemedi)."
+            )
+        )
+        finding(
+            "PATCH slot-settings null maxPublicSlots ile HTTP 500 (sozlesme NULLABLE, GET null "
+            "donduruyor): BranchManagementService.cs:229 audit JSON'unu elle string-interpolate "
+            "ediyor, null -> gecersiz JSON -> audit SaveChanges patliyor -> tum PATCH rollback. "
+            "JSON serializer kullanilmali."
+        )
+    elif interval_works:
+        REPORT.ok(
+            f"slotIntervalMinutes ->60; slot sayisi {len(before_iv)}->{len(after_iv)}, en kucuk "
+            f"ardisik aralik={gap:.0f}dk (araligi seyreltti). null maxPublicSlots 500'u bu kosumda YOK."
+        )
+    else:
+        REPORT.fail(
+            f"URUN HATASI: slotIntervalMinutes=60 uygulanamadi/etkilemedi "
+            f"(HTTP {status}, GET slotIntervalMinutes={stored_interval!r}, "
+            f"slot {len(before_iv)}->{len(after_iv)}, en kucuk aralik={gap}). "
+            f"Yanit: {body}"
+        )
+        finding("slotIntervalMinutes degisimi public slot araligini/sayisini degistirmiyor.")
+
+    # E adimi icin lab subesinde slot BIRAK (somut maxPublicSlots ile -- null bug'ina takilmadan).
+    safe_interval = orig_interval if isinstance(orig_interval, int) and orig_interval > 0 else 15
+    owner.patch(
+        f"/api/business/branches/{lab_branch_id}/slot-settings",
+        {"slotIntervalMinutes": safe_interval, "maxPublicSlots": 200},
+        expect=(200, 400, 500),
+    )
+
+    # -- 60 ---------------- (KAYNAK) kaynak out-of-service -> slotlar azalir; restore -> geri gelir
+    # variant_id gerekli kaynak tipi (resource_type_id) tasiyor ve lab subesinde TEK kaynak var;
+    # o kaynak out-of-service olunca slot motoru kaynak adayi bulamamali -> 0 slot. Degismezse NOT dus.
+    REPORT.start("[KAYNAK] Kaynak out-of-service -> slotlar azalir/sifirlanir; restore -> geri gelir")
+    before_oos = lab_slots(lab_date_iso)
+    owner.post(
+        f"/api/business/branches/{lab_branch_id}/resources/{lab_resource_id}/out-of-service",
+        expect=(200, 204),
+    )
+    after_oos = lab_slots(lab_date_iso)
+    oos_blocked = len(after_oos) < len(before_oos)
+    if not oos_blocked:
+        REPORT.info(
+            f"Kaynak out-of-service edildi ama slot sayisi DEGISMEDI (once={len(before_oos)} "
+            f"sonra={len(after_oos)}). variant_id gerekli kaynak tipi ({resource_type_id}) tasiyor "
+            "ve subede TEK kaynak vardi; o devre disi kalinca slotlar dusmeliydi. Slot motoru kaynak "
+            "musaitligini (out-of-service) dikkate almiyor olabilir."
+        )
+        finding(
+            "Kaynak out-of-service public slot aramasini degistirmiyor -- slot motoru kaynak "
+            "musaitligini dikkate almiyor olabilir (urun riski; dogrulanmali)."
+        )
+    # restore
+    owner.post(
+        f"/api/business/branches/{lab_branch_id}/resources/{lab_resource_id}/restore",
+        expect=(200, 204),
+    )
+    restored_oos = lab_slots(lab_date_iso)
+    if oos_blocked:
+        if len(restored_oos) <= len(after_oos):
+            REPORT.fail(
+                f"Kaynak RESTORE edildi ama slotlar geri gelmedi (out-of-service={len(after_oos)} "
+                f"slot, restore={len(restored_oos)} slot). Restore islemi slotlara yansimiyor."
+            )
+            finding("Kaynak restore public slot aramasina yansimiyor (out-of-service geri alinamiyor).")
+            return False
+        REPORT.ok(
+            f"out-of-service: {len(before_oos)}->{len(after_oos)} slot (kaynak adayi kalmadi); "
+            f"restore: ->{len(restored_oos)} slot (geri geldi)"
+        )
+    else:
+        REPORT.info(
+            f"restore sonrasi slot sayisi={len(restored_oos)} (out-of-service etkisi olculemedi)."
+        )
 
     return True
 

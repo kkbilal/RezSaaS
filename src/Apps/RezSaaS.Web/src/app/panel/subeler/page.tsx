@@ -12,7 +12,6 @@ import { buildPanelTenants } from "@/features/business/lib/panel-tenants";
 import { PrivateRouteState } from "@/features/session/components/private-route-state";
 import { requireSession } from "@/features/session/lib/guards";
 import { routes, withReturnTo } from "@/shared/config/routes";
-import { EmptyState } from "@/shared/ui/empty-state";
 
 export const dynamic = "force-dynamic";
 
@@ -88,22 +87,7 @@ export default async function BusinessBranchesRoute({ searchParams }: Props) {
     );
   }
 
-  if (branchesState.branches.length === 0) {
-    return (
-      <PanelShell
-        capabilities={tenant.capabilities ?? []}
-        currentTenantId={tenant.tenantId}
-        sessionEmail={sessionState.session.account?.email ?? "Oturum"}
-        tenants={buildPanelTenants(context.tenants)}
-      >
-        <EmptyState
-          description="Bu işletme için kayıtlı şube henüz yok. Şube yönetimi Phase 5a backend'i tamamlandığında bu ekrandan açılır."
-          title="Şube yok"
-        />
-      </PanelShell>
-    );
-  }
-
+  // Bos liste durumu artik component icinde ele aliniyor (shadcn empty-state + "Şube ekle" CTA).
   return (
     <PanelShell
       capabilities={tenant.capabilities ?? []}

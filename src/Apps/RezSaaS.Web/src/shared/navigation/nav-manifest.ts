@@ -134,18 +134,13 @@ export const PANEL_NAV: readonly NavGroup[] = [
       },
       {
         // Kullanicinin dili: salon sahibi "kaynak" degil KOLTUK dusunur.
-        // Adim 6'da /panel/kaynak-turleri ile TEK sayfaya (iki sekme) birlesecek.
+        // Kaynaklar VE ekipman turleri TEK sayfada iki sekme (docs/29). Eski
+        // /panel/kaynak-turleri ogesi KALDIRILDI; o rota artik buraya redirect eder
+        // (nav-manifest'te HIDDEN_ROUTES icinde gizli kayitli).
         icon: Sofa,
         id: "panel-koltuklar",
         label: "Koltuklar ve ekipman",
         path: routes.business.resources,
-        permission: BUSINESS_CAPABILITIES.manageSettings
-      },
-      {
-        icon: Tags,
-        id: "panel-kaynak-turleri",
-        label: "Ekipman türleri",
-        path: routes.business.resourceTypes,
         permission: BUSINESS_CAPABILITIES.manageSettings
       },
       {
@@ -257,6 +252,11 @@ export const HIDDEN_ROUTES: readonly NavNode[] = [
   { hidden: true, id: "auth-sifremi-unuttum", label: "Şifremi unuttum", path: routes.auth.forgotPassword, permission: "public" },
   { hidden: true, id: "auth-sifre-sifirla", label: "Şifre sıfırla", path: routes.auth.resetPassword, permission: "public" },
   { hidden: true, id: "auth-gelis", label: "Rol dağıtıcı", path: routes.auth.dispatch, permission: "auth" },
+
+  // Panel -- /panel/kaynak-turleri artik /panel/kaynaklar'in bir sekmesine yonlenen
+  // bir redirect. Sayfa dosyasi durdugu icin (routes.resourceTypes) izin tablosunda
+  // KAYITLI olmali; menude GORUNMEZ (koltuklar sayfasiyla birlesti).
+  { hidden: true, id: "panel-kaynak-turleri-stub", label: "Ekipman türleri", path: routes.business.resourceTypes, permission: BUSINESS_CAPABILITIES.manageSettings },
 
   // Musteri -- /hesabim randevu listesine yonlenen bir redirect.
   { hidden: true, id: "hesabim-kok", label: "Hesabım", path: routes.customer.dashboard, permission: "auth" },

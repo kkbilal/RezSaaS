@@ -88,6 +88,28 @@ public sealed class Branch
             addressLine);
     }
 
+    /// <summary>
+    /// Subenin gorunen adini degistirir.
+    /// </summary>
+    /// <remarks>
+    /// BU METOT EKSIKTI. BranchManagementService.UpdateAsync `command.DisplayName`'i
+    /// DOGRULUYOR (2-200 karakter) ve audit'e "oldDisplayName -> newDisplayName" YAZIYOR,
+    /// ama entity'ye HIC UYGULAMIYORDU (yalnizca SetLocation cagriliyordu). Istek 200 OK
+    /// donuyor, sube adi DEGISMIYORDU -- hem kullaniciya hem denetim gunlugune yalan.
+    ///
+    /// Bu, kod tabanindaki BESINCI ayni tur SESSIZ NO-OP idi:
+    ///   1) StaffMember: Rename metodu YOKTU -> personel adi degismiyordu
+    ///   2) Service: Archive() vardi ama cagrilmiyordu -> KALICI SILINIYORDU
+    ///   3) ServiceVariant: para birimi dogrulaniyor ama uygulanmiyordu
+    ///   4) StaffManagementService.ArchiveAsync: aktif randevu kontrolu yoktu
+    ///   5) Branch: DisplayName dogrulaniyor/audit'leniyor ama uygulanmiyordu  <-- bu
+    /// Kalip: servis bir alani dogruluyor ama domain'de o alani yazacak metot yok.
+    /// </remarks>
+    public void Rename(string displayName)
+    {
+        DisplayName = NormalizeRequiredText(displayName, nameof(displayName));
+    }
+
     public void SetLocation(
         string city,
         string district,

@@ -2855,6 +2855,155 @@ public sealed class Phase1CorePersistenceTests : IAsyncLifetime
         Assert.Equal(1, count);
     }
 
+    private async Task<(Guid tenantId, Guid branchId, BranchManagementService service)> SeedBranchAsync()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+
+        OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>(), accessor);
+
+        Business business = Business.Create(tenantId, "atlas-hair", "Atlas Hair", "hair", testTime);
+        dbContext.Businesses.Add(business);
+        await dbContext.SaveChangesAsync();
+
+        BranchManagementService service = new(
+            dbContext,
+            accessor,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new FixedTimeProvider(testTime));
+
+        BranchManagementResult created = await service.CreateAsync(
+            new CreateBranchCommand(
+                Guid.CreateVersion7(), "kadikoy", "Kadıköy", "Europe/Istanbul",
+                "İstanbul", "Kadıköy", "Caferağa Mahallesi"));
+
+        return (tenantId, created.Branch!.Id, service);
+    }
+
+    /// <summary>
+    /// REGRESYON: sube adi guncelleme GERCEKTEN uygulanir (5. sessiz no-op).
+    /// </summary>
+    /// <remarks>
+    /// BranchManagementService.UpdateAsync `command.DisplayName`'i DOGRULUYOR (2-200) ve
+    /// audit'e "oldDisplayName -> newDisplayName" YAZIYORDU, ama entity'ye HIC UYGULAMIYORDU
+    /// (yalnizca SetLocation cagriliyordu). Branch domain'inde Rename metodu YOKTU.
+    /// Istek 200 OK doner, sube adi DEGISMEZDI -- StaffMember.Rename bug'inin birebir aynisi.
+    /// </remarks>
+    [Fact]
+    public async Task BranchUpdatePersistsTheNewDisplayName()
+    {
+        (Guid tenantId, Guid branchId, BranchManagementService service) = await SeedBranchAsync();
+
+        BranchManagementResult updated = await service.UpdateAsync(
+            new UpdateBranchCommand(
+                Guid.CreateVersion7(), branchId, "Kadıköy Merkez",
+                "İstanbul", "Kadıköy", "Moda Caddesi 12"));
+
+        Assert.True(updated.Succeeded);
+
+        // Servisin donus degerine GUVENME -- DB'den yeniden oku.
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+        await using OrganizationDbContext verify =
+            new(CreateOptions<OrganizationDbContext>(), accessor);
+
+        Branch persisted = await verify.Branches
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == branchId);
+
+        Assert.Equal("Kadıköy Merkez", persisted.DisplayName);
+        // Konum da guncellenmis olmali (mevcut davranis bozulmadi).
+        Assert.Equal("Moda Caddesi 12", persisted.AddressLine);
+    }
+
+    /// <summary>
+    /// REGRESYON: slot ayarlari NULL maxPublicSlots ile de kaydedilir (audit JSON'u patlamaz).
+    /// </summary>
+    /// <remarks>
+    /// BULUNAN BUG (uctan uca duman testi ortaya cikardi):
+    /// Audit payload'i ELLE string-interpolate ediliyordu:
+    ///     ..."maxPublicSlots":{{command.MaxPublicSlots}}}
+    /// MaxPublicSlots NULL oldugunda bu `"maxPublicSlots":}` uretiyordu -- GECERSIZ JSON.
+    /// Postgres jsonb reddediyor, audit SaveChangesAsync PATLIYOR, TUM PATCH ROLLBACK oluyordu:
+    /// slot ayari HIC kaydedilmiyordu (HTTP 500).
+    ///
+    /// maxPublicSlots sozlesmede NULLABLE ve GET onu null donduruyor -> subeyi round-trip'leyen
+    /// (oku, hepsini geri gonder) HER istemci bu 500'u aliyordu.
+    /// </remarks>
+    [Fact]
+    public async Task BranchSlotSettingsAcceptsNullMaxPublicSlots()
+    {
+        (Guid tenantId, Guid branchId, BranchManagementService service) = await SeedBranchAsync();
+
+        // NULL maxPublicSlots -- eskiden audit JSON'unu bozup TUM islemi rollback ediyordu.
+        BranchManagementResult result = await service.UpdateSlotSettingsAsync(
+            new UpdateBranchSlotSettingsCommand(
+                Guid.CreateVersion7(), branchId, 45, null));
+
+        Assert.True(result.Succeeded);
+
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+        await using OrganizationDbContext verify =
+            new(CreateOptions<OrganizationDbContext>(), accessor);
+
+        Branch persisted = await verify.Branches
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == branchId);
+
+        // ASIL KONTROL: ayar GERCEKTEN kaydedildi mi? (Eskiden rollback oluyordu.)
+        Assert.Equal(45, persisted.SlotIntervalMinutes);
+        Assert.Null(persisted.MaxPublicSlots);
+    }
+
+    /// <summary>
+    /// REGRESYON: gecersiz TimeZoneId ile sube ACILAMAZ; Windows ID IANA'ya normalize edilir.
+    /// </summary>
+    /// <remarks>
+    /// LANSMAN BLOKAJI B4: TimeZoneId yalnizca uzunlukla dogrulaniyordu. "Istanbul" gibi
+    /// gecersiz bir deger o subeyi SONSUZA KADAR 0 slot dondurmeye itiyordu (200 OK, hata yok).
+    /// </remarks>
+    [Fact]
+    public async Task BranchCreateValidatesAndNormalizesTimeZone()
+    {
+        Guid tenantId = Guid.CreateVersion7();
+        TenantContextAccessor accessor = new() { TenantId = tenantId };
+
+        await using OrganizationDbContext dbContext =
+            new(CreateOptions<OrganizationDbContext>(), accessor);
+
+        dbContext.Businesses.Add(
+            Business.Create(tenantId, "atlas-hair", "Atlas Hair", "hair", testTime));
+        await dbContext.SaveChangesAsync();
+
+        BranchManagementService service = new(
+            dbContext,
+            accessor,
+            new AdminAuditLogRecorder(new AdminDbContext(CreateOptions<AdminDbContext>())),
+            new FixedTimeProvider(testTime));
+
+        // "Istanbul" bir SEHIR adi, zaman dilimi degil -> REDDEDILMELI.
+        BranchManagementResult invalid = await service.CreateAsync(
+            new CreateBranchCommand(
+                Guid.CreateVersion7(), "sube-1", "Şube 1", "Istanbul", "İstanbul", "Kadıköy", ""));
+
+        Assert.False(invalid.Succeeded);
+        Assert.Equal(BranchManagementService.InvalidTimeZone, invalid.ErrorCode);
+
+        // Windows ID kabul edilir AMA IANA olarak SAKLANIR (frontend Intl yalnizca IANA'yi anlar).
+        BranchManagementResult windows = await service.CreateAsync(
+            new CreateBranchCommand(
+                Guid.CreateVersion7(), "sube-2", "Şube 2", "Turkey Standard Time",
+                "İstanbul", "Kadıköy", ""));
+
+        Assert.True(windows.Succeeded);
+
+        Branch persisted = await dbContext.Branches
+            .AsNoTracking()
+            .SingleAsync(entity => entity.Id == windows.Branch!.Id);
+
+        Assert.Equal("Europe/Istanbul", persisted.TimeZoneId);
+    }
+
     /// <summary>
     /// StaffManagementService.ArchiveAsync icin sahte randevu bekcisi.
     /// Gercek adapter Booking'in Appointments tablosunu okur; testte "aktif randevu var mi"

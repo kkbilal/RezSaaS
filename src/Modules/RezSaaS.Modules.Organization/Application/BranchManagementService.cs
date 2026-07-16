@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RezSaaS.BuildingBlocks.Time;
 using RezSaaS.BuildingBlocks.Auditing;
@@ -175,6 +176,11 @@ public sealed class BranchManagementService
 
         string oldDisplayName = branch.DisplayName;
 
+        // BUG FIX: DisplayName DOGRULANIYOR (IsUpdateValid) ve audit'e "oldDisplayName ->
+        // newDisplayName" YAZILIYORDU, ama entity'ye HIC UYGULANMIYORDU -- yalnizca
+        // SetLocation cagriliyordu. Istek 200 OK doner, sube adi DEGISMEZDI.
+        // (StaffMember.Rename bug'inin birebir aynisi; domain'de Rename metodu yoktu.)
+        branch.Rename(command.DisplayName);
         branch.SetLocation(
             command.City,
             command.District,
@@ -188,7 +194,15 @@ public sealed class BranchManagementService
                 tenantId,
                 command.ActorUserAccountId,
                 "organization.branch.updated",
-                $$"""{"tenantId":"{{tenantId}}","branchId":"{{branch.Id}}","oldDisplayName":"{{oldDisplayName}}","newDisplayName":"{{command.DisplayName}}"}""",
+                // Elle interpolasyon yerine serializer: tirnak iceren bir sube adi
+                // ("Kadikoy \"Merkez\"") JSON'u bozardi.
+                JsonSerializer.Serialize(new
+                {
+                    tenantId,
+                    branchId = branch.Id,
+                    oldDisplayName,
+                    displayName = branch.DisplayName,
+                }),
                 now),
             cancellationToken);
 
@@ -226,7 +240,24 @@ public sealed class BranchManagementService
                 tenantId,
                 command.ActorUserAccountId,
                 "organization.branch.slot-settings.updated",
-                $$"""{"tenantId":"{{tenantId}}","branchId":"{{branch.Id}}","slotIntervalMinutes":{{command.SlotIntervalMinutes}},"maxPublicSlots":{{command.MaxPublicSlots}}}""",
+                // BUG FIX: audit payload'i ELLE string-interpolate ediliyordu:
+                //   ..."maxPublicSlots":{{command.MaxPublicSlots}}}
+                // MaxPublicSlots NULL oldugunda bu `"maxPublicSlots":}` uretiyordu -- GECERSIZ
+                // JSON. Postgres jsonb reddediyor, audit SaveChangesAsync PATLIYOR ve TUM PATCH
+                // ROLLBACK oluyordu: slot ayari HIC kaydedilmiyordu (HTTP 500).
+                //
+                // maxPublicSlots sozlesmede NULLABLE ve GET onu null donduruyor -> subeyi
+                // round-trip'leyen (oku, hepsini geri gonder) HER istemci bu 500'u aliyordu.
+                //
+                // Artik JSON serializer uretiyor: null -> `null`, string'ler dogru kacisla.
+                // (Elle interpolasyon ayni zamanda tirnak iceren metinlerde de JSON'u bozardi.)
+                JsonSerializer.Serialize(new
+                {
+                    tenantId,
+                    branchId = branch.Id,
+                    slotIntervalMinutes = command.SlotIntervalMinutes,
+                    maxPublicSlots = command.MaxPublicSlots,
+                }),
                 now),
             cancellationToken);
 

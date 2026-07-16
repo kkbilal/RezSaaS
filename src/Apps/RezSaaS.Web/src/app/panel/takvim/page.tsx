@@ -104,8 +104,8 @@ export default async function BusinessCalendarRoute({
       tenants={buildPanelTenants(context.tenants)}
     >
       <BusinessCalendarPage
-        appointments={appointmentSchedule.appointments}
         branchTimeZoneId={branchTimeZoneId}
+        initialAppointments={appointmentSchedule.appointments}
         tenant={appointmentSchedule.tenant}
       />
     </PanelShell>
