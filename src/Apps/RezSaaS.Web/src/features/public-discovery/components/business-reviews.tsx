@@ -1,162 +1,150 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
+import { Star } from "lucide-react";
+import type { PublicReviewSummary } from "@/features/public-discovery/api/public-businesses";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
-type BusinessReview = {
-  id: string;
-  rating: number;
-  comment: string;
-  customerDisplayName?: string | null;
-  createdAt: string;
-  serviceNames?: string[] | null;
-};
+type PublicReview = NonNullable<PublicReviewSummary["reviews"]>[number];
 
 type BusinessReviewsProps = {
-  reviews?: BusinessReview[];
-  ratingAverage?: number | null;
-  reviewCount?: number | null;
+  summary: PublicReviewSummary;
 };
 
-export function BusinessReviews({
-  reviews = [],
-  ratingAverage,
-  reviewCount
-}: BusinessReviewsProps) {
-  const [showAll, setShowAll] = useState(false);
-  const hasReviews = reviews.length > 0;
-  const displayReviews = showAll ? reviews : reviews.slice(0, 3);
+const initialVisibleCount = 3;
 
-  if (!hasReviews) {
+export function BusinessReviews({ summary }: BusinessReviewsProps) {
+  const [showAll, setShowAll] = useState(false);
+  const reviews = summary.reviews ?? [];
+
+  // Yorum METNI yoksa bolum hic cizilmez. "Henuz yorum yok" bos kutusu, urunun en kritik
+  // edinim yuzeyinde olumsuz bir ilk izlenim uretir -- yeni salonun sucu degil, gostermeyiz.
+  if (reviews.length === 0) {
     return null;
   }
 
+  const visibleReviews = showAll ? reviews : reviews.slice(0, initialVisibleCount);
+  const averageRating = summary.averageRating ?? 0;
+  const totalCount = summary.totalCount ?? reviews.length;
+
   return (
-    <section className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--rs-muted)]">
-            Müşteri yorumları
-          </p>
-          <h2 className="mt-3 text-4xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
-            {ratingAverage?.toFixed(1) || "0.0"} / 5
-          </h2>
-          <p className="mt-1 text-sm text-[var(--rs-muted)]">
-            {reviewCount || 0} değerlendirme
-          </p>
+    <section aria-labelledby="yorumlar-basligi" className="space-y-4" id="yorumlar">
+      <div>
+        <h2
+          className="text-xl font-semibold tracking-tight text-foreground"
+          id="yorumlar-basligi"
+        >
+          Müşteri yorumları
+        </h2>
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <RatingStars rating={averageRating} />
+          {/* Puan METIN olarak da yazilir: yildiz TEK sinyal olamaz (ekran okuyucu, renk korlugu). */}
+          <span className="text-sm font-medium text-foreground">
+            {averageRating.toFixed(1)} / 5
+          </span>
+          <span className="text-sm text-muted-foreground">
+            · {totalCount} değerlendirme
+          </span>
         </div>
-        {reviews.length > 3 && !showAll && (
-          <button
-            className="text-sm text-[var(--rs-accent-strong)] transition hover:underline"
-            onClick={() => setShowAll(true)}
-          >
-            Tümünü gör
-          </button>
-        )}
       </div>
 
-      <div className="grid gap-4">
-        {displayReviews.map((review) => (
+      <div className="grid gap-3">
+        {visibleReviews.map((review) => (
           <ReviewCard key={review.id} review={review} />
         ))}
       </div>
 
-      {reviews.length > 3 && showAll && (
-        <button
-          className="text-sm text-[var(--rs-accent-strong)] transition hover:underline"
-          onClick={() => setShowAll(false)}
+      {reviews.length > initialVisibleCount ? (
+        <Button
+          className="min-h-11 w-full sm:w-auto"
+          onClick={() => setShowAll((current) => !current)}
+          type="button"
+          variant="outline"
         >
-          Daha az göster
-        </button>
-      )}
+          {showAll
+            ? "Daha az göster"
+            : `Tüm yorumları gör (${reviews.length})`}
+        </Button>
+      ) : null}
+
+      {/* Sayfalama YOK: uc page/pageSize aliyor ama ilk 10'u cekiyoruz. Daha fazlasi icin
+          ayri bir istek gerekir; bunu VAAT ETMEYELIM diye sayiyi acikca yaziyoruz. */}
+      {totalCount > reviews.length ? (
+        <p className="text-sm text-muted-foreground">
+          En son {reviews.length} yorum gösteriliyor.
+        </p>
+      ) : null}
     </section>
   );
 }
 
-function ReviewCard({ review }: { review: BusinessReview }) {
+function ReviewCard({ review }: { review: PublicReview }) {
+  const rating = review.rating ?? 0;
+
   return (
-    <div className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-soft)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <div className="flex gap-0.5">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <svg
-                  key={star}
-                  className={`h-5 w-5 ${
-                    star <= review.rating
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "fill-gray-200 text-gray-200"
-                  }`}
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-            </div>
-            <span className="text-sm font-medium text-[var(--rs-ink)]">
-              {review.customerDisplayName || "Misafir"}
-            </span>
-          </div>
-          
-          <p className="mt-3 text-sm leading-6 text-[var(--rs-muted-strong)]">
-            {review.comment}
-          </p>
-
-          {review.serviceNames && review.serviceNames.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {review.serviceNames.map((serviceName) => (
-                <span
-                  key={serviceName}
-                  className="rounded-full bg-[var(--rs-neutral-soft)] px-3 py-1 text-xs text-[var(--rs-muted)]"
-                >
-                  {serviceName}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <p className="mt-4 text-xs text-[var(--rs-muted)]">
-            {formatDate(review.createdAt)}
-          </p>
+    <Card>
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <RatingStars rating={rating} />
+          <span className="text-sm font-medium text-foreground">
+            {review.customerDisplayName || "Misafir"}
+          </span>
+          <span className="text-sm text-muted-foreground">
+            {formatReviewDate(review.createdAtUtc)}
+          </span>
         </div>
-      </div>
-    </div>
+
+        {review.comment ? (
+          <>
+            <Separator />
+            <p className="text-sm leading-6 text-muted-foreground">
+              {review.comment}
+            </p>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
-function formatDate(dateString: string) {
-  try {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+function RatingStars({ rating }: { rating: number }) {
+  const rounded = Math.round(rating);
 
-    if (diffDays === 0) {
-      return "Bugün";
-    }
+  return (
+    // Gorsel sus: gercek deger her zaman yanindaki metinde yazili.
+    <span aria-hidden="true" className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          className={
+            star <= rounded
+              ? "size-4 fill-amber-500 text-amber-500"
+              : "size-4 fill-muted text-muted-foreground/40"
+          }
+          key={star}
+        />
+      ))}
+    </span>
+  );
+}
 
-    if (diffDays === 1) {
-      return "Dün";
-    }
-
-    if (diffDays < 7) {
-      return `${diffDays} gün önce`;
-    }
-
-    if (diffDays < 30) {
-      const weeks = Math.floor(diffDays / 7);
-      return `${weeks} hafta önce`;
-    }
-
-    if (diffDays < 365) {
-      const months = Math.floor(diffDays / 30);
-      return `${months} ay önce`;
-    }
-
-    const years = Math.floor(diffDays / 365);
-    return `${years} yıl önce`;
-  } catch {
-    return dateString;
+// Yorum tarihi MUTLAK gosterilir. "3 gun once" gibi goreli metin sunucuda ve tarayicida
+// farkli hesaplanip hydration uyusmazligi uretir; yorum icin kesin tarih zaten yeterli.
+function formatReviewDate(value?: string) {
+  if (!value) {
+    return "";
   }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(date);
 }

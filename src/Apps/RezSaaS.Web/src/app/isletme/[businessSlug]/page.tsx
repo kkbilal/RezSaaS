@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getPublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
+import {
+  getPublicBusinessProfile,
+  getPublicBusinessReviews
+} from "@/features/public-discovery/api/public-businesses";
 import { BusinessProfilePage } from "@/features/public-discovery/components/business-profile-page";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { routes } from "@/shared/config/routes";
 
 type BusinessProfileRouteProps = {
   params: Promise<{
@@ -17,20 +21,40 @@ export async function generateMetadata({
   const state = await getPublicBusinessProfile(businessSlug);
 
   if (state.kind !== "ready") {
+    // Profil yoksa/gelmiyorsa INDEXLETME: bos ya da hatali bir sayfanin aramaya dusmesi,
+    // urunun edinim kanalini kirletir.
     return {
+      robots: {
+        index: false
+      },
       title: "İşletme"
     };
   }
 
+  const { profile } = state;
+  const title =
+    profile.metadata?.seoTitle || profile.displayName || "İşletme";
+  const description =
+    profile.metadata?.seoDescription ||
+    profile.description ||
+    `${profile.displayName ?? "Bu işletme"} için uygun saatleri gör, randevu talebi gönder.`;
+
   return {
-    description:
-      state.profile.metadata?.seoDescription ||
-      state.profile.description ||
-      "RezSaaS işletme profili.",
-    title:
-      state.profile.metadata?.seoTitle ||
-      state.profile.displayName ||
-      "İşletme"
+    alternates: {
+      canonical: routes.public.businessProfile(businessSlug)
+    },
+    description,
+    // PUBLIC yuzey: panelin aksine INDEXLENEBILIR olmali (docs: edinim kanali).
+    openGraph: {
+      description,
+      title,
+      type: "website"
+    },
+    robots: {
+      follow: true,
+      index: true
+    },
+    title
   };
 }
 
@@ -46,18 +70,24 @@ export default async function BusinessProfileRoute({
 
   if (state.kind === "unavailable") {
     return (
-      <main className="studio-grid grid min-h-screen place-items-center px-4 py-10">
-        <Card className="fade-up w-full max-w-2xl p-7 sm:p-9">
-          <CardHeader>
-            <CardTitle className="text-4xl sm:text-5xl">
+      <main className="grid min-h-screen place-items-center bg-background px-4 py-10">
+        <Card className="w-full max-w-md">
+          <CardContent className="space-y-2">
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
               Profil yüklenemedi
-            </CardTitle>
-            <CardDescription className="max-w-xl">{state.reason}</CardDescription>
-          </CardHeader>
+            </h1>
+            <p className="text-sm text-muted-foreground">{state.reason}</p>
+          </CardContent>
         </Card>
       </main>
     );
   }
 
-  return <BusinessProfilePage profile={state.profile} />;
+  // Yorumlar profil ICIN zorunlu degil -- ayri uc, ayri hata yuzeyi. Yine de SSR'de
+  // cekiliyor ki sosyal kanit indexlenebilir olsun ve ilk boyada gelsin.
+  const reviewSummary = await getPublicBusinessReviews(businessSlug);
+
+  return (
+    <BusinessProfilePage profile={state.profile} reviewSummary={reviewSummary} />
+  );
 }

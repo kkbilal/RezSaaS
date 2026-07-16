@@ -3,6 +3,7 @@ import type { ApiSchema } from "@/shared/api/types";
 
 export type PublicBusinessSummary = ApiSchema<"PublicBusinessSummaryView">;
 export type PublicBusinessProfile = ApiSchema<"PublicBusinessProfileResponse">;
+export type PublicReviewSummary = ApiSchema<"PublicReviewSummaryResponse">;
 
 export type PublicBusinessSearchParams = {
   categoryKey?: string;
@@ -117,6 +118,44 @@ export async function getPublicBusinessProfile(
       kind: "unavailable",
       reason: "İşletme profili şu anda yüklenemedi."
     };
+  }
+}
+
+// Yorumlar ANONIM okunur (uc RequireAuthorization ISTEMEZ) -- profille birlikte SSR'de
+// cekilir, boylece sosyal kanit ilk boyada gelir ve indexlenebilir olur.
+//
+// Profil yaniti da ratingAverage/reviewCount tasir; ama o OZET'tir, yorum METNI yoktur.
+// Metin sadece bu ucta. Ozet sayilari da BURADAN okunur: iki uc ayni sayiyi verdiginde
+// tek kaynak secmek, "profilde 12 yorum yaziyor ama listede 9 var" tutarsizligini onler.
+//
+// Yorumlar profilin KENDISI degildir: bu uc duserse profil yine de acilmali.
+// Bu yuzden hata "unavailable" state'i degil, sessiz null -- bolum tamamen gizlenir.
+export async function getPublicBusinessReviews(
+  businessSlug: string
+): Promise<PublicReviewSummary | null> {
+  try {
+    const { data, response } = await createServerApiClient().GET(
+      "/api/public/businesses/{slug}/reviews",
+      {
+        params: {
+          path: {
+            slug: businessSlug
+          },
+          query: {
+            page: 1,
+            pageSize: 10
+          }
+        }
+      }
+    );
+
+    if (!response.ok || !data) {
+      return null;
+    }
+
+    return data;
+  } catch {
+    return null;
   }
 }
 

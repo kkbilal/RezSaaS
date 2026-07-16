@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Check, Clock, Info } from "lucide-react";
 import {
   bookingDraftStorageKey,
   createBookingDraft,
@@ -10,15 +11,33 @@ import {
   type BookingDraft
 } from "@/features/public-booking/lib/booking-draft";
 import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
+import { showStaffNames } from "@/features/public-discovery/lib/staff-display";
 import { apiClient } from "@/shared/api/client";
 import type { ApiSchema } from "@/shared/api/types";
 import { routes, withReturnTo } from "@/shared/config/routes";
 import { createWebIdempotencyKey } from "@/shared/lib/idempotency";
-import { Button } from "@/shared/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
-import { EmptyState } from "@/shared/ui/empty-state";
-import { Progress } from "@/shared/ui/progress";
-import { TextSkeleton } from "@/shared/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/shared/lib/cn";
 
 type PublicSlotSearchResponse = ApiSchema<"PublicSlotSearchResponse">;
 type PublicSlot = ApiSchema<"PublicSlotResponse">;
@@ -36,18 +55,24 @@ type SubmitState =
     }
   | {
       kind: "success";
-      message: string;
+      expiresAtUtc?: string | null;
+      status?: string | null;
     }
   | {
       kind: "error";
       message: string;
     };
 
+// Personel secimi "Fark etmez" = bos string. Radix Select bos string'i deger olarak KABUL
+// ETMEZ (bos degeri placeholder temizligi icin ayirir), bu yuzden sentinel bir deger gerekiyor.
+const anyStaffValue = "any";
+
 export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
   const businessSlug = profile.slug ?? "";
   const branches = useMemo(() => profile.branches ?? [], [profile.branches]);
   const services = useMemo(() => profile.services ?? [], [profile.services]);
   const variantOptions = useMemo(() => createVariantOptions(services), [services]);
+  const staffNamesVisible = showStaffNames(profile.metadata?.staffDisplayPolicy);
   const [selectedBranchSlug, setSelectedBranchSlug] = useState(
     branches[0]?.slug ?? ""
   );
@@ -84,6 +109,9 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
     [selectedSlotStartUtc, slotState.result?.slots]
   );
   const hasSearched = slotState.result !== undefined;
+  // Personel filtresi sadece isimler GORUNURKEN anlamli. HideNames'te backend staffMembers'i
+  // bos dondurur; secim kutusunu tamamen gizliyoruz ki bos bir kontrol kalmasin.
+  const staffOptions = staffNamesVisible ? (selectedBranch?.staffMembers ?? []) : [];
 
   function resetBookingIntent() {
     setIdempotencyKey("");
@@ -186,6 +214,7 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
 
     const requestIdempotencyKey = idempotencyKey || createIdempotencyKey();
     setIdempotencyKey(requestIdempotencyKey);
+    // Taslak GONDERMEDEN ONCE yazilir: 401 login'e firlatir, geri donunce secim burada durur.
     persistBookingDraft({
       branchSlug: selectedBranch.slug,
       businessSlug,
@@ -240,8 +269,9 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
 
       clearBookingDraft();
       setSubmitState({
+        expiresAtUtc: data.expiresAtUtc,
         kind: "success",
-        message: `Talep işletme onayına gönderildi. Durum: ${getStatusCopy(data.status)}.`
+        status: data.status
       });
     } catch {
       setSubmitState({
@@ -251,219 +281,316 @@ export function PublicBookingPanel({ profile }: PublicBookingPanelProps) {
     }
   }
 
+  const canSubmit = Boolean(selectedSlotStartUtc) && submitState.kind !== "success";
+
+  // Gonderim sonrasi: secim arayuzu yerini "sonra ne olacak" anlatimina birakir.
+  if (submitState.kind === "success") {
+    return (
+      <Card id="rezervasyon">
+        <CardContent>
+          <RequestSubmitted
+            branch={selectedBranch}
+            expiresAtUtc={submitState.expiresAtUtc}
+            selectedSlot={selectedSlot}
+            status={submitState.status}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="p-6" id="rezervasyon">
+    <Card id="rezervasyon">
       <CardHeader>
-        <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
-          Rezervasyon başlangıcı
-        </p>
-        <CardTitle className="mt-4 text-4xl sm:text-5xl">
-          Hizmeti seç, uygun saatleri şube saatine göre gör.
-        </CardTitle>
-        <CardDescription className="max-w-2xl">
-          Talep gönderildiğinde randevu kesinleşmez; işletme onayı bekleyen bir
-          istek oluşur.
+        <CardTitle className="text-xl">Randevu al</CardTitle>
+        <CardDescription>
+          Hizmetini seç, uygun saatleri gör. Saatler şubenin kendi saatiyle gösterilir.
         </CardDescription>
       </CardHeader>
 
-      <div className="mt-6 rounded-[var(--rs-radius-lg)] border border-[var(--rs-border)] bg-[var(--rs-surface-muted)] px-4 py-4 sm:px-6">
-        <Progress steps={getProgressSteps({ hasSearched, hasSlot: Boolean(selectedSlotStartUtc), submitted: submitState.kind === "success" })} />
-      </div>
+      <CardContent className="space-y-6">
+        <BookingSteps
+          hasSearched={hasSearched}
+          hasSlot={Boolean(selectedSlotStartUtc)}
+        />
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <SelectField
-              label="Şube"
-              onChange={(value) => {
-                const branch = branches.find((item) => item.slug === value);
-                setSelectedBranchSlug(value);
-                setDate(getTodayInBranchTimeZone(branch?.timeZoneId));
-                setSelectedSlotStartUtc("");
-                resetBookingIntent();
-                setSubmitState({ kind: "idle" });
-              }}
-              value={selectedBranchSlug}
-            >
-              {branches.map((branch) => (
-                <option key={branch.slug} value={branch.slug ?? ""}>
-                  {branch.displayName ?? branch.slug}
-                </option>
-              ))}
-            </SelectField>
+        <Separator />
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-[var(--rs-ink)]">Tarih</span>
-              <input
-                className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
-                onChange={(event) => {
-                  setDate(event.target.value);
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Tek sube varsa secim kutusu bir karar degil, gurultudur. */}
+          {branches.length > 1 ? (
+            <div className="space-y-2">
+              <Label htmlFor="booking-branch">Şube</Label>
+              <Select
+                onValueChange={(value) => {
+                  const branch = branches.find((item) => item.slug === value);
+                  setSelectedBranchSlug(value);
+                  setDate(getTodayInBranchTimeZone(branch?.timeZoneId));
                   setSelectedSlotStartUtc("");
                   resetBookingIntent();
                   setSubmitState({ kind: "idle" });
                 }}
-                type="date"
-                value={date}
-              />
-            </label>
+                value={selectedBranchSlug}
+              >
+                <SelectTrigger className="min-h-11 w-full" id="booking-branch">
+                  <SelectValue placeholder="Şube seç" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.slug} value={branch.slug ?? ""}>
+                      {branch.displayName ?? branch.slug}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
 
-            <SelectField
-              label="Personel tercihi"
-              onChange={(value) => {
-                setSelectedStaffId(value);
+          <div className="space-y-2">
+            <Label htmlFor="booking-date">Tarih</Label>
+            <input
+              className="flex min-h-11 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
+              id="booking-date"
+              onChange={(event) => {
+                setDate(event.target.value);
                 setSelectedSlotStartUtc("");
                 resetBookingIntent();
                 setSubmitState({ kind: "idle" });
               }}
-              value={selectedStaffId}
-            >
-              <option value="">Fark etmez</option>
-              {(selectedBranch?.staffMembers ?? []).map((staff) => (
-                <option key={staff.id} value={staff.id ?? ""}>
-                  {staff.displayName ?? "Personel"}
-                </option>
-              ))}
-            </SelectField>
+              type="date"
+              value={date}
+            />
           </div>
 
-          <section className="space-y-3">
-            <h3 className="text-xl font-semibold tracking-[-0.04em] text-[var(--rs-ink)]">
-              Hizmetler
-            </h3>
-            {variantOptions.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-[var(--rs-border)] p-4 text-sm text-[var(--rs-muted)]">
-                Bu işletmede slot aranacak hizmet varyantı henüz yok.
-              </p>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                {variantOptions.map((option) => (
-                  <label
-                    className={
-                      selectedVariantIds.includes(option.id)
-                        ? "rounded-2xl border border-[var(--rs-border-strong)] bg-[var(--rs-surface)] p-4 shadow-[var(--rs-shadow-soft)]"
-                        : "rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 transition hover:border-[var(--rs-border-strong)]"
-                    }
-                    key={option.id}
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        checked={selectedVariantIds.includes(option.id)}
-                        className="mt-1 h-4 w-4 accent-[var(--rs-ink)]"
-                        onChange={() => toggleVariant(option.id)}
-                        type="checkbox"
-                      />
-                      <span>
-                        <span className="block font-medium text-[var(--rs-ink)]">
-                          {option.serviceName} · {option.name}
-                        </span>
-                        <span className="mt-1 block text-sm text-[var(--rs-muted)]">
-                          {option.durationMinutes} dk ·{" "}
-                          {formatMoney(option.priceAmount, option.currencyCode)}
-                        </span>
-                      </span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <Button
-            disabled={slotState.isLoading || selectedVariantIds.length === 0}
-            onClick={() => void searchSlots()}
-            type="button"
-          >
-            {slotState.isLoading ? "Saatler aranıyor..." : "Uygun saatleri ara"}
-          </Button>
-
-          {slotState.error ? (
-            <p className="rounded-2xl border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] p-4 text-sm text-[var(--rs-warning)]">
-              {slotState.error}
-            </p>
-          ) : null}
-
-          <SlotResults
-            hasSearched={hasSearched}
-            isLoading={slotState.isLoading}
-            onSelect={(startUtc) => {
-              setSelectedSlotStartUtc(startUtc);
-              resetBookingIntent();
-              setSubmitState({ kind: "idle" });
-            }}
-            selectedSlotStartUtc={selectedSlotStartUtc}
-            slots={slotState.result?.slots ?? []}
-            timeZoneId={slotState.result?.branchTimeZoneId ?? selectedBranch?.timeZoneId}
-          />
-        </div>
-
-        <aside className="space-y-4">
-          <SummaryCard
-            branch={selectedBranch}
-            date={date}
-            selectedSlot={selectedSlot}
-            selectedSlotStartUtc={selectedSlotStartUtc}
-            selectedVariants={selectedVariants}
-          />
-
-          {submitState.kind !== "idle" ? (
-            <div
-              className={
-                submitState.kind === "success"
-                  ? "rounded-2xl border border-[rgb(47_122_78_/_0.22)] bg-[var(--rs-success-soft)] p-4 text-sm leading-6 text-[var(--rs-success)]"
-                  : "rounded-2xl border border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] p-4 text-sm leading-6 text-[var(--rs-warning)]"
-              }
-            >
-              <p>{submitState.message}</p>
-              {submitState.kind === "success" ? (
-                <Button asChild className="mt-4" variant="secondary">
-                  <Link href={routes.customer.appointments}>
-                    Randevularıma git
-                  </Link>
-                </Button>
-              ) : null}
+          {staffOptions.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="booking-staff">Personel tercihi</Label>
+              <Select
+                onValueChange={(value) => {
+                  setSelectedStaffId(value === anyStaffValue ? "" : value);
+                  setSelectedSlotStartUtc("");
+                  resetBookingIntent();
+                  setSubmitState({ kind: "idle" });
+                }}
+                value={selectedStaffId || anyStaffValue}
+              >
+                <SelectTrigger className="min-h-11 w-full" id="booking-staff">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={anyStaffValue}>Fark etmez</SelectItem>
+                  {staffOptions.map((staff) => (
+                    <SelectItem key={staff.id} value={staff.id ?? ""}>
+                      {staff.displayName ?? "Personel"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : null}
+        </div>
 
+        <ServiceSelection
+          onToggle={toggleVariant}
+          options={variantOptions}
+          selectedVariantIds={selectedVariantIds}
+        />
+
+        <Button
+          className="min-h-11 w-full sm:w-auto"
+          disabled={slotState.isLoading || selectedVariantIds.length === 0}
+          onClick={() => void searchSlots()}
+          type="button"
+        >
+          {slotState.isLoading ? "Saatler aranıyor..." : "Uygun saatleri ara"}
+        </Button>
+
+        {slotState.error ? (
+          <Alert variant="destructive">
+            <AlertDescription>{slotState.error}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <SlotResults
+          hasSearched={hasSearched}
+          isLoading={slotState.isLoading}
+          onSelect={(startUtc) => {
+            setSelectedSlotStartUtc(startUtc);
+            resetBookingIntent();
+            setSubmitState({ kind: "idle" });
+          }}
+          selectedSlotStartUtc={selectedSlotStartUtc}
+          slots={slotState.result?.slots ?? []}
+          timeZoneId={slotState.result?.branchTimeZoneId ?? selectedBranch?.timeZoneId}
+        />
+
+        {selectedVariants.length > 0 ? (
+          <>
+            <Separator />
+            <BookingSummary
+              branch={selectedBranch}
+              date={date}
+              selectedSlot={selectedSlot}
+              selectedSlotStartUtc={selectedSlotStartUtc}
+              selectedVariants={selectedVariants}
+              showBranch={branches.length > 1}
+            />
+          </>
+        ) : null}
+
+        {submitState.kind === "error" ? (
+          <Alert variant="destructive">
+            <AlertDescription>{submitState.message}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {/* Masaustu gonderim. Mobilde buton sticky bar'a tasinir (asagida), ama ACIKLAMA
+            METNI burada kalir: sticky bar'da tekrarlansa bar ~116px olur ve icerigi orter. */}
+        <div className="space-y-2">
           <Button
-            className="w-full"
-            disabled={!selectedSlotStartUtc || submitState.kind === "success"}
+            className="hidden min-h-11 lg:inline-flex"
+            disabled={!canSubmit}
             onClick={() => void submitAppointmentRequest()}
             type="button"
           >
-            Talep gönder
+            Onay talebi gönder
           </Button>
-          <p className="text-xs leading-5 text-[var(--rs-muted)]">
-            Giriş yapmadıysan seçimlerin kısa süreli saklanır ve tek giriş ekranından
-            sonra bu profile dönebilirsin.
+          {/* Login duvari SURPRIZ OLMAMALI: anonim kullanici saatleri sonuna kadar gorur,
+              duvara sadece gonderirken carpar. Bunu ONCEDEN soyluyoruz. */}
+          <p className="text-xs leading-5 text-muted-foreground">
+            Talebi göndermek için giriş yapman gerekir. Giriş yapmadıysan
+            seçimlerin kısa süre saklanır, girişten sonra kaldığın yerden devam
+            edersin.
           </p>
-        </aside>
+        </div>
+      </CardContent>
+
+      {/* Mobil BIRINCIL cihaz: saat seciminden sonra buton her zaman parmak altinda kalmali,
+          musteri sayfayi asagi kaydirmak zorunda kalmasin.
+          Sadece BUTON -- yuksekligi sabit tutuluyor ki sayfa altindaki pb-24 yetsin. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
+        <Button
+          className="min-h-11 w-full"
+          disabled={!canSubmit}
+          onClick={() => void submitAppointmentRequest()}
+          type="button"
+        >
+          Onay talebi gönder
+        </Button>
       </div>
     </Card>
   );
 }
 
-function SelectField({
-  children,
-  label,
-  onChange,
-  value
+function BookingSteps({
+  hasSearched,
+  hasSlot
 }: {
-  children: React.ReactNode;
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
+  hasSearched: boolean;
+  hasSlot: boolean;
 }) {
+  const steps = [
+    { done: hasSearched, label: "Hizmet seç" },
+    { done: hasSlot, label: "Saat seç" },
+    { done: false, label: "Talep gönder" }
+  ];
+  const currentIndex = steps.findIndex((step) => !step.done);
+
   return (
-    <label className="block space-y-2">
-      <span className="text-sm font-medium text-[var(--rs-ink)]">{label}</span>
-      <select
-        className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
-      >
-        {children}
-      </select>
-    </label>
+    <ol className="flex flex-wrap items-center gap-x-2 gap-y-2">
+      {steps.map((step, index) => {
+        const isCurrent = index === currentIndex;
+
+        return (
+          <li className="flex items-center gap-2" key={step.label}>
+            <span
+              aria-current={isCurrent ? "step" : undefined}
+              className={cn(
+                "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                step.done && "bg-primary text-primary-foreground",
+                isCurrent && "border-2 border-primary text-primary",
+                !step.done && !isCurrent && "border text-muted-foreground"
+              )}
+            >
+              {step.done ? <Check aria-hidden="true" className="size-3.5" /> : index + 1}
+            </span>
+            <span
+              className={cn(
+                "text-xs font-medium sm:text-sm",
+                step.done || isCurrent ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              {step.label}
+            </span>
+            {index < steps.length - 1 ? (
+              <span aria-hidden="true" className="ml-1 text-muted-foreground">
+                ›
+              </span>
+            ) : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function ServiceSelection({
+  onToggle,
+  options,
+  selectedVariantIds
+}: {
+  onToggle: (variantId: string) => void;
+  options: Array<ServiceVariant & { id: string; serviceName: string }>;
+  selectedVariantIds: string[];
+}) {
+  if (options.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+        Bu işletmede saat aranabilecek hizmet henüz yok.
+      </p>
+    );
+  }
+
+  return (
+    <fieldset className="space-y-3">
+      <legend className="text-sm font-medium text-foreground">
+        Hizmetler{" "}
+        <span className="font-normal text-muted-foreground">
+          (birden fazla seçebilirsin)
+        </span>
+      </legend>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((option) => {
+          const checked = selectedVariantIds.includes(option.id);
+
+          return (
+            <Label
+              className={cn(
+                // min-h-11: dokunma hedefi. Etiketin TAMAMI tiklanabilir.
+                "flex min-h-11 cursor-pointer items-start gap-3 rounded-md border p-3 font-normal transition-colors",
+                checked ? "border-primary bg-accent" : "hover:bg-accent/50"
+              )}
+              key={option.id}
+            >
+              <Checkbox
+                checked={checked}
+                className="mt-0.5"
+                onCheckedChange={() => onToggle(option.id)}
+              />
+              <span className="space-y-0.5">
+                <span className="block text-sm font-medium text-foreground">
+                  {option.serviceName} · {option.name}
+                </span>
+                <span className="block text-sm text-muted-foreground">
+                  {option.durationMinutes ?? 0} dk ·{" "}
+                  {formatMoney(option.priceAmount, option.currencyCode)}
+                </span>
+              </span>
+            </Label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 
@@ -484,95 +611,81 @@ function SlotResults({
 }) {
   if (isLoading) {
     return (
-      <section className="space-y-3">
-        <div>
-          <h3 className="text-xl font-semibold tracking-[-0.04em] text-[var(--rs-ink)]">
-            Uygun saatler
-          </h3>
-          <p className="mt-1 text-sm text-[var(--rs-muted)]">
-            Saatler şube zamanına göre gösterilir: {timeZoneId ?? "zaman dilimi yok"}.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, index) => (
-            <div key={index} className="h-24 animate-pulse bg-[var(--rs-surface-muted)] rounded-2xl" />
-          ))}
-        </div>
-      </section>
+      <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]">
+        {[...Array(8)].map((_, index) => (
+          <Skeleton className="h-11" key={index} />
+        ))}
+      </div>
     );
   }
 
   if (slots.length === 0) {
-    if (hasSearched) {
-      return (
-        <EmptyState
-          description="Başka bir tarih veya hizmet seçmeyi dene"
-          title="Uygun saat bulunamadı"
-        />
-      );
-    }
-
     return (
-      <EmptyState
-        description="Şube, tarih ve en az bir hizmet seçip 'Uygun saatleri ara' butonuna bas"
-        title="Saatleri görmek için arama yap"
-      />
+      <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+        {hasSearched
+          ? "Bu tarihte uygun saat yok. Başka bir tarih ya da hizmet dene."
+          : "Hizmet seçip 'Uygun saatleri ara' butonuna bas."}
+      </p>
     );
   }
 
   return (
-    <section className="space-y-3">
+    <div className="space-y-3">
       <div>
-        <h3 className="text-xl font-semibold tracking-[-0.04em] text-[var(--rs-ink)]">
-          Uygun saatler
-        </h3>
-        <p className="mt-1 text-sm text-[var(--rs-muted)]">
-          Saatler şube zamanına göre gösterilir: {timeZoneId ?? "zaman dilimi yok"}.
+        <h3 className="text-sm font-medium text-foreground">Uygun saatler</h3>
+        {/* Saat dilimi GORUNUR yazilir: sube baska sehirde olabilir, musteri hangi saate
+            baktigini bilmeli. */}
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Saatler şubenin yerel saatiyle gösterilir
+          {timeZoneId ? ` (${timeZoneId})` : ""}.
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {slots.map((slot) => (
-          <button
-            className={
-              selectedSlotStartUtc === slot.startUtc
-                ? "rounded-2xl border border-[var(--rs-border-strong)] bg-[var(--rs-accent)] p-4 text-left text-white shadow-[var(--rs-shadow-card)]"
-                : "rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-left text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
-            }
-            key={slot.startUtc}
-            onClick={() => slot.startUtc && onSelect(slot.startUtc)}
-            type="button"
-          >
-            <span className="block text-lg font-semibold tracking-[-0.04em]">
-              {formatLocalSlot(slot.localStart)} - {formatLocalSlot(slot.localEnd)}
-            </span>
-            <span
-              className={
-                selectedSlotStartUtc === slot.startUtc
-                  ? "mt-2 block text-xs text-white/58"
-                  : "mt-2 block text-xs text-[var(--rs-muted)]"
-              }
+
+      <div
+        className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]"
+        role="group"
+      >
+        {slots.map((slot) => {
+          const selected = selectedSlotStartUtc === slot.startUtc;
+
+          return (
+            <button
+              aria-pressed={selected}
+              className={cn(
+                "flex min-h-11 items-center justify-center gap-1.5 rounded-md border px-2 text-sm font-medium transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                selected
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "hover:bg-accent"
+              )}
+              key={slot.startUtc}
+              onClick={() => slot.startUtc && onSelect(slot.startUtc)}
+              type="button"
             >
-              İşletme onayı bekleyen talep oluşur.
-            </span>
-          </button>
-        ))}
+              {/* Secili saat renkle DEGIL, ikonla da isaretlenir. */}
+              {selected ? <Check aria-hidden="true" className="size-3.5" /> : null}
+              {formatLocalSlot(slot.localStart)}
+            </button>
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }
 
-function SummaryCard({
+function BookingSummary({
   branch,
   date,
   selectedSlot,
   selectedSlotStartUtc,
-  selectedVariants
+  selectedVariants,
+  showBranch
 }: {
   branch?: Branch;
   date: string;
   selectedSlot: PublicSlot | null;
   selectedSlotStartUtc: string;
   selectedVariants: Array<ServiceVariant & { serviceName: string }>;
+  showBranch: boolean;
 }) {
   const totalMinutes = selectedVariants.reduce(
     (total, variant) => total + (variant.durationMinutes ?? 0),
@@ -586,29 +699,32 @@ function SummaryCard({
     selectedVariants.find((variant) => variant.currencyCode)?.currencyCode ?? "TRY";
 
   return (
-    <div className="rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)]">
-      <p className="text-xs uppercase tracking-[0.22em] text-[var(--rs-muted)]">
-        Seçim özeti
-      </p>
-      <div className="mt-5 space-y-4 text-sm leading-6">
-        <SummaryLine label="Şube" value={branch?.displayName ?? "Şube seç"} />
-        <SummaryLine label="Tarih" value={date || "Tarih seç"} />
-        <SummaryLine
-          label="Hizmet"
-          value={
-            selectedVariants.length > 0
-              ? `${selectedVariants.length} hizmet · ${totalMinutes} dk`
-              : "Hizmet seç"
-          }
-        />
-        <SummaryLine
-          label="Tahmini toplam"
-          value={
-            selectedVariants.length > 0
-              ? formatMoney(totalPrice, currencyCode)
-              : "Hizmet seç"
-          }
-        />
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium text-foreground">Seçimin</h3>
+
+      <ul className="space-y-1">
+        {selectedVariants.map((variant) => (
+          <li
+            className="flex justify-between gap-4 text-sm"
+            key={variant.id ?? variant.name}
+          >
+            <span className="text-muted-foreground">
+              {variant.serviceName} · {variant.name}
+            </span>
+            <span className="text-foreground">
+              {formatMoney(variant.priceAmount, variant.currencyCode)}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <Separator />
+
+      <dl className="space-y-1 text-sm">
+        {showBranch ? (
+          <SummaryLine label="Şube" value={branch?.displayName ?? "Şube seç"} />
+        ) : null}
+        <SummaryLine label="Tarih" value={formatDateLabel(date)} />
         <SummaryLine
           label="Saat"
           value={
@@ -619,55 +735,101 @@ function SummaryCard({
                 : "Saat seç"
           }
         />
-      </div>
+        <SummaryLine label="Toplam süre" value={`${totalMinutes} dk`} />
+        <div className="flex justify-between gap-4 pt-1">
+          <dt className="font-medium text-foreground">Tahmini toplam</dt>
+          <dd className="font-semibold text-foreground">
+            {formatMoney(totalPrice, currencyCode)}
+          </dd>
+        </div>
+      </dl>
+
+      <p className="text-xs leading-5 text-muted-foreground">
+        Ödeme burada alınmaz; tutar işletmede ödenir.
+      </p>
     </div>
   );
 }
 
 function SummaryLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-[var(--rs-surface-muted)] p-3">
-      <p className="text-xs text-[var(--rs-muted)]">{label}</p>
-      <p className="mt-1 font-medium text-[var(--rs-ink)]">{value}</p>
+    <div className="flex justify-between gap-4">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-foreground">{value}</dd>
     </div>
   );
 }
 
-function getProgressSteps(state: {
-  hasSearched: boolean;
-  hasSlot: boolean;
-  submitted: boolean;
+function RequestSubmitted({
+  branch,
+  expiresAtUtc,
+  selectedSlot,
+  status
+}: {
+  branch?: Branch;
+  expiresAtUtc?: string | null;
+  selectedSlot: PublicSlot | null;
+  status?: string | null;
 }) {
-  const { hasSearched, hasSlot, submitted } = state;
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Check aria-hidden="true" className="size-5" />
+        </span>
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            Talebin işletmeye iletildi
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {selectedSlot
+              ? `${formatLocalSlot(selectedSlot.localStart)} - ${formatLocalSlot(selectedSlot.localEnd)}`
+              : "Seçtiğin saat"}
+            {branch?.displayName ? ` · ${branch.displayName}` : ""}
+          </p>
+          <Badge variant="secondary">{getStatusCopy(status)}</Badge>
+        </div>
+      </div>
 
-  return [
-    {
-      label: "Seçim",
-      state: submitted
-        ? ("complete" as const)
-        : hasSearched
-          ? ("complete" as const)
-          : ("current" as const)
-    },
-    {
-      label: "Saat",
-      state: submitted
-        ? ("complete" as const)
-        : hasSlot
-          ? ("complete" as const)
-          : hasSearched
-            ? ("current" as const)
-            : ("upcoming" as const)
-    },
-    {
-      label: "Gönder",
-      state: submitted
-        ? ("complete" as const)
-        : hasSlot
-          ? ("current" as const)
-          : ("upcoming" as const)
-    }
-  ];
+      <Alert>
+        <Info aria-hidden="true" />
+        <AlertTitle>Randevun henüz kesinleşmedi</AlertTitle>
+        <AlertDescription>
+          <ul className="list-disc space-y-1 pl-4">
+            <li>İşletme talebini onaylarsa randevun kesinleşir.</li>
+            <li>
+              Aynı saate başka müşteriler de talep göndermiş olabilir; işletme
+              birini seçer.
+            </li>
+            <li>
+              Yanıt gelmezse talep kendiliğinden düşer ve randevu oluşmaz.
+            </li>
+          </ul>
+        </AlertDescription>
+      </Alert>
+
+      {/* Sure HARDCODE EDILMEZ. Backend: expiry = min(olusturma + 24 saat,
+          randevu saati - yanit tamponu). Yani yakin bir saate gonderilen talep 24 saatten
+          COK ONCE duser. Yanit MUTLAK tarih olarak geliyorsa onu yaziyoruz. */}
+      {expiresAtUtc ? (
+        <div className="flex items-start gap-3 rounded-md border p-4">
+          <Clock aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              Yanıt için son tarih
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {formatDeadline(expiresAtUtc, branch?.timeZoneId)}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      <Button asChild className="min-h-11 w-full sm:w-auto">
+        <Link href={routes.customer.appointments}>Randevularıma git</Link>
+      </Button>
+    </div>
+  );
 }
 
 function createVariantOptions(services: Service[]) {
@@ -733,12 +895,61 @@ function getTodayInBranchTimeZone(timeZoneId?: string | null) {
   return new Date().toISOString().slice(0, 10);
 }
 
+// SAAT DILIMI TUZAGI -- DOKUNMA.
+// localStart sunucuda SUBENIN saat dilimine cevrilmis olarak gelir ("2026-06-15T14:30:00").
+// Bu string'ten "HH:mm" KESILIR; new Date() ile parse EDILMEZ. Parse edilirse tarayici onu
+// ziyaretcinin saat dilimine cevirir ve Izmir'deki musteriye Berlin'deki subenin saati
+// YANLIS gosterilir. Donusum YOK, kesme VAR.
 function formatLocalSlot(value?: string) {
   if (!value) {
     return "--:--";
   }
 
   return value.slice(11, 16);
+}
+
+// "2026-06-15" -> "15 Haziran 2026 Pazartesi". Girdi zaten sube-yerel bir TARIH (saat yok),
+// bu yuzden UTC olarak parse edilip UTC olarak formatlanir: gun kaymaz.
+function formatDateLabel(value: string) {
+  if (!value) {
+    return "Tarih seç";
+  }
+
+  const date = new Date(`${value}T00:00:00Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+    weekday: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+// expiresAtUtc GERCEK bir UTC an'idir (slot'un localStart'i gibi onceden cevrilmis DEGIL),
+// bu yuzden burada Intl ile subenin saat dilimine cevirmek DOGRU olan.
+function formatDeadline(expiresAtUtc: string, branchTimeZoneId?: string | null) {
+  const date = new Date(expiresAtUtc);
+
+  if (Number.isNaN(date.getTime())) {
+    return "İşletme kısa süre içinde yanıtlar.";
+  }
+
+  try {
+    return new Intl.DateTimeFormat("tr-TR", {
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      month: "long",
+      timeZone: branchTimeZoneId ?? "Europe/Istanbul"
+    }).format(date);
+  } catch {
+    return "İşletme kısa süre içinde yanıtlar.";
+  }
 }
 
 function formatMoney(amount?: number, currencyCode?: string | null) {
@@ -799,8 +1010,8 @@ function getCreateErrorCopy(status: number) {
 
 function getStatusCopy(status?: string | null) {
   if (status === "PendingApproval") {
-    return "işletme onayı bekliyor";
+    return "İşletme onayı bekliyor";
   }
 
-  return status ?? "işletme onayı bekliyor";
+  return status ?? "İşletme onayı bekliyor";
 }

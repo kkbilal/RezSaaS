@@ -1,13 +1,27 @@
-﻿  import Link from "next/link";
-  import { PublicBookingPanel } from "@/features/public-booking/components/public-booking-panel";
-  import { EnhancedGallery } from "./enhanced-gallery";
-  import type { PublicBusinessProfile } from "@/features/public-discovery/api/public-businesses";
-  import { routes } from "@/shared/config/routes";
-  import { Button } from "@/shared/ui/button";
-  import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import Link from "next/link";
+import { Clock, MapPin, Star } from "lucide-react";
+import { PublicBookingPanel } from "@/features/public-booking/components/public-booking-panel";
+import { BusinessReviews } from "./business-reviews";
+import type {
+  PublicBusinessProfile,
+  PublicReviewSummary
+} from "@/features/public-discovery/api/public-businesses";
+import { showStaffNames } from "@/features/public-discovery/lib/staff-display";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { routes } from "@/shared/config/routes";
 
 type BusinessProfilePageProps = {
   profile: PublicBusinessProfile;
+  reviewSummary: PublicReviewSummary | null;
 };
 
 const dayLabels: Record<string, string> = {
@@ -20,149 +34,203 @@ const dayLabels: Record<string, string> = {
   Wednesday: "Çarşamba"
 };
 
-export function BusinessProfilePage({ profile }: BusinessProfilePageProps) {
+// Haftanin gunleri sozlesmede sirali GELMEZ (Sunday=0 kaynakli). Musteri "Pazartesi'den"
+// baslayan bir liste bekler.
+const dayOrder = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday"
+];
+
+export function BusinessProfilePage({
+  profile,
+  reviewSummary
+}: BusinessProfilePageProps) {
   const metadata = profile.metadata;
   const branches = profile.branches ?? [];
   const services = profile.services ?? [];
-  const gallery = (metadata?.galleryImages ?? [])
-    .slice()
-    .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0));
+  const staffNamesVisible = showStaffNames(metadata?.staffDisplayPolicy);
+
+  // GALERI GOSTERILMIYOR: BusinessGalleryImage entity'si ve profil yanitindaki gallery alani
+  // VAR, ama o veriyi dolduran hicbir yonetim ucu YOK -- galeri pratikte HER ZAMAN BOS.
+  // Backend ucu olmayan ekran uretmiyoruz (enhanced-gallery.tsx bu yuzden silindi).
 
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <header className="flex items-center justify-between">
+    <div className="min-h-screen bg-background pb-24 lg:pb-0">
+      <header className="border-b bg-background">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <Link
-            className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
+            className="text-base font-semibold tracking-tight text-foreground"
             href={routes.public.home}
           >
             RezSaaS
           </Link>
-          <div className="flex items-center gap-3">
-            <Button asChild variant="ghost">
+          <div className="flex items-center gap-1">
+            <Button asChild className="min-h-11" variant="ghost">
               <Link href={routes.public.discover}>Keşfet</Link>
             </Button>
-            <Button asChild>
+            <Button asChild className="min-h-11" variant="outline">
               <Link href={routes.auth.login}>Giriş yap</Link>
             </Button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <section className="fade-up overflow-hidden rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] shadow-[var(--rs-shadow-card)] backdrop-blur-xl">
-          <div className="grid gap-8 p-6 lg:grid-cols-[1fr_25rem] lg:p-8">
-            <div className="space-y-5">
-              <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
-                {profile.categoryKey ?? "İşletme"}
-              </p>
-              <h1 className="text-6xl font-semibold tracking-[-0.08em] text-[var(--rs-ink)] sm:text-8xl">
-                {profile.displayName ?? "İşletme"}
-              </h1>
-              <p className="max-w-3xl text-lg leading-8 text-[var(--rs-muted-strong)]">
-                {profile.description ||
-                  "Bu işletme RezSaaS üzerinden onaylı rezervasyon akışıyla çalışır."}
-              </p>
-            </div>
-
-            <aside className="rounded-[2rem] bg-[var(--rs-accent)] p-6 text-white shadow-[var(--rs-shadow-card)]">
-              <p className="text-xs uppercase tracking-[0.24em] text-white/50">
-                Rezervasyon modeli
-              </p>
-              <h2 className="mt-8 text-3xl font-semibold tracking-[-0.06em]">
-                Talep gönderilir, işletme onaylar.
-              </h2>
-              <p className="mt-5 text-sm leading-6 text-white/68">
-                Onay bekleyen talepler kesin randevu değildir ve slotu tek başına
-                bloklamaz. İşletme uygun talebi seçtiğinde randevu netleşir.
-              </p>
-            </aside>
-          </div>
-        </section>
-
-        {gallery.length > 0 ? <EnhancedGallery images={gallery} /> : null}
+      <main className="mx-auto max-w-6xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
+        <ProfileHero
+          branches={branches}
+          metadata={metadata}
+          profile={profile}
+          reviewSummary={reviewSummary}
+        />
 
         <PublicBookingPanel profile={profile} />
 
-        <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
-          <section className="space-y-6" id="hizmetler">
-            <SectionHeading
-              eyebrow="Hizmetler"
-              title="Süre ve fiyatı net hizmet menüsü."
-            />
-            <div className="grid gap-4">
-              {services.length === 0 ? (
-                <EmptyCard text="Bu işletmenin public hizmet menüsü henüz yayınlanmadı." />
-              ) : (
-                services.map((service) => (
-                  <ServiceCard key={service.id ?? service.name} service={service} />
-                ))
-              )}
-            </div>
-          </section>
+        <div className="grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start">
+          <div className="space-y-8">
+            <ServiceMenu services={services} />
+            {reviewSummary ? <BusinessReviews summary={reviewSummary} /> : null}
+          </div>
 
           <aside className="space-y-6">
-            <RulesCard metadata={metadata} />
-            <BranchList branches={branches} />
+            {metadata?.publicRules ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">İşletme kuralları</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm leading-6 whitespace-pre-line text-muted-foreground">
+                    {metadata.publicRules}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            <BranchList
+              branches={branches}
+              staffNamesVisible={staffNamesVisible}
+            />
           </aside>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
-function Gallery({
-  images
+function ProfileHero({
+  branches,
+  metadata,
+  profile,
+  reviewSummary
 }: {
-  images: NonNullable<
-    NonNullable<PublicBusinessProfile["metadata"]>["galleryImages"]
-  >;
+  branches: NonNullable<PublicBusinessProfile["branches"]>;
+  metadata: PublicBusinessProfile["metadata"];
+  profile: PublicBusinessProfile;
+  reviewSummary: PublicReviewSummary | null;
 }) {
-  return (
-    <section className="grid gap-4 lg:grid-cols-3">
-      {images.slice(0, 3).map((image, index) => {
-        const imageUrl = getSafeImageUrl(image.imageUrl);
+  // Puan ozeti: /reviews ucu varsa ORADAN oku. Profil metadata'si ayni sayilari tasir ama
+  // iki kaynagi karistirmak "ustte 4.8, altta 4.6" gibi celiskiler uretir.
+  const ratingAverage = reviewSummary?.averageRating ?? metadata?.ratingAverage;
+  const reviewCount = reviewSummary?.totalCount ?? metadata?.reviewCount ?? 0;
+  const hasRating = reviewCount > 0 && typeof ratingAverage === "number";
+  const primaryBranch = branches[0];
+  const location = primaryBranch
+    ? [primaryBranch.district, primaryBranch.city].filter(Boolean).join(", ")
+    : "";
 
-        return (
-          <div
-            className="fade-up overflow-hidden rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] shadow-[var(--rs-shadow-soft)]"
-            key={`${image.imageUrl}-${index}`}
-            style={{ animationDelay: `${index * 70}ms` }}
-          >
-            {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                alt={image.altText ?? "İşletme galerisi"}
-                className="h-64 w-full object-cover"
-                decoding="async"
-                fetchPriority={index === 0 ? "high" : "auto"}
-                height={256}
-                loading={index === 0 ? "eager" : "lazy"}
-                referrerPolicy="no-referrer"
-                sizes="(min-width: 1024px) 33vw, 100vw"
-                src={imageUrl}
-                width={640}
-              />
-            ) : (
-              <div className="grid h-64 place-items-center bg-[var(--rs-surface-muted)] px-6 text-center text-sm text-[var(--rs-muted)]">
-                {image.altText ?? "Galeri görseli"}
-              </div>
-            )}
+  return (
+    <section className="space-y-4">
+      <div className="space-y-3">
+        {profile.categoryKey ? (
+          <Badge variant="secondary">{profile.categoryKey}</Badge>
+        ) : null}
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          {profile.displayName ?? "İşletme"}
+        </h1>
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          {hasRating ? (
+            <span className="flex items-center gap-1.5 text-foreground">
+              <Star aria-hidden="true" className="size-4 fill-amber-500 text-amber-500" />
+              <span className="font-medium">{ratingAverage.toFixed(1)}</span>
+              <span className="text-muted-foreground">({reviewCount} yorum)</span>
+            </span>
+          ) : null}
+          {location ? (
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <MapPin aria-hidden="true" className="size-4" />
+              {location}
+            </span>
+          ) : null}
+          {branches.length > 1 ? (
+            <span className="text-muted-foreground">{branches.length} şube</span>
+          ) : null}
+        </div>
+
+        {profile.description ? (
+          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+            {profile.description}
+          </p>
+        ) : null}
+      </div>
+
+      {/* Urunun EN COK YANLIS ANLASILAN mekanigi. Rezervasyon panelinin USTUNDE, tooltip
+          DEGIL gorunur metin olarak duruyor -- musteri "randevum kesinlesti" sanmasin. */}
+      <Card className="border-amber-500/30 bg-amber-50/60 dark:bg-amber-950/20">
+        <CardContent className="flex gap-3">
+          <Clock
+            aria-hidden="true"
+            className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-500"
+          />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Burada randevu anında onaylanmaz.
+            </p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Seçtiğin saat için işletmeye bir <strong>talep</strong> gönderirsin.
+              İşletme onaylarsa randevun kesinleşir. Aynı saate başka talepler de
+              gelebilir; işletme birini seçer.
+            </p>
           </div>
-        );
-      })}
+        </CardContent>
+      </Card>
     </section>
   );
 }
 
-function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+function ServiceMenu({
+  services
+}: {
+  services: NonNullable<PublicBusinessProfile["services"]>;
+}) {
   return (
-    <div>
-      <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--rs-muted)]">
-        {eyebrow}
-      </p>
-      <h2 className="mt-3 text-4xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
-        {title}
-      </h2>
-    </div>
+    <section aria-labelledby="hizmetler-basligi" className="space-y-4" id="hizmetler">
+      <div>
+        <h2
+          className="text-xl font-semibold tracking-tight text-foreground"
+          id="hizmetler-basligi"
+        >
+          Hizmetler
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Süre ve fiyat her seçenekte ayrı ayrı yazılıdır.
+        </p>
+      </div>
+
+      {services.length === 0 ? (
+        <EmptyNote text="Bu işletmenin hizmet menüsü henüz yayınlanmadı." />
+      ) : (
+        <div className="grid gap-3">
+          {services.map((service) => (
+            <ServiceCard key={service.id ?? service.name} service={service} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -174,168 +242,172 @@ function ServiceCard({
   const variants = service.variants ?? [];
 
   return (
-    <Card className="p-5">
+    <Card>
       <CardHeader>
-        <CardTitle>{service.name ?? "Hizmet"}</CardTitle>
-        <CardDescription>{service.categoryKey ?? "Kategori"}</CardDescription>
+        <CardTitle className="text-base">{service.name ?? "Hizmet"}</CardTitle>
+        {service.categoryKey ? (
+          <CardDescription>{service.categoryKey}</CardDescription>
+        ) : null}
       </CardHeader>
-      <div className="mt-5 grid gap-3">
+      <CardContent>
         {variants.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-[var(--rs-border)] p-4 text-sm text-[var(--rs-muted)]">
-            Bu hizmet için public varyant bilgisi henüz yok.
-          </p>
+          <EmptyNote text="Bu hizmet için seçenek bilgisi henüz yok." />
         ) : (
-          variants.map((variant) => (
-            <div
-              className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4"
-              key={variant.id ?? variant.name}
-            >
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <ul className="divide-y">
+            {variants.map((variant) => (
+              <li
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3 first:pt-0 last:pb-0"
+                key={variant.id ?? variant.name}
+              >
                 <div>
-                  <p className="font-medium text-[var(--rs-ink)]">
-                    {variant.name ?? "Varyant"}
+                  <p className="text-sm font-medium text-foreground">
+                    {variant.name ?? "Seçenek"}
                   </p>
-                  <p className="mt-1 text-sm text-[var(--rs-muted)]">
+                  <p className="text-sm text-muted-foreground">
                     {variant.durationMinutes ?? 0} dk
                   </p>
                 </div>
-                <p className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-accent-strong)]">
+                <p className="text-sm font-semibold text-foreground">
                   {formatMoney(variant.priceAmount, variant.currencyCode)}
                 </p>
-              </div>
-            </div>
-          ))
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
-    </Card>
-  );
-}
-
-function RulesCard({
-  metadata
-}: {
-  metadata: PublicBusinessProfile["metadata"];
-}) {
-  const hasReviews = (metadata?.reviewCount ?? 0) > 0;
-
-  return (
-    <Card className="p-6">
-      <CardHeader>
-        <CardTitle>Profil bilgileri</CardTitle>
-        <CardDescription>
-          {metadata?.seoDescription || "İşletmenin public profil detayları."}
-        </CardDescription>
-      </CardHeader>
-
-      <div className="mt-6 space-y-3 text-sm leading-6">
-        <InfoLine
-          label="Değerlendirme"
-          value={
-            hasReviews
-              ? `${metadata?.ratingAverage?.toFixed(1) ?? "0.0"} / 5, ${metadata?.reviewCount} yorum`
-              : "Yorumlar henüz oluşmadı"
-          }
-        />
-        <InfoLine
-          label="Personel gösterimi"
-          value={getStaffPolicyCopy(metadata?.staffDisplayPolicy)}
-        />
-        <InfoLine
-          label="Kurallar"
-          value={metadata?.publicRules || "İşletme kuralları yakında netleşir."}
-        />
-      </div>
+      </CardContent>
     </Card>
   );
 }
 
 function BranchList({
-  branches
+  branches,
+  staffNamesVisible
 }: {
   branches: NonNullable<PublicBusinessProfile["branches"]>;
+  staffNamesVisible: boolean;
 }) {
   return (
-    <Card className="p-6">
-      <CardHeader>
-        <CardTitle>Şubeler</CardTitle>
-        <CardDescription>
-          Saatler işletmenin şube zaman dilimine göre gösterilir.
-        </CardDescription>
-      </CardHeader>
-      <div className="mt-6 space-y-4">
-        {branches.length === 0 ? (
-          <EmptyCard text="Public şube bilgisi henüz yayınlanmadı." />
-        ) : (
-          branches.map((branch) => <BranchCard branch={branch} key={branch.slug} />)
-        )}
-      </div>
-    </Card>
+    <section aria-labelledby="subeler-basligi" className="space-y-4" id="subeler">
+      <h2
+        className="text-xl font-semibold tracking-tight text-foreground"
+        id="subeler-basligi"
+      >
+        {branches.length > 1 ? "Şubeler" : "Şube"}
+      </h2>
+
+      {branches.length === 0 ? (
+        <EmptyNote text="Şube bilgisi henüz yayınlanmadı." />
+      ) : (
+        branches.map((branch) => (
+          <BranchCard
+            branch={branch}
+            key={branch.slug}
+            staffNamesVisible={staffNamesVisible}
+          />
+        ))
+      )}
+    </section>
   );
 }
 
 function BranchCard({
-  branch
+  branch,
+  staffNamesVisible
 }: {
   branch: NonNullable<PublicBusinessProfile["branches"]>[number];
+  staffNamesVisible: boolean;
 }) {
+  const workingHours = sortWorkingHours(branch.workingHours ?? []);
+  const staffMembers = branch.staffMembers ?? [];
+
   return (
-    <div className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4">
-      <p className="font-medium text-[var(--rs-ink)]">
-        {branch.displayName ?? "Şube"}
-      </p>
-      <p className="mt-1 text-sm text-[var(--rs-muted)]">
-        {[branch.district, branch.city].filter(Boolean).join(", ") ||
-          "Konum bilgisi yok"}
-      </p>
-      <p className="mt-1 text-sm text-[var(--rs-muted)]">
-        {branch.addressLine ?? "Adres bilgisi yok"}
-      </p>
-      <div className="mt-4 space-y-2">
-        {(branch.workingHours ?? []).slice(0, 7).map((hours) => (
-          <div
-            className="flex items-center justify-between rounded-2xl bg-[var(--rs-surface-muted)] px-3 py-2 text-xs text-[var(--rs-muted)]"
-            key={hours.dayOfWeek}
-          >
-            <span>{getDayLabel(hours.dayOfWeek)}</span>
-            <span>
-              {hours.isClosed
-                ? "Kapalı"
-                : `${formatTime(hours.opensAt)} - ${formatTime(hours.closesAt)}`}
-            </span>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{branch.displayName ?? "Şube"}</CardTitle>
+        <CardDescription>
+          {[branch.district, branch.city].filter(Boolean).join(", ") ||
+            "Konum bilgisi yok"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {branch.addressLine ? (
+          <p className="text-sm leading-6 text-muted-foreground">
+            {branch.addressLine}
+          </p>
+        ) : null}
+
+        {workingHours.length > 0 ? (
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">Çalışma saatleri</p>
+            <dl className="text-sm">
+              {workingHours.map((hours) => (
+                <div
+                  className="flex justify-between gap-4 py-1"
+                  key={hours.dayOfWeek}
+                >
+                  <dt className="text-muted-foreground">
+                    {getDayLabel(hours.dayOfWeek)}
+                  </dt>
+                  <dd
+                    className={
+                      hours.isClosed
+                        ? "text-muted-foreground"
+                        : "font-medium text-foreground"
+                    }
+                  >
+                    {hours.isClosed
+                      ? "Kapalı"
+                      : `${formatTime(hours.opensAt)} - ${formatTime(hours.closesAt)}`}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
-        ))}
-      </div>
-      {branch.staffMembers?.length ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {branch.staffMembers.map((staff) => (
-            <span
-              className="rounded-full bg-[var(--rs-neutral-soft)] px-3 py-1 text-xs text-[var(--rs-muted)]"
-              key={staff.id ?? staff.displayName}
-            >
-              {staff.displayName ?? "Personel"}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+
+        {/* Personel isimleri: isletme "gizle" secmisse backend zaten staffMembers'i BOS
+            dondurur (PublicBusinessProfileComposer). Policy'yi burada da kontrol etmek
+            ikinci bir kilit -- yanit sekli degisirse isim yine sizmaz. */}
+        {staffNamesVisible && staffMembers.length > 0 ? (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">Ekip</p>
+              <div className="flex flex-wrap gap-1.5">
+                {staffMembers.map((staff) => (
+                  <Badge key={staff.id ?? staff.displayName} variant="outline">
+                    {staff.displayName ?? "Personel"}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
-function InfoLine({ label, value }: { label: string; value: string }) {
+function EmptyNote({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-glass)] p-4">
-      <p className="text-xs text-[var(--rs-muted)]">{label}</p>
-      <p className="mt-1 font-medium text-[var(--rs-ink)]">{value}</p>
-    </div>
-  );
-}
-
-function EmptyCard({ text }: { text: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
+    <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
       {text}
-    </div>
+    </p>
   );
+}
+
+function sortWorkingHours(
+  workingHours: NonNullable<
+    NonNullable<PublicBusinessProfile["branches"]>[number]["workingHours"]
+  >
+) {
+  return workingHours
+    .slice()
+    .sort(
+      (left, right) =>
+        dayOrder.indexOf(left.dayOfWeek ?? "") -
+        dayOrder.indexOf(right.dayOfWeek ?? "")
+    );
 }
 
 function formatMoney(amount?: number, currencyCode?: string | null) {
@@ -354,6 +426,7 @@ function formatMoney(amount?: number, currencyCode?: string | null) {
   }
 }
 
+// Sube saati "09:00:00" gelir; saniye musteriye bir sey anlatmaz.
 function formatTime(value?: string) {
   if (!value) {
     return "--:--";
@@ -368,28 +441,4 @@ function getDayLabel(day?: string | null) {
   }
 
   return dayLabels[day] ?? day;
-}
-
-function getSafeImageUrl(value?: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  if (value.startsWith("/") || value.startsWith("https://")) {
-    return value;
-  }
-
-  return null;
-}
-
-function getStaffPolicyCopy(policy?: string | null) {
-  if (policy === "DisplayNames") {
-    return "Personel isimleri gösterilir";
-  }
-
-  if (policy === "Anonymous") {
-    return "Personel bilgisi işletme onayında netleşir";
-  }
-
-  return policy ?? "İşletme politikasına göre";
 }

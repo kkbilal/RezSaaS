@@ -80,21 +80,16 @@ test("dialog primitive keeps modal semantics and escape handling", () => {
 });
 
 
-test("progress primitive renders step states", () => {
-  const progress = readSource("progress.tsx");
-  const requiredContracts = [
-    '"complete"',
-    '"current"',
-    '"upcoming"',
-    "aria-current={step.state === \"current\" ? \"step\" : undefined}",
-    "var(--rs-ink)",
-    "var(--rs-accent-soft)"
-  ];
-
-  for (const contract of requiredContracts) {
-    assertIncludes(progress, contract);
-  }
-});
+// KALDIRILDI: "progress primitive renders step states"
+//
+// progress.tsx SILINDI. Tek kullanicisi public-booking-panel'di; panel shadcn'e tasinirken
+// adim gostergesi panelin kendi icinde (BookingSteps) yeniden yazildi -- shadcn'de stepper
+// primitifi YOK ve tek cagiran icin paylasilan bir primitif tutmak gereksizdi.
+// aria-current="step" sozlesmesi BookingSteps'te KORUNDU.
+//
+// skeleton.tsx da SILINDI: TextSkeleton/CardSkeleton/ButtonSkeleton'in tek "kullanicisi"
+// ayni paneldi ve import KULLANILMIYORDU (olu import). Yerine @/components/ui/skeleton.
+// (Zaten bu testte skeleton assertion'i hic yoktu.)
 
 test("avatar primitive exposes sizes and accessible labelling", () => {
   const avatar = readSource("avatar.tsx");
@@ -173,22 +168,15 @@ test("customer shell keeps navigation scopes and responsive toggle", () => {
 // orb'lariydi; light-first karariyla (docs/29) tema degisti ve component olu koda dondu.
 // Testi de birlikte gitti -- artik var olmayan bir sozlesmeyi assert ediyordu.
 
-test("public navbar keeps scroll-blur and gradient logo", () => {
-  const nav = readSource("public-navbar.tsx");
-  const requiredContracts = [
-    "PublicNavbar",
-    "setScrolled",
-    "backdrop-blur-2xl",
-    "rs-gradient-bg",
-    "routes.public.discover",
-    "routes.auth.login",
-    "routes.auth.register"
-  ];
-
-  for (const contract of requiredContracts) {
-    assertIncludes(nav, contract);
-  }
-});
+// KALDIRILDI: "public navbar keeps scroll-blur and gradient logo"
+//
+// shared/ui/public-navbar.tsx SILINDI; yerine components/public-header.tsx (shadcn) geldi.
+// Testin assert ettigi sozlesmenin her maddesi artik bir KARARIN TERSI:
+// - "setScrolled"/"backdrop-blur-2xl": scroll-blur bir client state'iydi; light-first
+//   karariyla (docs/29) glass/blur birakildi ve baslik server component'e dondu.
+// - "rs-gradient-bg": gradient logo ayni kararla kaldirildi.
+// - "routes.auth.register": navbar'daki "Uye Ol" CTA'si SILINDI -- /kayit self-servis
+//   ISLETME kaydi DEGIL, musteri hesabi aciyor (docs/29 K3: onboarding elle). Bkz. app/page.tsx.
 
 test("global tokens are LIGHT-FIRST and expose the shadcn token layer", () => {
   const css = readSource("../../app/globals.css");

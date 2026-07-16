@@ -1,7 +1,10 @@
-﻿import Link from "next/link";
+import Link from "next/link";
+
+import { PublicHeader } from "@/components/public-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { routes } from "@/shared/config/routes";
-import { Button } from "@/shared/ui/button";
-import { Card, CardDescription, CardTitle } from "@/shared/ui/card";
 import {
   buildDiscoverHref,
   getActiveDiscoveryFilterCount
@@ -17,6 +20,8 @@ type DiscoverPageProps = {
   state: PublicBusinessSearchState;
 };
 
+type FacetField = "categoryKey" | "city" | "district";
+
 type FacetOption = {
   count: number;
   href: string;
@@ -25,230 +30,105 @@ type FacetOption = {
   value: string;
 };
 
-const categories: Record<string, string> = {
+// categoryKey backend'de KAPALI bir enum DEGIL -- serbest metin (e2e-smoke.py "hair" yaziyor,
+// domain tarafinda sabit liste yok). Bu yuzden burasi bir SECENEK LISTESI degil, yalnizca
+// bilinen anahtarlar icin bir GORUNEN AD sozlugu. Bilinmeyen anahtar ham haliyle gosterilir.
+// (Ana sayfada bu listeden uretilen bir kategori izgarasi VARDI: anahtarlari -- hair, fitness,
+// dental -- buradakilerle bile ortusmuyordu, yani 0 sonuca goturebiliyordu. Kaldirildi.)
+const categoryLabels: Record<string, string> = {
   barber: "Berber",
   beauty: "Güzellik",
   clinic: "Klinik",
+  hair: "Saç & Güzellik",
   nail: "Nail Studio",
   spa: "Spa",
   studio: "Stüdyo"
 };
 
 export function DiscoverPage({ params, state }: DiscoverPageProps) {
+  const activeFilterCount = getActiveDiscoveryFilterCount(params);
+
   return (
-    <main className="studio-grid min-h-screen px-4 py-6 sm:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <PublicTopBar />
+    <main className="min-h-screen bg-background">
+      <PublicHeader />
 
-        <section className="fade-up grid gap-8 rounded-[2.5rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-6 shadow-[var(--rs-shadow-card)] backdrop-blur-xl lg:grid-cols-[1fr_28rem] lg:p-8">
-          <div className="space-y-5">
-            <p className="w-fit rounded-full bg-[var(--rs-accent-soft)] px-4 py-2 text-sm font-medium text-[var(--rs-accent-strong)]">
-              Keşfet
-            </p>
-            <h1 className="max-w-4xl text-5xl font-semibold tracking-[-0.07em] text-[var(--rs-ink)] sm:text-7xl">
-              İşletme profillerini güvenli rezervasyon akışıyla keşfet.
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-[var(--rs-muted-strong)]">
-              RezSaaS keşfi yalnızca public işletme verisiyle çalışır. Şehir,
-              kategori veya işletme adıyla ara; rezervasyon süreci işletme onayıyla
-              ilerler.
-            </p>
-          </div>
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <header className="max-w-2xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            İşletme keşfet
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
+            Şehir, ilçe veya işletme adıyla ara. Uygun saati seçip talebini
+            gönderdiğinde randevun işletmenin onayıyla kesinleşir.
+          </p>
+        </header>
 
-          <SearchCard params={params} />
-        </section>
+        <SearchForm params={params} />
 
-        {state.kind === "ready" ? (
-          <SearchRefinement businesses={state.businesses} params={params} />
-        ) : null}
+        {/* Filtre seridi mobilde YAPISKAN: sonuclari kaydirirken filtre degistirmek
+            telefonda birincil hareket (kural 4). */}
+        <div className="sticky top-0 z-10 -mx-4 mt-6 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-none sm:-mx-6 sm:px-6">
+          <FilterStrip
+            activeFilterCount={activeFilterCount}
+            businesses={state.businesses}
+            params={params}
+          />
+        </div>
 
-        {state.kind === "unavailable" ? (
-          <Card className="border-[var(--rs-warning-border)] bg-[var(--rs-warning-soft)] p-6 shadow-none">
-            <CardTitle>Arama tamamlanamadı</CardTitle>
-            <CardDescription className="mt-2 text-[var(--rs-warning)]">
-              {state.reason}
-            </CardDescription>
-          </Card>
-        ) : (
-          <SearchResults businesses={state.businesses} />
-        )}
+        <div className="mt-6">
+          {state.kind === "unavailable" ? (
+            <SearchUnavailable reason={state.reason} />
+          ) : (
+            <SearchResults businesses={state.businesses} params={params} />
+          )}
+        </div>
       </div>
     </main>
   );
 }
 
-function SearchRefinement({
-  businesses,
-  params
-}: {
-  businesses: PublicBusinessSummary[];
-  params: PublicBusinessSearchParams;
-}) {
-  const activeFilterCount = getActiveDiscoveryFilterCount(params);
-  const activeFilters = getActiveFilters(params);
-  const categoryFacets = getFacetOptions(businesses, params, "categoryKey");
-  const cityFacets = getFacetOptions(businesses, params, "city");
-  const districtFacets = getFacetOptions(businesses, params, "district");
-
+function SearchForm({ params }: { params: PublicBusinessSearchParams }) {
   return (
-    <section className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] [animation-delay:90ms]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-[var(--rs-muted)]">
-            Arama özeti
-          </p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
-            {businesses.length} public işletme profili
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--rs-muted)]">
-            Filtreler URL üzerinde taşınır; kartlar tek discovery endpointinden
-            gelir ve profil başına ek çağrı üretmez.
-          </p>
-        </div>
-
-        {activeFilterCount > 0 ? (
-          <Button asChild variant="secondary">
-            <Link href={routes.public.discover}>Filtreleri temizle</Link>
-          </Button>
-        ) : null}
-      </div>
-
-      {activeFilters.length > 0 ? (
-        <div className="mt-5 flex flex-wrap gap-2">
-          {activeFilters.map((filter) => (
-            <Link
-              className="rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 py-2 text-sm text-[var(--rs-muted-strong)] shadow-[var(--rs-shadow-soft)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
-              href={filter.href}
-              key={filter.label}
-            >
-              <span className="font-medium text-[var(--rs-ink)]">
-                {filter.label}:
-              </span>{" "}
-              {filter.value}
-              <span className="ml-2 text-xs text-[var(--rs-muted)]">sil</span>
-            </Link>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <FacetGroup options={categoryFacets} title="Kategori" />
-        <FacetGroup options={cityFacets} title="Şehir" />
-        <FacetGroup options={districtFacets} title="İlçe" />
-      </div>
-    </section>
-  );
-}
-
-function FacetGroup({
-  options,
-  title
-}: {
-  options: FacetOption[];
-  title: string;
-}) {
-  if (options.length === 0) {
-    return (
-      <div className="rounded-[1.5rem] border border-dashed border-[var(--rs-border)] bg-[var(--rs-glass)] p-4 text-sm text-[var(--rs-muted)]">
-        {title} filtresi için bu aramada veri yok.
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-[1.5rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-[var(--rs-muted)]">
-        {title}
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {options.slice(0, 8).map((option) => (
-          <Link
-            className={
-              option.isActive
-                ? "rounded-full bg-[var(--rs-accent)] px-3 py-2 text-xs font-medium text-white shadow-[var(--rs-shadow-soft)]"
-                : "rounded-full border border-[var(--rs-border)] bg-[var(--rs-surface)] px-3 py-2 text-xs font-medium text-[var(--rs-muted-strong)] transition hover:border-[var(--rs-border-strong)] hover:text-[var(--rs-ink)]"
-            }
-            href={option.href}
-            key={option.value}
-          >
-            {option.label}
-            <span
-              className={
-                option.isActive ? "ml-2 text-white/60" : "ml-2 text-[var(--rs-muted)]"
-              }
-            >
-              {option.count}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PublicTopBar() {
-  return (
-    <header className="flex items-center justify-between">
-      <Link
-        className="text-lg font-semibold tracking-[-0.04em] text-[var(--rs-ink)]"
-        href={routes.public.home}
-      >
-        RezSaaS
-      </Link>
-      <div className="flex items-center gap-3">
-        <Button asChild variant="ghost">
-          <Link href={routes.public.home}>Ana sayfa</Link>
-        </Button>
-        <Button asChild>
-          <Link href={routes.auth.login}>Giriş yap</Link>
-        </Button>
-      </div>
-    </header>
-  );
-}
-
-function SearchCard({ params }: { params: PublicBusinessSearchParams }) {
-  return (
+    // Native GET form: JS'siz calisir, filtreleri URL'e yazar (paylasilabilir link) ve
+    // sayfayi SSR/indexlenebilir birakir.
     <form
       action={routes.public.discover}
-      className="rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-surface)] p-5 shadow-[var(--rs-shadow-soft)]"
+      className="mt-6 grid gap-3 sm:grid-cols-[2fr_1fr_1fr_auto]"
+      method="get"
     >
-      <div className="space-y-4">
-        <SearchInput
-          defaultValue={params.searchText}
-          label="İşletme veya hizmet"
-          name="searchText"
-          placeholder="Saç, cilt bakımı, klinik..."
-        />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SearchInput
-            defaultValue={params.city}
-            label="Şehir"
-            name="city"
-            placeholder="İstanbul"
-          />
-          <SearchInput
-            defaultValue={params.district}
-            label="İlçe"
-            name="district"
-            placeholder="Kadıköy"
-          />
-        </div>
-        <SearchInput
-          defaultValue={params.categoryKey}
-          label="Kategori anahtarı"
-          name="categoryKey"
-          placeholder="spa, barber, clinic"
-        />
-      </div>
-      <Button className="mt-5 w-full" type="submit">
-        İşletme ara
+      {/* categoryKey bir GIZLI alan: kullanicidan "spa, barber, clinic" gibi bir anahtari
+          YAZMASINI istemek yerine asagidaki veriye dayali cip'lerden secilir. Boylece
+          formu gonderince aktif kategori kaybolmaz. */}
+      {params.categoryKey ? (
+        <input name="categoryKey" type="hidden" value={params.categoryKey} />
+      ) : null}
+
+      <SearchField
+        defaultValue={params.searchText}
+        label="İşletme veya hizmet"
+        name="searchText"
+        placeholder="Saç kesimi, cilt bakımı..."
+      />
+      <SearchField
+        defaultValue={params.city}
+        label="Şehir"
+        name="city"
+        placeholder="İstanbul"
+      />
+      <SearchField
+        defaultValue={params.district}
+        label="İlçe"
+        name="district"
+        placeholder="Kadıköy"
+      />
+      <Button className="min-h-11 sm:mt-[1.625rem]" type="submit">
+        Ara
       </Button>
     </form>
   );
 }
 
-function SearchInput({
+function SearchField({
   defaultValue,
   label,
   name,
@@ -259,38 +139,152 @@ function SearchInput({
   name: string;
   placeholder: string;
 }) {
+  const fieldId = `discover-${name}`;
+
   return (
-    <label className="block space-y-2">
-      <span className="text-sm font-medium text-[var(--rs-ink)]">{label}</span>
-      <input
-        className="min-h-12 w-full rounded-2xl border border-[var(--rs-border)] bg-[var(--rs-surface)] px-4 text-sm text-[var(--rs-ink)] shadow-[var(--rs-shadow-soft)] outline-none transition placeholder:text-[var(--rs-muted)] focus:border-[var(--rs-accent)] focus:ring-4 focus:ring-[rgba(99_102_241_/_0.18)]"
+    <div className="space-y-1.5">
+      <label
+        className="block text-sm font-medium text-foreground"
+        htmlFor={fieldId}
+      >
+        {label}
+      </label>
+      <Input
+        autoComplete="off"
+        className="min-h-11"
         defaultValue={defaultValue}
+        id={fieldId}
         name={name}
         placeholder={placeholder}
       />
-    </label>
+    </div>
   );
 }
 
-function SearchResults({ businesses }: { businesses: PublicBusinessSummary[] }) {
+function FilterStrip({
+  activeFilterCount,
+  businesses,
+  params
+}: {
+  activeFilterCount: number;
+  businesses: PublicBusinessSummary[];
+  params: PublicBusinessSearchParams;
+}) {
+  const activeFilters = getActiveFilters(params);
+  // Cip'ler MEVCUT sonuc kumesinden turer -- uydurma kategori/sehir listesi yok,
+  // her cip en az 1 sonuc getirmeyi garanti eder.
+  const facets = [
+    ...getFacetOptions(businesses, params, "categoryKey"),
+    ...getFacetOptions(businesses, params, "city"),
+    ...getFacetOptions(businesses, params, "district")
+  ].filter((facet) => !facet.isActive);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-foreground">
+          {businesses.length} işletme
+          {activeFilterCount > 0 ? (
+            <span className="font-normal text-muted-foreground">
+              {" "}
+              · {activeFilterCount} filtre
+            </span>
+          ) : null}
+        </p>
+        {activeFilterCount > 0 ? (
+          <Button asChild className="min-h-11" size="sm" variant="ghost">
+            <Link href={routes.public.discover}>Filtreleri temizle</Link>
+          </Button>
+        ) : null}
+      </div>
+
+      {activeFilters.length > 0 || facets.length > 0 ? (
+        // Mobilde yatay kaydirma; sayfa govdesi yatay kaymaz.
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <div className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
+            {activeFilters.map((filter) => (
+              <Link
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-transparent bg-primary px-4 text-sm font-medium whitespace-nowrap text-primary-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                href={filter.href}
+                key={`${filter.label}-${filter.value}`}
+              >
+                {/* Etiket GORUNUR metin: hangi alan oldugu tooltip'e saklanmaz (kural 3). */}
+                <span>
+                  {filter.label}: {filter.value}
+                </span>
+                <span aria-hidden className="text-base leading-none">
+                  ×
+                </span>
+                <span className="sr-only">filtresini kaldır</span>
+              </Link>
+            ))}
+
+            {facets.slice(0, 12).map((facet) => (
+              <Link
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-background px-4 text-sm font-medium whitespace-nowrap text-foreground hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                href={facet.href}
+                key={`${facet.label}-${facet.value}`}
+              >
+                {facet.label}
+                <span className="text-muted-foreground">{facet.count}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SearchUnavailable({ reason }: { reason: string }) {
+  return (
+    <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-6">
+      <h2 className="text-base font-semibold text-foreground">
+        Arama tamamlanamadı
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{reason}</p>
+      <Button asChild className="mt-4 min-h-11" variant="outline">
+        <Link href={routes.public.discover}>Tekrar dene</Link>
+      </Button>
+    </div>
+  );
+}
+
+function SearchResults({
+  businesses,
+  params
+}: {
+  businesses: PublicBusinessSummary[];
+  params: PublicBusinessSearchParams;
+}) {
   if (businesses.length === 0) {
+    const hasFilters = getActiveDiscoveryFilterCount(params) > 0;
+
     return (
-      <Card className="border-dashed bg-[var(--rs-glass)] p-10 text-center shadow-none">
-        <CardTitle>Bu aramada işletme bulunamadı</CardTitle>
-        <CardDescription className="mx-auto mt-2 max-w-lg">
-          Arama terimini genişletebilir, şehir veya kategori alanlarını boşaltarak
-          tekrar deneyebilirsin.
-        </CardDescription>
-      </Card>
+      <div className="rounded-xl border border-dashed border-border p-8 text-center sm:p-12">
+        <h2 className="text-base font-semibold text-foreground">
+          Bu aramada işletme bulunamadı
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+          {hasFilters
+            ? "Filtreleri gevşetmeyi dene: ilçeyi kaldır, şehri genişlet veya arama terimini kısalt."
+            : "Şu anda listelenecek public işletme profili yok. Kısa süre sonra tekrar bak."}
+        </p>
+        {hasFilters ? (
+          <Button asChild className="mt-5 min-h-11" variant="outline">
+            <Link href={routes.public.discover}>Filtreleri temizle</Link>
+          </Button>
+        ) : null}
+      </div>
     );
   }
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    // <768px tek sutun (kural 4)
+    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {businesses.map((business, index) => (
         <BusinessResultCard
           business={business}
-          index={index}
           key={business.slug ?? `${business.displayName}-${index}`}
         />
       ))}
@@ -298,40 +292,53 @@ function SearchResults({ businesses }: { businesses: PublicBusinessSummary[] }) 
   );
 }
 
-function BusinessResultCard({
-  business,
-  index
-}: {
-  business: PublicBusinessSummary;
-  index: number;
-}) {
+function BusinessResultCard({ business }: { business: PublicBusinessSummary }) {
   const slug = business.slug ?? "";
+  const location =
+    [business.district, business.city].filter(Boolean).join(", ") || null;
 
-  return (
-    <article
-      className="fade-up rounded-[2rem] border border-[var(--rs-border)] bg-[var(--rs-glass)] p-5 shadow-[var(--rs-shadow-soft)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--rs-shadow-card)]"
-      style={{ animationDelay: `${index * 55}ms` }}
-    >
-      <p className="w-fit rounded-full bg-[var(--rs-neutral-soft)] px-3 py-1 text-xs font-medium text-[var(--rs-muted)]">
-        {getCategoryLabel(business.categoryKey)}
-      </p>
-      <h2 className="mt-6 text-3xl font-semibold tracking-[-0.06em] text-[var(--rs-ink)]">
+  // PUAN OZETI YOK -- bilerek.
+  // PublicBusinessSummaryView yalnizca tenantId/slug/displayName/categoryKey/city/district
+  // doner; ratingAverage/reviewCount ALANLARI SOZLESMEDE YOK. Puan gostermek isletme basina
+  // ayri bir /reviews cagrisi (N+1) gerektirirdi. "Backend ucu yoksa ekran yok" (kural 1).
+  // Puan ozeti tek cagrida gerekiyorsa: PublicBusinessSummaryView'a alan eklenmeli.
+
+  const card = (
+    <>
+      <Badge variant="secondary">{getCategoryLabel(business.categoryKey)}</Badge>
+      <h2 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
         {business.displayName ?? "İşletme"}
       </h2>
-      <p className="mt-3 text-sm text-[var(--rs-muted)]">
-        {[business.district, business.city].filter(Boolean).join(", ") ||
-          "Konum bilgisi hazırlanıyor"}
+      <p className="mt-1 text-sm text-muted-foreground">
+        {location ?? "Konum belirtilmemiş"}
       </p>
-      {slug ? (
-        <Button asChild className="mt-8 w-full" variant="secondary">
-          <Link href={routes.public.businessProfile(slug)}>Profili gör</Link>
-        </Button>
-      ) : (
-        <Button className="mt-8 w-full" disabled type="button" variant="secondary">
-          Profil hazırlanıyor
-        </Button>
-      )}
-    </article>
+    </>
+  );
+
+  if (!slug) {
+    // Slug yoksa profile gidilemez; tiklanabilir gibi gorunmesin.
+    return (
+      <article className="rounded-xl border border-border bg-card p-5 text-card-foreground">
+        {card}
+        <p className="mt-4 text-sm text-muted-foreground">
+          Bu işletmenin profili henüz yayında değil.
+        </p>
+      </article>
+    );
+  }
+
+  return (
+    // Kartin TAMAMI tek dokunma hedefi -- telefonda "Profili gör" dugmesini
+    // nisan almaktan daha guvenilir (kural 4).
+    <Link
+      className="block rounded-xl border border-border bg-card p-5 text-card-foreground transition-colors hover:bg-accent/40 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+      href={routes.public.businessProfile(slug)}
+    >
+      {card}
+      <span className="mt-4 inline-block text-sm font-medium text-foreground underline underline-offset-4">
+        Profili gör
+      </span>
+    </Link>
   );
 }
 
@@ -366,7 +373,7 @@ function getActiveFilters(params: PublicBusinessSearchParams) {
 function getFacetOptions(
   businesses: PublicBusinessSummary[],
   params: PublicBusinessSearchParams,
-  field: "categoryKey" | "city" | "district"
+  field: FacetField
 ): FacetOption[] {
   const counts = new Map<string, number>();
 
@@ -403,13 +410,14 @@ function getFacetOptions(
 }
 
 function getFacetApplyPatch(
-  field: "categoryKey" | "city" | "district",
+  field: FacetField,
   value: string
 ): Partial<PublicBusinessSearchParams> {
   if (field === "categoryKey") {
     return { categoryKey: value };
   }
 
+  // Sehir degisince ilce dusurulur: baska sehrin ilcesi 0 sonuc verirdi.
   if (field === "city") {
     return { city: value, district: undefined };
   }
@@ -417,9 +425,7 @@ function getFacetApplyPatch(
   return { district: value };
 }
 
-function getFacetClearPatch(
-  field: "categoryKey" | "city" | "district"
-): Partial<PublicBusinessSearchParams> {
+function getFacetClearPatch(field: FacetField): Partial<PublicBusinessSearchParams> {
   if (field === "city") {
     return { city: undefined, district: undefined };
   }
@@ -436,5 +442,5 @@ function getCategoryLabel(categoryKey?: string | null) {
     return "Kategori";
   }
 
-  return categories[categoryKey] ?? categoryKey;
+  return categoryLabels[categoryKey] ?? categoryKey;
 }

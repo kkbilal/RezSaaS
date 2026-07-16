@@ -75,7 +75,9 @@ RATE_LIMIT_WINDOW_SECONDS = 62
 # Cikti yardimcilari
 # --------------------------------------------------------------------------------------
 
-TOTAL_STEPS = 60
+# Gercek REPORT.start sayisi ile AYNI olmali (yoksa "[73/72]" gibi yalan bir sayac basar).
+# Dogrula: grep -c "REPORT.start" scripts/e2e-smoke.py
+TOTAL_STEPS = 73
 
 # Kosum sirasinda ortaya cikan URUN BULGULARI. FAIL olmayan (INFO) bulgular da buraya
 # girer: testi dusurmeyen ama urun kararini etkileyen gercekler kaybolmasin.
@@ -2535,6 +2537,408 @@ def run(
         REPORT.info(
             f"restore sonrasi slot sayisi={len(restored_oos)} (out-of-service etkisi olculemedi)."
         )
+
+    # ==================================================================================
+    # PUBLIC YUZEY (adim 61-71) -- urunun EDINIM KANALI: kesif, profil, gizlilik, yorum.
+    #
+    # NEDEN ANONIM BIR OTURUM: buraya kadarki tum public cagrilar `customer` oturumuyla
+    # (GIRIS YAPMIS, cookie'li) yapildi. Ama public yuzeyi GERCEKTE tuketen kisi giris
+    # YAPMAMIS bir ziyaretcidir. Giris yapmis bir oturumla test etmek, sunucunun
+    # kimlige gore ne sizdirdigini GIZLER. `visitor` cookie tasimayan, tenant basligi
+    # GONDERMEYEN taze bir oturumdur -- gercek bir tarayici sekmesi gibi.
+    # ==================================================================================
+    visitor = Session(api_url, "visitor")  # GIRIS YOK, cookie YOK, X-RezSaaS-Tenant YOK
+
+    def visitor_profile() -> dict:
+        _, b = visitor.get(
+            f"/api/public/businesses/{business_slug}/profile",
+            expect=(200,),
+            retry_on_rate_limit=1,
+        )
+        return b if isinstance(b, dict) else {}
+
+    def visitor_lab_slots(date_iso: str) -> dict:
+        _, b = visitor.get(
+            f"/api/public/businesses/{business_slug}/slots",
+            query={"branchSlug": lab_slug, "date": date_iso, "serviceVariantIds": variant_id},
+            expect=(200,),
+            retry_on_rate_limit=1,
+        )
+        return b if isinstance(b, dict) else {}
+
+    def discover(**params) -> list[dict]:
+        _, b = visitor.get(
+            "/api/public/businesses", query=params, expect=(200,), retry_on_rate_limit=1
+        )
+        return b if isinstance(b, list) else []
+
+    # -- 61 --------------------- (A) [KESIF] salon anonim aramada listeleniyor mu
+    REPORT.start("[KESIF] Salon anonim /api/public/businesses listesinde gorunuyor")
+    all_rows = discover(take=200)
+    if not any(row.get("slug") == business_slug for row in all_rows):
+        REPORT.fail(
+            f"Kurulan salon (slug={business_slug}) anonim kesif listesinde YOK "
+            f"({len(all_rows)} kayit dondu). Salon public'te BULUNAMAZ -> edinim kanali kapali."
+        )
+        finding(
+            f"Aktif salon /api/public/businesses listesinde donmuyor (slug={business_slug})."
+        )
+        return False
+    REPORT.ok(f"slug={business_slug} listede ({len(all_rows)} aktif salon)")
+
+    # -- 62 ------------------- (A) [KESIF] searchText + categoryKey='hair' filtresi
+    # searchText SOZLESMESI: PublicBusinessDirectoryService.cs:45-50 aramayi DisplayName
+    # ve CategoryKey uzerinde yapar -- SLUG uzerinde YAPMAZ (bilincli: musteri salonun
+    # ADINI yazar, slug'ini degil). Bu yuzden salonun CANLI adiyla ariyoruz. Adi
+    # hardcode ETMIYORUZ: onceki ayar adimlari displayName'i degistirmis olabilir.
+    REPORT.start("[KESIF] searchText (salon ADI) ve categoryKey='hair' filtreleri calisiyor")
+    _, live_settings = owner.get("/api/business/settings/profile", expect=(200,))
+    live_name = (live_settings or {}).get("displayName") if isinstance(live_settings, dict) else None
+    if not live_name:
+        REPORT.fail(f"Salonun canli displayName'i okunamadi: {live_settings!r}")
+        return False
+    by_text = discover(searchText=live_name, take=50)
+    text_hit = any(row.get("slug") == business_slug for row in by_text)
+    by_cat = discover(categoryKey="hair", take=200)
+    cat_hit = any(row.get("slug") == business_slug for row in by_cat)
+    if not text_hit:
+        REPORT.fail(
+            f"searchText='{live_name}' (salonun TAM adi) ile arama salonu BULAMADI "
+            f"({len(by_text)} sonuc). Musteri salonu ADIYLA arayamiyorsa kesif ekrani islevsiz."
+        )
+        finding(f"Public kesif: salon TAM adiyla ({live_name!r}) aranamiyor.")
+        return False
+    if not cat_hit:
+        REPORT.fail(
+            f"categoryKey='hair' filtresi salonu BULAMADI ({len(by_cat)} sonuc) -- salon "
+            "'hair' kategorisinde seed edildigi halde kategori filtresi onu eliyor."
+        )
+        finding("Public kesif: categoryKey='hair' filtresi dogru kategorideki salonu eliyor.")
+        return False
+    REPORT.ok(
+        f"searchText={live_name!r} -> {len(by_text)} sonuc (hit); "
+        f"categoryKey=hair -> {len(by_cat)} sonuc (hit)"
+    )
+
+    # -- 63 --------------- (A) [KESIF] var olmayan kategori BOS donmeli (filtre gercek mi)
+    # Bu adim 62'yi ANLAMLI kilar: filtre yok sayiliyor olsaydi 62 de gecerdi.
+    REPORT.start("[KESIF] Var olmayan kategori filtresi BOS donuyor (filtre gercekten uygulaniyor)")
+    bogus = discover(categoryKey=f"yok-kategori-{unique}", take=50)
+    if bogus:
+        REPORT.fail(
+            f"Var olmayan kategori ile filtreleme {len(bogus)} kayit dondurdu (BOS bekleniyordu). "
+            "categoryKey filtresi SESSIZCE YOK SAYILIYOR -> kesif filtreleri bir yanilsama."
+        )
+        finding(
+            "Public kesif: bilinmeyen categoryKey filtresi yok sayiliyor, tum salonlar donuyor."
+        )
+        return False
+    REPORT.ok("bilinmeyen kategori -> 0 kayit (filtre gercekten uygulaniyor)")
+
+    # -- 64 ------------------- (B) [PROFIL] sube + hizmet + varyant FIYATI + personel
+    REPORT.start("[PROFIL] Anonim profil: sube, hizmet, varyant+fiyat, personel donuyor")
+    prof = visitor_profile()
+    p_branches = prof.get("branches") or []
+    p_services = prof.get("services") or []
+    lab_branch_row = next((b for b in p_branches if b.get("slug") == lab_slug), None)
+    priced_variant = None
+    for svc in p_services:
+        for var in svc.get("variants") or []:
+            if var.get("priceAmount") is not None:
+                priced_variant = var
+                break
+        if priced_variant:
+            break
+    if not p_branches or not p_services:
+        REPORT.fail(
+            f"Anonim profil eksik: {len(p_branches)} sube, {len(p_services)} hizmet dondu."
+        )
+        return False
+    if lab_branch_row is None:
+        REPORT.fail(f"Lab subesi (slug={lab_slug}) anonim profilde YOK ({len(p_branches)} sube).")
+        return False
+    if priced_variant is None:
+        REPORT.fail(
+            "Anonim profilde FIYATLI varyant YOK -- musteri fiyati goremez "
+            f"({len(p_services)} hizmet tarandi). Varyant fiyati public sozlesmenin parcasi."
+        )
+        finding("Public profil varyantlarinda priceAmount donmuyor -- musteri fiyat goremiyor.")
+        return False
+    lab_staff_rows = lab_branch_row.get("staffMembers") or []
+    REPORT.ok(
+        f"{len(p_branches)} sube, {len(p_services)} hizmet, ornek fiyat="
+        f"{priced_variant.get('priceAmount')} {priced_variant.get('currencyCode')}, "
+        f"lab subesinde {len(lab_staff_rows)} personel"
+    )
+
+    # -- 65 ------------------------------ (B) [PROFIL] galeri: backend yonetim ucu YOK
+    REPORT.start("[PROFIL] Galeri alani BOS (galeriyi dolduran yonetim ucu yok)")
+    gallery = ((prof.get("metadata") or {}).get("galleryImages")) or []
+    if gallery:
+        REPORT.info(
+            f"Galeri {len(gallery)} gorsel donuyor -- oysa BusinessGalleryImage'i dolduran "
+            "hicbir yonetim ucu yok. Beklenmedik veri kaynagi (seed/migration?) arastirilmali."
+        )
+        finding(f"Public profil galerisi bos degil ({len(gallery)} gorsel) -- kaynagi belirsiz.")
+    else:
+        REPORT.ok(
+            "galleryImages=[] -- dogrulandi: galeri HER ZAMAN bos (yonetim ucu yok). "
+            "Frontend'de galeri bolumu gostermek sahte ekran olur."
+        )
+
+    # ================================================================================
+    # (C) [PII SIZINTISI] PublicStaffDisplayPolicy = HideNames
+    #
+    # NEDEN EN ONEMLI ADIM: salon "personel isimlerini gizle" ayarini BILINCLI yapar --
+    # en yaygin sebep rakiplerin personel avlamasini (poaching) onlemektir. Bu ayar
+    # UCLARIN HEPSINDE tutmuyorsa ayar bir YANILSAMADIR: salon korundugunu sanir,
+    # isimler baska bir uctan anonim olarak akmaya devam eder.
+    # ================================================================================
+
+    def read_settings() -> dict:
+        _, b = owner.get("/api/business/settings/profile", expect=(200,))
+        return b if isinstance(b, dict) else {}
+
+    def set_staff_policy(policy: str) -> dict:
+        """TUZAK: uc PATCH adini tasiyor ama davranisi PUT -- alanlarin HEPSI gitmeli.
+        Once GET ile oku, sadece staffDisplayPolicy'yi degistir, tamamini geri gonder."""
+        cur = read_settings()
+        _, b = owner.patch(
+            "/api/business/settings/profile",
+            {
+                "displayName": cur.get("displayName"),
+                "description": cur.get("description"),
+                "publicRules": cur.get("publicRules"),
+                "seoTitle": cur.get("seoTitle"),
+                "seoDescription": cur.get("seoDescription"),
+                "staffDisplayPolicy": policy,
+                "cancellationCutoffHours": cur.get("cancellationCutoffHours"),
+            },
+            expect=(200,),
+        )
+        return b if isinstance(b, dict) else {}
+
+    # -- 66 -------------- (C) HideNames ayari yaziliyor ve GET'te KALICI mi (sessiz no-op avi)
+    REPORT.start("[PII] staffDisplayPolicy='HideNames' yaziliyor ve kalici mi")
+    echoed = set_staff_policy("HideNames")
+    persisted = read_settings().get("staffDisplayPolicy")
+    if persisted != "HideNames":
+        REPORT.fail(
+            f"SESSIZ NO-OP: PATCH HTTP 200 (yanit staffDisplayPolicy={echoed.get('staffDisplayPolicy')!r}) "
+            f"ama YENIDEN OKUNDUGUNDA {persisted!r}. Gizlilik ayari HIC KAYDEDILMIYOR -- "
+            "salon personelini gizledigini sanir, hicbir sey degismez."
+        )
+        finding(
+            "staffDisplayPolicy='HideNames' PATCH sonrasi kalici degil (sessiz no-op) -- "
+            "gizlilik ayari hic uygulanmiyor."
+        )
+        return False
+    REPORT.ok("HideNames yazildi ve GET'te dogrulandi")
+
+    # Ayar HideNames iken sunucunun ANONIM olarak ne sizdirdigini olcuyoruz.
+    # Not: 67/68 hangi sonucu verirse versin ayar 69'da ShowNames'e GERI ALINIR.
+    hidden_prof = visitor_profile()
+    hidden_lab_branch = next(
+        (b for b in (hidden_prof.get("branches") or []) if b.get("slug") == lab_slug), None
+    )
+    profile_staff = (hidden_lab_branch or {}).get("staffMembers") or []
+    slots_body = visitor_lab_slots(lab_date_iso)
+    leaked_names: set[str] = set()
+    slots_seen = slots_body.get("slots") or []
+    for slot in slots_seen:
+        for cand in slot.get("staffCandidates") or []:
+            name = cand.get("displayName")
+            if name:
+                leaked_names.add(name)
+
+    # -- 67 --------------------- (C1) HideNames -> PROFIL personel adi sizdirmamali
+    REPORT.start("[PII] HideNames iken ANONIM /profile personel adi SIZDIRMIYOR")
+    profile_names = [s.get("displayName") for s in profile_staff if s.get("displayName")]
+    if profile_names:
+        REPORT.fail(
+            f"GIZLILIK HATASI: HideNames ayarina ragmen anonim /profile personel adi donuyor: "
+            f"{profile_names!r} (uc: GET /api/public/businesses/{{slug}}/profile, "
+            "dosya: src/Apps/RezSaaS.Api/Public/PublicBusinessProfileComposer.cs)."
+        )
+        finding("HideNames iken public /profile personel adlarini sizdiriyor.")
+        return False
+    REPORT.ok(
+        f"profil lab subesinde staffMembers=[] ({len(profile_staff)} kayit) -- "
+        "PublicBusinessProfileComposer.cs:62 showStaffNames kontrolu dogru calisiyor"
+    )
+
+    # -- 68 ------------ (C2) HideNames -> SLOT ucu personel adi sizdirmamali  [KRITIK]
+    REPORT.start("[PII] HideNames iken ANONIM /slots personel adi SIZDIRMIYOR")
+    if not slots_seen:
+        REPORT.info(
+            f"Lab subesi {lab_date_iso} icin 0 slot dondu -> slot ucunun ad sizdirip "
+            "sizdirmadigi bu kosumda OLCULEMEDI (fixture sorunu, urun hatasi degil)."
+        )
+    elif leaked_names:
+        REPORT.fail(
+            "GIZLILIK HATASI -- AYAR BIR YANILSAMA: isletme staffDisplayPolicy='HideNames' "
+            f"secmis, /profile isimleri DOGRU sekilde gizliyor, AMA anonim slot ucu ayni "
+            f"isimleri sizdirmaya devam ediyor: {sorted(leaked_names)!r}\n"
+            f"      UC   : GET /api/public/businesses/{business_slug}/slots"
+            f"?branchSlug={lab_slug}&date={lab_date_iso}&serviceVariantIds={variant_id}\n"
+            f"      ALAN : slots[].staffCandidates[].displayName\n"
+            "      DOSYA: src/Apps/RezSaaS.Api/Public/PublicSlotSearchComposer.cs:243-245 -- "
+            "GenerateSlots() icinde `new PublicSlotStaffResponse(staff.Id, staff.DisplayName)` "
+            "KOSULSUZ kuruluyor; sinif business.StaffDisplayPolicy'yi HIC OKUMUYOR "
+            "(PublicBusinessProfileComposer.cs:62'deki showStaffNames kontrolunun karsiligi "
+            "slot ucunda YOK).\n"
+            "      ETKI : ayar personel avlanmasini onlemek icin secilir; slot ucu tum salon "
+            "kadrosunu giris yapmamis herkese, isim isim, tarih tarih listeler. Gizlilik "
+            "ayarinin sagladigi koruma SIFIR."
+        )
+        finding(
+            "GIZLILIK: HideNames iken GET /slots -> staffCandidates[].displayName personel "
+            "adlarini anonim sizdiriyor (PublicSlotSearchComposer.cs:243-245 politikayi "
+            "okumuyor). /profile gizliyor, /slots sizdiriyor -> ayar yanilsama."
+        )
+        # NEDEN `return False` YOK: FAIL kaydedildi, cikis kodu ZATEN 1 olacak
+        # (REPORT.summary() herhangi bir FAIL'de duser -- main() run()'in donusune bakmiyor).
+        # Burada zinciri kesmek, kalan public sozlesme adimlarini (yorum/arsiv/TZ) KOR ederdi:
+        # tek bir ucun sizintisi yuzunden geri kalan public yuzey test EDILMEMIS kalirdi.
+        # Ayar bir sonraki adimda ShowNames'e geri alinir.
+    else:
+        REPORT.ok(
+            f"{len(slots_seen)} slot donuyor, staffCandidates'te ad YOK -- politika slot ucunda da tutuyor"
+        )
+
+    # -- 69 ------------------------------------- (C3) ayari ShowNames'e geri al
+    REPORT.start("[PII] staffDisplayPolicy 'ShowNames'e geri alindi")
+    set_staff_policy("ShowNames")
+    restored_policy = read_settings().get("staffDisplayPolicy")
+    if restored_policy != "ShowNames":
+        REPORT.fail(
+            f"Ayar ShowNames'e geri alinamadi (okunan={restored_policy!r}) -- "
+            "sonraki kosumlar bozuk durumdan baslar."
+        )
+        return False
+    back_prof = visitor_profile()
+    back_branch = next(
+        (b for b in (back_prof.get("branches") or []) if b.get("slug") == lab_slug), None
+    )
+    back_names = [s.get("displayName") for s in (back_branch or {}).get("staffMembers") or []]
+    if not back_names:
+        REPORT.fail(
+            "ShowNames'e donuldu ama anonim profil HALA personel adi dondurmuyor -- "
+            "politika TEK YONLU (gizlenen isimler geri gelmiyor)."
+        )
+        finding("staffDisplayPolicy ShowNames'e geri alininca public profil isimleri geri gelmiyor.")
+        return False
+    REPORT.ok(f"ShowNames geri yuklendi; profil yeniden {len(back_names)} personel adi donuyor")
+
+    # -- 70 ------------------------- (D) [YORUMLAR] anonim okunabilir olmali
+    REPORT.start("[YORUM] Anonim GET /reviews auth duvarina carpmiyor")
+    status, rbody = visitor.get(
+        f"/api/public/businesses/{business_slug}/reviews",
+        expect=(200, 401, 403, 404),
+        retry_on_rate_limit=1,
+    )
+    if status in (401, 403):
+        REPORT.fail(
+            f"Yorumlar anonim OKUNAMIYOR: HTTP {status}. Yorumlar public guven sinyalidir; "
+            "auth duvari arkasinda olmamalilar. Govde: {rbody}"
+        )
+        finding(f"GET /api/public/businesses/{{slug}}/reviews anonim cagriya HTTP {status} donuyor.")
+        return False
+    if status == 404:
+        REPORT.fail(
+            f"Yorum ucu aktif salon icin HTTP 404 donuyor (slug={business_slug}) -- "
+            "profil ve slot ayni slug'i cozebiliyorken yorum ucu cozemiyor."
+        )
+        finding("Public reviews ucu, profil/slot ucunun cozdugu slug icin 404 donuyor.")
+        return False
+    r_count = len(rbody.get("reviews") or []) if isinstance(rbody, dict) else 0
+    REPORT.ok(f"HTTP 200, anonim okunabiliyor ({r_count} yorum) -- auth gate YOK (dogru)")
+
+    # -- 71 -------------- (E) [ARSIVLI ICERIK] arsivlenen hizmet/personel profilde YOK
+    REPORT.start("[ARSIV] Arsivlenen hizmet ve personel anonim profilde GORUNMUYOR")
+    final_prof = visitor_profile()
+    svc_ids = {s.get("id") for s in (final_prof.get("services") or [])}
+    all_staff_ids = {
+        m.get("id")
+        for b in (final_prof.get("branches") or [])
+        for m in (b.get("staffMembers") or [])
+    }
+    archived_svc_leak = archive_service_id in svc_ids
+    archived_staff_leak = archived_ok and staff_id in all_staff_ids
+    if archived_svc_leak or archived_staff_leak:
+        parts = []
+        if archived_svc_leak:
+            parts.append(f"arsivlenen hizmet (id={archive_service_id}) HALA profilde")
+        if archived_staff_leak:
+            parts.append(f"arsivlenen personel (id={staff_id}) HALA profilde")
+        REPORT.fail(
+            "Arsivlenen icerik anonim public profilde gorunuyor: "
+            + "; ".join(parts)
+            + ". Salon icerigi arsivledigini sanarken musteri onu gormeye devam ediyor."
+        )
+        finding("Arsivlenen hizmet/personel public profilden dusmuyor.")
+        return False
+    REPORT.ok(
+        f"arsivli hizmet ve personel profilde YOK ({len(svc_ids)} hizmet, "
+        f"{len(all_staff_ids)} personel donuyor)"
+    )
+
+    # -- 72 ------------------------------ (F) [SLOT TZ SOZLESMESI]
+    # NEDEN KRITIK: frontend (public-booking-panel.tsx) saati localStart'in ilk 16 karakterini
+    # KESEREK gosteriyor ve tarayicida HIC TZ donusumu yapmiyor -- cunku sube ziyaretcinin
+    # sehrinde olmak zorunda degil. Bu alanlar/format bozulursa hata SESSIZDIR: saatler
+    # yanlis gosterilir, kimse 500 gormez.
+    REPORT.start("[TZ] Slot sozlesmesi: startUtc/endUtc/localStart/localEnd + branchTimeZoneId")
+    tz_body = visitor_lab_slots(lab_date_iso)
+    tz_id = tz_body.get("branchTimeZoneId")
+    tz_slots = tz_body.get("slots") or []
+    if not tz_slots:
+        REPORT.fail(f"TZ sozlesmesi olculemedi: {lab_date_iso} icin 0 slot dondu.")
+        return False
+    missing = [f for f in ("startUtc", "endUtc", "localStart", "localEnd") if not tz_slots[0].get(f)]
+    if not tz_id:
+        REPORT.fail(
+            "Slot yanitinda ust seviye branchTimeZoneId YOK/BOS -- frontend saatin hangi "
+            "sehre ait oldugunu bilemez."
+        )
+        finding("Slot yaniti branchTimeZoneId dondurmuyor -- TZ sozlesmesi eksik.")
+        return False
+    if missing:
+        REPORT.fail(
+            f"Slot yaninda eksik alan(lar): {missing}. Frontend localStart'i keserek saat "
+            "gosteriyor; bu alanlar olmadan saat gosterilemez."
+        )
+        finding(f"Slot yaniti eksik alan donduruyor: {missing}.")
+        return False
+    local_start = tz_slots[0]["localStart"]
+    head = local_start[:16]
+    try:
+        datetime.strptime(head, "%Y-%m-%dT%H:%M")
+        fmt_ok = len(local_start) >= 16
+    except ValueError:
+        fmt_ok = False
+    if not fmt_ok:
+        REPORT.fail(
+            f"localStart={local_start!r} -- ilk 16 karakteri 'YYYY-MM-DDTHH:mm' DEGIL. "
+            "Frontend value.slice(11,16) ile saati KESIYOR "
+            "(src/features/public-booking/components/public-booking-panel.tsx); bu format "
+            "bozulunca tum saatler SESSIZCE yanlis gosterilir (hata firlatilmaz)."
+        )
+        finding(
+            f"Slot localStart formati frontend'in kestigi sozlesmeyi bozuyor: {local_start!r}."
+        )
+        return False
+    # localStart tarayici TZ'sine cevrilmemis, subenin YEREL saati olmali: 'Z'/offset TASIMAMALI.
+    if local_start.endswith("Z") or "+" in local_start[10:]:
+        REPORT.info(
+            f"localStart={local_start!r} offset/Z tasiyor -- 'yerel duvar saati' olmasi "
+            "beklenirdi. Frontend ilk 16 karakteri kestigi icin BUGUN calisiyor, ama alan "
+            "adi ile icerigi celisiyor (kirilgan)."
+        )
+    REPORT.ok(
+        f"branchTimeZoneId={tz_id}; localStart={local_start!r} -> kesilen saat={local_start[11:16]!r}; "
+        f"4 alan da mevcut ({len(tz_slots)} slot)"
+    )
 
     return True
 

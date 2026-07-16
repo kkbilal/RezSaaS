@@ -192,7 +192,14 @@ public sealed class PublicSlotSearchComposer
                 resourceBlocks,
                 confirmedBusyTimes,
                 branch.SlotIntervalMinutes ?? options.Value.SlotIntervalMinutes,
-                branch.MaxPublicSlots ?? options.Value.MaxSlots);
+                branch.MaxPublicSlots ?? options.Value.MaxSlots,
+                // FAIL-CLOSED: yalnizca ACIKCA "ShowNames" ise isim gonderilir. Taninmayan/bos
+                // bir deger gelirse isim GIZLENIR -- gizlilikte varsayilan "gizle" olmali.
+                // (PublicBusinessProfileComposer ile ayni kalip.)
+                showStaffNames: string.Equals(
+                    business.StaffDisplayPolicy,
+                    "ShowNames",
+                    StringComparison.OrdinalIgnoreCase));
 
             return CreateResponse(
                 business,
@@ -219,7 +226,10 @@ public sealed class PublicSlotSearchComposer
         IReadOnlyCollection<PublicResourceBlockView> resourceBlocks,
         IReadOnlyCollection<ConfirmedAppointmentBusyTimeView> confirmedBusyTimes,
         int slotIntervalMinutes,
-        int maxSlots)
+        int maxSlots,
+        // GIZLILIK: isletme "personel isimlerini gizle" (HideNames) secmisse slot yanitinda
+        // personel ADI GONDERILMEZ. Bkz. asagidaki kullanim.
+        bool showStaffNames)
     {
         List<PublicSlotResponse> slots = [];
         DateTime opensAtLocal = date.ToDateTime(workingHours.OpensAt, DateTimeKind.Unspecified);
@@ -240,9 +250,23 @@ public sealed class PublicSlotSearchComposer
                     endUtc,
                     staffUnavailableTimes,
                     confirmedBusyTimes))
+                // GIZLILIK ACIGI FIX: burada `staff.DisplayName` KOSULSUZ gonderiliyordu.
+                // Isletme "personel isimlerini gizle" (HideNames) secse bile /slots ucu,
+                // ANONIM cagriya personel ADLARINI donduruyordu. /profile dogru davranip
+                // personel listesini bos donerken, /slots ayni ismi sizdiriyordu -- yani ayar
+                // BIR YANILSAMAYDI: salon isimleri gizlediğini sanirken herkes tek bir curl ile
+                // alabiliyordu.
+                //
+                // Salonlar bu ayari genelde BILINCLI yapar (personel avlanmasini onlemek yaygin
+                // bir sebep). "Frontend zaten basmiyor" bir gizlilik kontrolu DEGILDIR -- API
+                // dogrudan cagrilabilir. Kisit BURADA olmali.
+                //
+                // Id KORUNUR: opak bir GUID kimlik sizdirmaz ve slot secimi/rezervasyon buna
+                // dayanir (staffMemberId nullable, ama musteri secebiliyorsa Id gerekir).
+                // Sizan sey ISIMDI; giden de o.
                 .Select(staff => new PublicSlotStaffResponse(
                     staff.Id,
-                    staff.DisplayName))
+                    showStaffNames ? staff.DisplayName : string.Empty))
                 .ToArray();
 
             if (availableStaff.Length == 0)
